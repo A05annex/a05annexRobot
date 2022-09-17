@@ -1,2 +1,3 @@
 # a05annexRobot
-The library of FRC classes that we will take forward and refine in future years.
+
+A05 base library for Server Drive Base with NavX
