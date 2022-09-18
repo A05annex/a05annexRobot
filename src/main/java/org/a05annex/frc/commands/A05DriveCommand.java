@@ -2,7 +2,6 @@ package org.a05annex.frc.commands;
 
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.Constants;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.DriveSubsystem;
@@ -141,7 +140,7 @@ public class A05DriveCommand extends CommandBase {
             NavX.HeadingInfo headingInfo = m_navx.getHeadingInfo();
             if (headingInfo != null) {
                 rotation = new AngleD(headingInfo.expectedHeading).subtract(new AngleD(headingInfo.heading))
-                        .getRadians() * Constants.DRIVE_ORIENTATION_kP;
+                        .getRadians() * A05Constants.getDriveOrientationkp();
                 // clip and add speed multiplier
                 return Utl.clip(rotation, -0.5, 0.5) * speed;
             } else {

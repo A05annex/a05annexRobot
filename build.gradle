@@ -7,6 +7,15 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://frcmaven.wpi.edu/artifactory/release/"
+    }
+    maven {
+        url "https://maven.revrobotics.com/"
+    }
+    maven {
+        url "https://maven.ctr-electronics.com/release/"
+    }
 }
 
 dependencies {
@@ -14,6 +23,16 @@ dependencies {
     api 'org.jetbrains:annotations:17.0.0'
     api 'com.googlecode.json-simple:json-simple:1.1.1'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'edu.wpi.first.wpilibj:wpilibj-java:2022.4.1'
+    implementation 'edu.wpi.first.cameraserver:cameraserver-java:2022.4.1'
+    implementation 'edu.wpi.first.wpilibNewCommands:wpilibNewCommands-java:2022.4.1'
+    implementation 'com.kauailabs.navx.frc:navx-java:4.0.442'
+    implementation 'edu.wpi.first.wpiutil:wpiutil-java:2022.4.1'
+    implementation 'com.ctre.phoenix:wpiapi-java:5.20.2'
+    implementation 'com.revrobotics.frc:REVLib-java:2022.1.1'
+    implementation 'com.ctre.phoenix:api-java:5.20.2'
+    implementation 'edu.wpi.first.ntcore:ntcore-java:2022.4.1'
 
     testImplementation 'junit:junit:4.12'
     testImplementation('org.junit.platform:junit-platform-runner:1.4.2')
