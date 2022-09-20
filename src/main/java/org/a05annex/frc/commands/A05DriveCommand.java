@@ -9,11 +9,18 @@ import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
 
+/**
+ * The basic drive command for controlling the swerve base from an Xbox controller. The actual robot project
+ * will probably override this command to add competition-specific functionality like targetting, position tracking
+ * or field position goals, etc. An override of this class will probably add some instance variables for the added
+ * functionality, instantiation or initialization setting/defaulting of these instance  variables, and an
+ * override of the execute command that implements these additional capabilities and falls-back to basic
+ * driver functionalities if the additional capabilities are not being summoned.
+ */
 public class A05DriveCommand extends CommandBase {
     protected final DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
 
     protected final NavX m_navx = NavX.getInstance();
-
 
     protected XboxController m_driveXbox;
 
@@ -23,11 +30,26 @@ public class A05DriveCommand extends CommandBase {
     protected double m_stickX;
     protected double m_stickRotate;
 
-    // save last stick values to limit rate of change
+    // ---------------------------------------------
+    // save last stick values, which are used to limit rate of change for the next execution of the command. In the
+    // 2020 'at-home' competition we noted that really abrupt driver actions skidded the robot making behaviour erratic
+    // and tearing up the treads. To counteract this we implemented maximum speed and rotation deltas per command cycle
+    // which improve response because of uncontrolled skids, traction is maintained (like anti-skid brakes)
+    /**
+     * The last conditioned stick X value.
+     */
     protected double m_lastStickX = 0.0;
+
+    /**
+     * The last conditioned stick Y value.
+     */
     protected double m_lastStickY = 0.0;
     protected double m_lastStickRotate = 0.0;
+    // maximum change in joystick value per 20ms for speed and rotation
+    public static double DRIVE_MAX_SPEED_INC = 0.075;
+    public static double DRIVE_MAX_ROTATE_INC = 0.075;
 
+    // ---------------------------------------------
     // deadband of drive and rotate joysticks
     public static double DRIVE_DEADBAND = 0.05;
     public static double ROTATE_DEADBAND = 0.05;
@@ -43,9 +65,6 @@ public class A05DriveCommand extends CommandBase {
     public static final double DRIVE_SLOW_GAIN = 0.3;
     public static final double BOOST_TRIGGER_THRESHOLD = 0.5;
 
-    // maximum change in joystick value per 20ms for speed and rotation
-    public static double DRIVE_MAX_SPEED_INC = 0.075;
-    public static double DRIVE_MAX_ROTATE_INC = 0.075;
 
     public A05DriveCommand(XboxController xbox) {
         addRequirements(m_driveSubsystem);

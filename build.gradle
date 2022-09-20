@@ -1,49 +1,50 @@
+import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
+
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'maven'
+    //id 'maven'
     id 'signing'
+    id 'edu.wpi.first.GradleRIO' version '2022.4.1'
 }
 
-repositories {
-    mavenCentral()
-    maven {
-        url "https://frcmaven.wpi.edu/artifactory/release/"
-    }
-    maven {
-        url "https://maven.revrobotics.com/"
-    }
-    maven {
-        url "https://maven.ctr-electronics.com/release/"
-    }
+def javaVersion = JavaVersion.VERSION_11
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
+version = '0.0.1'
+group = 'org.a05annex'
+
+// Set to true to use debug for JNI.
+wpi.java.debugJni = false
+
+test {
+    useJUnitPlatform()
 }
 
 dependencies {
     //implementation 'org.a05annex:a05annexUtil:0.9.1'
-    api 'org.jetbrains:annotations:17.0.0'
+    api 'org.jetbrains:annotations:23.0.0'
     api 'com.googlecode.json-simple:json-simple:1.1.1'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'edu.wpi.first.wpilibj:wpilibj-java:2022.4.1'
-    implementation 'edu.wpi.first.cameraserver:cameraserver-java:2022.4.1'
-    implementation 'edu.wpi.first.wpilibNewCommands:wpilibNewCommands-java:2022.4.1'
-    implementation 'com.kauailabs.navx.frc:navx-java:4.0.442'
-    implementation 'edu.wpi.first.wpiutil:wpiutil-java:2022.4.1'
-    implementation 'com.ctre.phoenix:wpiapi-java:5.20.2'
-    implementation 'com.revrobotics.frc:REVLib-java:2022.1.1'
-    implementation 'com.ctre.phoenix:api-java:5.20.2'
-    implementation 'edu.wpi.first.ntcore:ntcore-java:2022.4.1'
+    implementation wpi.java.deps.wpilib()
+    implementation wpi.java.vendor.java()
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation('org.junit.platform:junit-platform-runner:1.4.2')
-    testImplementation('org.junit.jupiter:junit-jupiter-api:5.4.2')
-    testImplementation('org.junit.jupiter:junit-jupiter-engine:5.4.2')
+    nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
+    nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
+    simulationDebug wpi.sim.enableDebug()
+
+    nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
+    nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+    simulationRelease wpi.sim.enableRelease()
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation('org.junit.platform:junit-platform-runner:1.9.0')
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.9.0')
+    testImplementation('org.junit.jupiter:junit-jupiter-engine:5.9.0')
+    testImplementation('org.mockito:mockito-core:4.8.0')
+    testRuntimeOnly(files('libs/a05annexUtil-0.9.4.jar'))
 }
-
-sourceCompatibility = '1.9'
-targetCompatibility = '1.9'
-version = '0.0.1'
-group = 'org.a05annex'
 
 
 java {
@@ -101,66 +102,74 @@ publishing {
         }
 
     }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/A05annex/a05annexRobot"
-            credentials {
-                username = project.hasProperty("githubActor") ?
-                        project.property("githubActor") : System.getenv("GITHUB_ACTOR")
-                password = project.hasProperty("githubToken") ?
-                        project.property("githubToken") : System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
+
+// this is publishing to the github repository, which never really worked - might be time to revisit this
+//    repositories {
+//        maven {
+//            name = "GitHubPackages"
+//            url = "https://maven.pkg.github.com/A05annex/a05annexRobot"
+//            credentials {
+//                username = project.hasProperty("githubActor") ?
+//                        project.property("githubActor") : System.getenv("GITHUB_ACTOR")
+//                password = project.hasProperty("githubToken") ?
+//                        project.property("githubToken") : System.getenv("GITHUB_TOKEN")
+//            }
+//        }
+//    }
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+// This was the publishing to the sonatype repository. This worked in gradle 6, but needs an update for
+// gradle 7.
+//
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            // beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//            beforeDeployment { sign(publishing.publications["maven"]) }
+//
+//            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//                authentication(
+//                        userName: project.hasProperty("ossrhUsername") ?
+//                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
+//                        password:  project.hasProperty("ossrhPassword") ?
+//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN") )
+//            }
+//
+//            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+//                authentication(
+//                        userName: project.hasProperty("ossrhUsername") ?
+//                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
+//                        password:  project.hasProperty("ossrhPassword") ?
+//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN") )
+//            }
+//            pom.project {
+//                name = 'A05annex Robot Library'
+//                description = 'A05annex robot base for swerve and NavX.'
+//                url = 'https://github.com/A05annex/a05annexRobot'
+//                licenses {
+//                    license {
+//                        name = 'The Apache License, Version 2.0'
+//                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//                    }
+//                }
+//                developers {
+//                    developer {
+//                        id = 'A05annex'
+//                        name = 'A05annex'
+//                        email = 'a05annexrobotics@gmail.com'
+//                    }
+//                }
+//                scm {
+//                    connection = 'scm:git:git://github.com/A05annex/a05annexRobot.git'
+//                    developerConnection = 'scm:git:ssh://github.com/A05annex/a05annexRobot.git'
+//                    url = 'https://github.com/A05annex/a05annexRobot'
+//                }
+//            }
+//        }
+//    }
+//}
 
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(
-                        userName: project.hasProperty("ossrhUsername") ?
-                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
-                        password:  project.hasProperty("ossrhPassword") ?
-                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN") )
-            }
-
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(
-                        userName: project.hasProperty("ossrhUsername") ?
-                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
-                        password:  project.hasProperty("ossrhPassword") ?
-                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN") )
-            }
-            pom.project {
-                name = 'A05annex Robot Library'
-                description = 'A05annex robot base for swerve and NavX.'
-                url = 'https://github.com/A05annex/a05annexRobot'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'A05annex'
-                        name = 'A05annex'
-                        email = 'a05annexrobotics@gmail.com'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/A05annex/a05annexRobot.git'
-                    developerConnection = 'scm:git:ssh://github.com/A05annex/a05annexRobot.git'
-                    url = 'https://github.com/A05annex/a05annexRobot'
-                }
-            }
-        }
-    }
-}
+wpi.java.configureTestTasks(test)
 
 
 
