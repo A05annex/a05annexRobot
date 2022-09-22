@@ -61,7 +61,9 @@ public class Mk4NeoModule {
     // The module physical hardware
     // -----------------------------------------------------------------------------------------------------------------
     // This is the physical hardware wired to the roborio
+    @SuppressWarnings("FieldCanBeLocal")
     private final CANSparkMax driveMotor;
+    @SuppressWarnings("FieldCanBeLocal")
     private final CANSparkMax directionMotor;
     private final CANCoder calibrationEncoder;
 
@@ -87,12 +89,12 @@ public class Mk4NeoModule {
      * the wheel - see {@link #speedMultiplier ) documentation for determining whether this is the
      * orientation of the front or the back. This will be in the range -pi to pi.
      */
-    private AngleD lastDirection = new AngleD(AngleUnit.RADIANS, 0.0);
+    private final AngleD lastDirection = new AngleD(AngleUnit.RADIANS, 0.0);
     /**
      * The last direction encoder value that was set. Note, we always set the next spin by using a change angle.
      * This means the encoder setting can be anywhere from -infinity to +infinity.
      */
-    private double lastDirectionEncoder = 0.0;
+    private double lastDirectionEncoder;
     /**
      * The last speed value that was set for this module, in the range 0.0 to 1.0.
      */
@@ -169,8 +171,8 @@ public class Mk4NeoModule {
         this.directionMotor.setInverted(true);
 
         // update PID controllers for spin and drive motors and initialize them
-        initPID(this.drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE);
-        initPID(this.directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0);
+        setDrivePID();
+        setSpinPID();
 
         // calibrate
         this.calibrationOffset = calibrationOffset;
@@ -185,26 +187,25 @@ public class Mk4NeoModule {
      * constants for best control.
      */
     public void setSpinPID() {
-        directionPID.setP(SPIN_kP);
-        directionPID.setI(SPIN_kI);
+        initPID(this.directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0);
     }
 
     /**
-     * Updates the drive CANPIDController object using values in constants file. Used only when tuning the PID
-     * * constants for best control.
+     * Updates the drive CANPIDController object using the velocity PID values in constants file. Used when
+     * tuning the PID constants for best control, or when switching from drive position control to drive
+     * velocity control.
      */
     public void setDrivePID() {
-        drivePID.setP(DRIVE_kP);
-        drivePID.setI(DRIVE_kI);
-        drivePID.setFF(DRIVE_kFF);
-        drivePID.setIZone(DRIVE_IZONE);
+        initPID(this.drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE);
     }
 
+    /**
+     * Updates the drive CANPIDController object using the position PID values in constants file. Used when
+     * tuning the PID constants for best control, or when switching from drive velocity control to drive
+     * position control.
+     */
     public void setDrivePosPID() {
-        drivePID.setP(DRIVE_POS_kP);
-        drivePID.setI(DRIVE_POS_kI);
-        drivePID.setFF(0.0);
-        drivePID.setIZone(0.0);
+        initPID(this.drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, 0.0);
     }
 
     private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone) {

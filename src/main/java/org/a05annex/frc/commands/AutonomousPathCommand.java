@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
  * Note that when run in a test environment the navx device is instantiated as a simulation device rather than a
  * real physical devise.
  */
+@SuppressWarnings("unused")
 public class AutonomousPathCommand extends CommandBase {
 
     private final ISwerveDrive swerveDrive;
@@ -121,7 +122,7 @@ public class AutonomousPathCommand extends CommandBase {
     @Override
     public void execute() {
         if (null != stopAndRunCommand) {
-            // There is an active stop-and-run command. Take the next stepbbin that command.
+            // There is an active stop-and-run command. Take the next step in that command.
             stopAndRunCommand.execute();
 
         } else {
@@ -140,7 +141,7 @@ public class AutonomousPathCommand extends CommandBase {
                 // that it gets all its sequencing from the path file - which was built without access to the
                 // actual code and commands that may be scheduled or stop_and_run. These commands are instantiated
                 // by reflection, so only the name of the command is required during path planning.
-                Command command = null;
+                Command command;
                 if ((null != pathPoint.action) && (null != pathPoint.action.command) &&
                         (null != (command = instantiateActionCommand(pathPoint.action.command)))) {
                     // OK, we've instantiated the command, now either schedule it, or run it inside this command.

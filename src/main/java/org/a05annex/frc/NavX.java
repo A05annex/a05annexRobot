@@ -8,24 +8,22 @@ import org.a05annex.util.AngleUnit;
 
 
 /**
- * This is a class that initializes and tracks the NavX board to maintain current information, specifically
+ * <p>This is a class that initializes and tracks the NavX board to maintain current information, specifically
  * heading, for the robot. We have been having a degrees vs. radians, since all of the math trig libraries
  * use radians. we decided that staying in radians would build up minimal round-off error.
- *
+ * </p><p>
  * Originally this class was written to support NavX on a conventional drive that had PID direction loops
  * concerned with matching actual heading to expected heading. Right now we are a little unclear how that
  * relates to the A05annex 2021 season swerve drive.
+ * </p>
  */
 public class NavX {
 
-    //==================================================================================================================
-    // NOTE: the NavX software expresses all the navigation angles in degrees, so we maintain angles internal
-    // to this class in degrees. And do the conversions to radians when this class is queried for values.
     private final AHRS m_ahrs;
     /** The heading we are trying to track with the robot.
      */
     private final AngleD m_expectedHeading = new AngleD(AngleD.ZERO);
-    private double m_updateCt = -1;
+    private double m_updateCt;
 
     /** The raw heading, not corrected for the spins, read directly from the NavX, in the range
      * -180 to +180 degrees. Used for determining whether the boundary between -180 and 180 has been crossed.
@@ -76,6 +74,7 @@ public class NavX {
         m_ahrs.reset();
         while (m_ahrs.isCalibrating()) {
             try {
+                //noinspection BusyWait
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 break;
@@ -101,7 +100,7 @@ public class NavX {
      */
     public void initializeHeadingAndNav(AngleConstantD heading) {
         // In the past we have always initialized with the front of the robot facing down field, so the
-        // heading was 0.0 at initialization. In this case we are
+        // heading was 0.0 at initialization. In this case we are initializing to some other heading.
         m_refPitch.setDegrees(m_ahrs.getPitch());
         m_refYaw.setDegrees(m_ahrs.getYaw());
         m_refRoll.setDegrees(m_ahrs.getRoll());
@@ -116,9 +115,19 @@ public class NavX {
      *
      * @param delta The change to the expected heading.
      */
+    @SuppressWarnings("unused")
     public void incrementExpectedHeading(AngleD delta) {
         m_expectedHeading.add(delta);
+    }
 
+    /**
+     * Set the expected heading.
+     *
+     * @param expectedHeading (not null, AngleD) The expected heading.
+     */
+    @SuppressWarnings("unused")
+    public void setExpectedHeading(AngleD expectedHeading) {
+        m_expectedHeading.setValue(expectedHeading);
     }
 
     /**
@@ -150,13 +159,13 @@ public class NavX {
         // This is the logic for detecting and correcting for the IMU discontinuity at +180degrees and -180degrees.
         if (m_headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && heading_raw.isGreaterThan(AngleD.ZERO)) {
             // The previous raw IMU heading was negative and close to the discontinuity, and it is now positive. We
-            // have gone through the discontinuity so we decrement the heading revolutions by 1 (we completed a
+            // have gone through the discontinuity, so we decrement the heading revolutions by 1 (we completed a
             // negative revolution). NOTE: the initial check protects from the case that the heading is near 0 and
             // goes continuously through 0, which is not the completion of a revolution.
             m_headingRevs--;
         } else if (m_headingRawLast.isGreaterThan(AngleD.PI_OVER_2) && heading_raw.isLessThan(AngleD.ZERO)) {
             // The previous raw IMU heading was positive and close to the discontinuity, and it is now negative. We
-            // have gone through the discontinuity so we increment the heading revolutions by 1 (we completed
+            // have gone through the discontinuity, so we increment the heading revolutions by 1 (we completed
             // positive revolution). NOTE: the initial check protects from the case that the heading is near 0 and
             // goes continuously through 0, which is not the completion of a revolution.
             m_headingRevs++;
@@ -193,12 +202,14 @@ public class NavX {
             // are unreliable.
             return null;
         }
+        m_updateCt = updateCt;
         return new HeadingInfo(m_heading, m_expectedHeading, m_setExpectedToCurrent);
     }
 
     /**
      * @return Returns the navigation info, returns {@code null} if there is a problem with the NavX.
      */
+    @SuppressWarnings("unused")
     public NavInfo getNavInfo() {
         if (null == m_ahrs) {
             return null;
@@ -215,13 +226,24 @@ public class NavX {
                 new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getRoll()));
     }
 
+    /**
+     * The data class for information about the robot heading.
+     */
     public static class HeadingInfo {
         /**
          * The current heading in radians of the robot as computed in the last call
          * to {@link NavX#initializeHeadingAndNav()}.
          */
         public final AngleConstantD heading;
+        /**
+         * This is the expected heading based on navX initialization and calls to
+         * {@link NavX#incrementExpectedHeading(AngleD)} and {@link NavX#setExpectedHeadingToCurrent()}.
+         */
         public final AngleConstantD expectedHeading;
+        /**
+         * {@code true} if the expected heading is being reset to the current heading at each call to
+         * {@link NavX#initializeHeadingAndNav()}, and {@code false} otherwise.
+         */
         public final boolean isExpectedTrackingCurrent;
 
         HeadingInfo(AngleD heading, AngleD expectedHeading, boolean isExpectedTrackingCurrent) {
@@ -237,13 +259,13 @@ public class NavX {
     public static class NavInfo {
         /**
          * The pitch (lean forward or backward) of the robot, with negative being forwards, from when the robot
-         * was first initialized.
+         * was first initialized, or relative to when the NavX orientation was last reset.
          */
         public final AngleConstantD pitch;
         public final AngleConstantD rawPitch;
         /**
          * The yaw (rotation or turn) of the robot, with positive being clockwise (to the right), from when the
-         * robot was first initialized.
+         * robot was first initialized, or relative to when the NavX orientation was last reset.
          */
         public final AngleConstantD yaw;
         public final AngleConstantD rawYaw;
@@ -275,6 +297,8 @@ public class NavX {
      * Returns the Singleton instance of this NavX. This static method
      * should be used -- {@code NavX.getInstance();} -- by external
      * classes, rather than the constructor to get the instance of this class.
+     *
+     * @return (NavX) returns the NavX instance.
      */
     public static NavX getInstance() {
         return INSTANCE;

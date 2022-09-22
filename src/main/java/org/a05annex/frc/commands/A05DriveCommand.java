@@ -10,18 +10,46 @@ import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
 
 /**
- * The basic drive command for controlling the swerve base from an Xbox controller. The actual robot project
+ * <p>The basic drive command for controlling the swerve base from an Xbox controller. The actual robot project
  * will probably override this command to add competition-specific functionality like targetting, position tracking
  * or field position goals, etc. An override of this class will probably add some instance variables for the added
  * functionality, instantiation or initialization setting/defaulting of these instance  variables, and an
  * override of the execute command that implements these additional capabilities and falls-back to basic
  * driver functionalities if the additional capabilities are not being summoned.
+ * <p>
+ * This base implementation of drive control includes:
+ * <ul>
+ *     <li><b>Xbox drive control</b> with translation (field motion relative to the drive) on the left stick, and robot
+ *     rotation on the right stick;</li>
+ *     <li><b>deadband around the stick center</b> to make sure the driver means to apply a robot motion before it is
+ *     applied to the robots (on many controllers sticks don't quite go to 0,0 when you release them - this gives
+ *     you the 0,0 you expect when you release a stick);</li>
+ *     <li><b>Speed and Rotation sensitivity</b> to apply a power function to the linearity of the stick motion to
+ *     actual output. All human perceptions are logarithmic, not linear. This adjustment helps make the robot more
+ *     controllable (more sensitive) at low speeds with the stick.</li>
+ *     <li><b>acceleration/deceleration limits</b> - when a driver lats go of a stick (1.0 to 0.0) or smashes
+ *     a stick to the max (0.0 to 1.0), this asks the drives to do something not physically possible and results
+ *     in the tires skidding (they are moving faster that the robot can accelerate, or slowing faster than the
+ *     robot can decelerate, so they skid). These limits are a bit like anti-skid brakes in cars, because you
+ *     (the driver) have more control when you are not skidding. These limits  dictate the maximum change in speed
+ *     or rotation per command cycle to try to minimize skidding.</li>
+ * </ul>
  */
 public class A05DriveCommand extends CommandBase {
+
+    /**
+     * The swerve drive subsystem.
+     */
     protected final DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
 
+    /**
+     * The NavX that provides (and maintains the expected) inertial navigation heading for the robot
+     */
     protected final NavX m_navx = NavX.getInstance();
 
+    /**
+     * The drive controller for the robot.
+     */
     protected XboxController m_driveXbox;
 
     protected double m_gain;
@@ -39,13 +67,16 @@ public class A05DriveCommand extends CommandBase {
      * The last conditioned stick X value.
      */
     protected double m_lastStickX = 0.0;
-
     /**
      * The last conditioned stick Y value.
      */
     protected double m_lastStickY = 0.0;
+    /**
+     * The last conditioned stick rotation value.
+     */
     protected double m_lastStickRotate = 0.0;
-    // maximum change in joystick value per 20ms for speed and rotation
+    /** maximum change in joystick value per 20ms for speed and rotation
+     */
     public static double DRIVE_MAX_SPEED_INC = 0.075;
     public static double DRIVE_MAX_ROTATE_INC = 0.075;
 
@@ -54,6 +85,7 @@ public class A05DriveCommand extends CommandBase {
     public static double DRIVE_DEADBAND = 0.05;
     public static double ROTATE_DEADBAND = 0.05;
 
+    // ---------------------------------------------
     // sensitivity and gain
     public static double DRIVE_SPEED_SENSITIVITY = 2.0;
     public static double DRIVE_SPEED_GAIN = 0.7;
