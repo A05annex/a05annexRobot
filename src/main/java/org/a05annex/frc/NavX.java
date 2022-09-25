@@ -5,11 +5,13 @@ import edu.wpi.first.wpilibj.SPI;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
+import org.jetbrains.annotations.NotNull;
 
 
 /**
  * <p>This is a class that initializes and tracks the NavX board to maintain current information, specifically
- * heading, for the robot. We have been having a degrees vs. radians, since all of the math trig libraries
+ * heading, for the robot. We have been having a degrees vs. radians debate;
+ * since all of the math trig libraries
  * use radians. we decided that staying in radians would build up minimal round-off error.
  * </p><p>
  * Originally this class was written to support NavX on a conventional drive that had PID direction loops
@@ -19,10 +21,20 @@ import org.a05annex.util.AngleUnit;
  */
 public class NavX {
 
+    /**
+     * This is the NavX inertial navigation board connection.
+     */
     private final AHRS m_ahrs;
-    /** The heading we are trying to track with the robot.
+
+    /** The heading we are trying to track with the robot, i.e. this is the heading the robot is expected to
+     *  be on given the commands we have sent to the robot.
      */
     private final AngleD m_expectedHeading = new AngleD(AngleD.ZERO);
+
+    /** This is the update count from the NavX. This count is incremented whenever the NavX updates its position
+     *  information. The NavX updates at a faster rate than the WPI command loop rate, so, the update count should
+     *  always change between command cycles of there is a NavX communication problem.
+     */
     private double m_updateCt;
 
     /** The raw heading, not corrected for the spins, read directly from the NavX, in the range
@@ -50,21 +62,27 @@ public class NavX {
      * The NavX reported pitch at the time the NavX in initialized.
      */
     private final AngleD m_refPitch = new AngleD(AngleD.ZERO);
+
     /**
      * The NavX reported yaw at the time the NavX in initialized.
      */
     private final AngleD m_refYaw = new AngleD(AngleD.ZERO);
+
     /**
      * The NavX reported roll at the time the NavX in initialized.
      */
     private final AngleD m_refRoll = new AngleD(AngleD.ZERO);
+
     /**
      * The actual field heading of the robot at the time the NavX in initialized.
      */
     private final AngleD m_refHeading = new AngleD(AngleD.ZERO);
 
     /**
-     *
+     * Instantiate the NavX. We have had problems here where the NavX does not respond because it is somehow
+     * unreachable (disconnected) - which means this instantiation never finishes, and the robot sits on the
+     * starting block and does not participate in the match. We have not fully worked out the details of
+     * continuing without inertial navigation.
      */
     private NavX() {
         // So, if there is no navx, there is no error - it just keeps trying to connect forever, so this
@@ -181,15 +199,18 @@ public class NavX {
     }
 
     /**
-     * Returns a copy of the robot chassis heading.
+     * Returns a copy of the current robot chassis heading.
      *
-     * @return A copy of the robot chassis heading.
+     * @return (not null, AngleD) A copy of the current robot chassis heading.
      */
+    @NotNull
     public AngleD getHeading() {
         return m_heading.cloneAngleD();
     }
 
     /**
+     * Get the current heading information for the robot.
+     *
      * @return Returns the heading info, returns {@code null} if there is a problem with the NavX.
      */
     public HeadingInfo getHeadingInfo() {
@@ -207,6 +228,8 @@ public class NavX {
     }
 
     /**
+     * Get the navigation info from the NavX.
+     *
      * @return Returns the navigation info, returns {@code null} if there is a problem with the NavX.
      */
     @SuppressWarnings("unused")
@@ -227,7 +250,7 @@ public class NavX {
     }
 
     /**
-     * The data class for information about the robot heading.
+     * The data class for returning information about the robot heading.
      */
     public static class HeadingInfo {
         /**
@@ -235,17 +258,25 @@ public class NavX {
          * to {@link NavX#initializeHeadingAndNav()}.
          */
         public final AngleConstantD heading;
+
         /**
-         * This is the expected heading based on navX initialization and calls to
+         * This is the expected heading based on NavX initialization and calls to
          * {@link NavX#incrementExpectedHeading(AngleD)} and {@link NavX#setExpectedHeadingToCurrent()}.
          */
         public final AngleConstantD expectedHeading;
+
         /**
          * {@code true} if the expected heading is being reset to the current heading at each call to
          * {@link NavX#initializeHeadingAndNav()}, and {@code false} otherwise.
          */
         public final boolean isExpectedTrackingCurrent;
 
+        /**
+         *
+         * @param heading
+         * @param expectedHeading
+         * @param isExpectedTrackingCurrent
+         */
         HeadingInfo(AngleD heading, AngleD expectedHeading, boolean isExpectedTrackingCurrent) {
             this.heading = heading;
             this.expectedHeading = expectedHeading;
