@@ -73,9 +73,9 @@ public class AutonomousPathCommand extends CommandBase {
         pathPoint = pathFollower.getPointAt(0.0);
         if (pathPoint != null) {
             NavX.getInstance().initializeHeadingAndNav(pathPoint.fieldHeading);
-            double forward = pathPoint.speedForward / A05Constants.getMaxMetersPerSec();
-            double strafe = pathPoint.speedStrafe / A05Constants.getMaxMetersPerSec();
-            double rotation = (pathPoint.speedRotation / A05Constants.getMaxRadiansPerSec());
+            double forward = pathPoint.speedForward / swerveDrive.getMaxMetersPerSec();
+            double strafe = pathPoint.speedStrafe / swerveDrive.getMaxMetersPerSec();
+            double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec());
             swerveDrive.prepareForDriveComponents(forward, strafe, rotation);
             startTime = System.currentTimeMillis();
             if ((null != pathPoint.action) && (null != pathPoint.action.command) &&
@@ -161,8 +161,8 @@ public class AutonomousPathCommand extends CommandBase {
                     }
                 }
 
-                double forward = pathPoint.speedForward / A05Constants.getMaxMetersPerSec();
-                double strafe = pathPoint.speedStrafe / A05Constants.getMaxMetersPerSec();
+                double forward = pathPoint.speedForward / swerveDrive.getMaxMetersPerSec();
+                double strafe = pathPoint.speedStrafe / swerveDrive.getMaxMetersPerSec();
                 // The expected heading is included in the PathPoint. The path point is the instantaneous
                 // speed and position that we want to be at when we go through the path point. So, we are
                 // actually telling the swerve drive what to do to get from the last control point to this
@@ -172,7 +172,7 @@ public class AutonomousPathCommand extends CommandBase {
 //                double errorRotation = 0.0;  // when calibrating rotation rate.
                 double errorRotation = (lastPathPoint.fieldHeading.getRadians() -
                         NavX.getInstance().getHeading().getRadians()) * A05Constants.getDriveOrientationkp();
-                double rotation = (pathPoint.speedRotation / A05Constants.getMaxRadiansPerSec()) + errorRotation;
+                double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec()) + errorRotation;
                 swerveDrive.swerveDriveComponents(forward, strafe, rotation);
                 NavX.getInstance().setExpectedHeadingToCurrent();
 
@@ -213,9 +213,9 @@ public class AutonomousPathCommand extends CommandBase {
                 swerveDrive.setHeading(pathPoint.fieldHeading);
                 try {
                     Thread.sleep(15);
-                    double forward = pathPoint.speedForward / A05Constants.getMaxMetersPerSec();
-                    double strafe = pathPoint.speedStrafe / A05Constants.getMaxMetersPerSec();
-                    double rotation = (pathPoint.speedRotation / A05Constants.getMaxRadiansPerSec());
+                    double forward = pathPoint.speedForward / swerveDrive.getMaxMetersPerSec();
+                    double strafe = pathPoint.speedStrafe / swerveDrive.getMaxMetersPerSec();
+                    double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec());
                     swerveDrive.prepareForDriveComponents(forward, strafe, rotation);
                 } catch (InterruptedException e) {
                     return isFinished;

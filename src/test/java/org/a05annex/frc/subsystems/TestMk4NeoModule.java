@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
+import org.junit.platform.suite.api.Suite;
 import org.junit.runner.RunWith;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.*;
 /**
  *
  */
-@RunWith(JUnitPlatform.class)
+@Suite
 public class TestMk4NeoModule {
 
     /**
@@ -50,9 +51,10 @@ public class TestMk4NeoModule {
          */
         public InitializedMk4NeoModule() {
             when(analogEncoder.getAbsolutePosition()).thenReturn(Math.PI / 2.0);
-            driveModule = new Mk4NeoModule(driveMotor, driveEncoder, drivePID,
+            driveModule = new Mk4NeoModule("test-mk4", driveMotor, driveEncoder, drivePID,
                     spinMotor, spinEncoder, spinPID,
-                    analogEncoder, -(Math.PI / 2.0));
+                    analogEncoder);
+            driveModule.setCalibrationOffset(-(Math.PI / 2.0));
             assertEquals(Math.PI / 2.0, driveModule.getCalibrationPosition());
             // In this test example, the wheel is facing directly backwards, so the position should be set to
             // half a direction revolution.

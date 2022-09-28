@@ -40,11 +40,26 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     // cycle.
     private final NavX m_navx = NavX.getInstance();
 
-    // the drive geometry
-    private final double LENGTH_OVER_DIAGONAL =
-            A05Constants.getDriveLength() / A05Constants.getDriveDiagonal();
-    private final double WIDTH_OVER_DIAGONAL =
-            A05Constants.getDriveWidth() / A05Constants.getDriveDiagonal();
+    // These are the constants for the drive geometry. They will vary with different frames, and they are
+    // initially not set - which will result in an error is you call any of the drive commands.
+    /**
+     * is the drive geometry set? Initially {@code false}, but sell be set to {@code true} when the
+     * drive geometry and calibration has been initialized.
+     */
+    private boolean isDriveGeometrySet = false;
+    private double DRIVE_LENGTH;
+    private double DRIVE_WIDTH;
+    private double LENGTH_OVER_DIAGONAL;
+    private double WIDTH_OVER_DIAGONAL;
+    // The maximum spin of the robot when only spinning. Since the robot drive centers are
+    // rectangular, all wheels are aligned so their axis passes through the center of that rectangle, and all wheels
+    // follow the same circular path at a radius of DRIVE_DIAGONAL/2.0 at MAX_METERS_PER_SEC. So this is
+    // computed from DRIVE_DIAGONAL and MAX_METERS_PER_SEC:
+    //     Max [radians/sec] = max speed [meters/sec] / (PI * radius) [meters/radian]
+    //     Max [radians/sec] = MAX_METERS_PER_SEC / (Math.PI * DRIVE_DIAGONAL * 0.5)
+    private double MAX_RADIANS_PER_SEC;
+    // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
+    private static double DRIVE_POS_TICS_PER_RADIAN;
 
     // keep track of last angles
     private final AngleD m_RF_lastRadians = new AngleD(AngleD.ZERO);
@@ -71,17 +86,71 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     private DriveSubsystem() {
         // initialize drive modules
-        m_rf = Mk4NeoModule.factory(A05Constants.A05CAN_Devices.RF_DRIVE, A05Constants.A05CAN_Devices.RF_DIRECTION,
-                A05Constants.A05CAN_Devices.RF_CALIBRATION, A05Constants.CalibrationOffset.RF);
+        m_rf = Mk4NeoModule.factory("right-front", 1, 2,20);
 
-        m_rr = Mk4NeoModule.factory(A05Constants.A05CAN_Devices.RR_DRIVE, A05Constants.A05CAN_Devices.RR_DIRECTION,
-                A05Constants.A05CAN_Devices.RR_CALIBRATION, A05Constants.CalibrationOffset.RR);
+        m_rr = Mk4NeoModule.factory("right-rear", 3, 4,21);
 
-        m_lf = Mk4NeoModule.factory(A05Constants.A05CAN_Devices.LF_DRIVE, A05Constants.A05CAN_Devices.LF_DIRECTION,
-                A05Constants.A05CAN_Devices.LF_CALIBRATION, A05Constants.CalibrationOffset.LF);
+        m_lf = Mk4NeoModule.factory("left-front", 7, 8,23);
 
-        m_lr = Mk4NeoModule.factory(A05Constants.A05CAN_Devices.LR_DRIVE, A05Constants.A05CAN_Devices.LR_DIRECTION,
-                A05Constants.A05CAN_Devices.LR_CALIBRATION, A05Constants.CalibrationOffset.LR);
+        m_lr = Mk4NeoModule.factory("left-rear", 5, 6,24);
+    }
+
+    /**
+     * Set the swerve drive geometry and calibration constants. This must be called in your {@code Robot.robotInit()}
+     * to describe the geometry and calibration of the swerve drive before any commands using this geometry
+     * (like drive commands) are called. It should <i><b>NEVER</b></i> be called a second time.
+     *
+     * @param driveLength   (double) The length of the drive in meters.
+     * @param driveWidth    (double) The width of the drive in meters.
+     * @param rfCalibration (double) The reading of the right front spin encoder when the wheel is facing
+     *                      directly forward.
+     * @param rrCalibration (double) The reading of the right rear spin encoder when the wheel is facing
+     *                      directly forward.
+     * @param lfCalibration (double) The reading of the left front spin encoder when the wheel is facing
+     *                      directly forward.
+     * @param lrCalibration (double) The reading of the left rear spin encoder when the wheel is facing
+     *                      directly forward.
+     */
+    @Override
+    public void setDriveGeometry(double driveLength, double driveWidth,
+                                 double rfCalibration, double rrCalibration,
+                                 double lfCalibration, double lrCalibration) {
+        if (isDriveGeometrySet) {
+            throw new IllegalStateException("The drive geometry has already been set for this swerve drive.");
+        }
+        isDriveGeometrySet = true;
+        DRIVE_LENGTH = driveLength;
+        DRIVE_WIDTH = driveWidth;
+        double driveDiagonal = Utl.length(DRIVE_LENGTH, DRIVE_WIDTH);
+        LENGTH_OVER_DIAGONAL = DRIVE_LENGTH / driveDiagonal;
+        WIDTH_OVER_DIAGONAL = DRIVE_WIDTH / driveDiagonal;
+        MAX_RADIANS_PER_SEC = (377.0/360.0) * // tested
+                ((Mk4NeoModule.MAX_METERS_PER_SEC * 2 * Math.PI) / (Math.PI * driveDiagonal));
+        DRIVE_POS_TICS_PER_RADIAN = 10; //TODO: Really compute this number
+        m_rf.setCalibrationOffset(rfCalibration);
+        m_rr.setCalibrationOffset(rrCalibration);
+        m_lf.setCalibrationOffset(lfCalibration);
+        m_lr.setCalibrationOffset(lrCalibration);
+    }
+
+    @Override
+    public double getDriveLength() {
+        return DRIVE_LENGTH;
+    }
+
+    @Override
+    public double getDriveWidth() {
+        return DRIVE_WIDTH;
+    }
+
+    @Override
+    public double getMaxMetersPerSec() {
+        return Mk4NeoModule.MAX_METERS_PER_SEC;
+    }
+
+    @Override
+    public double getMaxRadiansPerSec() {
+        return MAX_RADIANS_PER_SEC;
     }
 
     // getter methods for modules
@@ -124,21 +193,20 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     // begin swerve methods
+
     /**
      * The internal method to run, or prepare to run, the swerve drive with the specified {@code  forward},
      * {@code strafe}, and {@code rotation} chassis relative components.
      *
-     *
-     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards.
-     * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
-     * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
+     * @param forward   Drive forward. From -1 (full backwards) to 1 (full forwards).
+     * @param strafe    Strafe right. From -1 (full left)  to 1 (full right).
+     * @param rotation  Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      * @param setSpeeds (boolean) {@code true} if module speeds should be set to run the modules, {@code false} if
      *                  this method is being called to prepare (set the direction of) the modules to run this command.
      *                  If {@code false}, module speeds will be 0.0 and there should be no robot motion.
      */
     private void setModulesForChassisMotion(double forward, double strafe,
-                                            double rotation, boolean setSpeeds)
-    {
+                                            double rotation, boolean setSpeeds) {
         // calculate a, b, c and d variables
         double a = strafe - (rotation * LENGTH_OVER_DIAGONAL);
         double b = strafe + (rotation * LENGTH_OVER_DIAGONAL);
@@ -166,10 +234,18 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         // will probably be very close to its current last motion - i.e. the next direction will probably
         // be very close to the last direction.
         double SMALL = 0.000001;
-        if (rfSpeed > SMALL) {m_RF_lastRadians.atan2(b, c);}
-        if (lfSpeed > SMALL) {m_LF_lastRadians.atan2(b, d);}
-        if (lrSpeed > SMALL) {m_LR_lastRadians.atan2(a, d);}
-        if (rrSpeed > SMALL) {m_RR_lastRadians.atan2(a, c);}
+        if (rfSpeed > SMALL) {
+            m_RF_lastRadians.atan2(b, c);
+        }
+        if (lfSpeed > SMALL) {
+            m_LF_lastRadians.atan2(b, d);
+        }
+        if (lrSpeed > SMALL) {
+            m_LR_lastRadians.atan2(a, d);
+        }
+        if (rrSpeed > SMALL) {
+            m_RR_lastRadians.atan2(a, c);
+        }
 
         // run wheels at speeds and angles
         m_rf.setDirectionAndSpeed(m_RF_lastRadians, setSpeeds ? rfSpeed : 0.0);
@@ -209,9 +285,8 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @Override
     public void prepareForDriveComponents(double forward, double strafe,
-                                          double rotation)
-    {
-        setModulesForChassisMotion(forward, strafe, rotation,false);
+                                          double rotation) {
+        setModulesForChassisMotion(forward, strafe, rotation, false);
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -278,6 +353,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
     /**
      * Returns the heading of the robot on the field.
+     *
      * @return (AngleD) A copy of the heading of the robot.
      */
     public AngleD getFieldHeading() {
@@ -292,10 +368,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * @param targetHeading (AngleConstantD) The desired chassis heading on the field.
      */
     public void setHeading(AngleConstantD targetHeading) {
-        m_RF_lastRadians.atan2(A05Constants.getDriveLength(), -A05Constants.getDriveWidth());
-        m_LF_lastRadians.atan2(A05Constants.getDriveLength(), A05Constants.getDriveWidth());
-        m_LR_lastRadians.atan2(-A05Constants.getDriveLength(), A05Constants.getDriveWidth());
-        m_RR_lastRadians.atan2(-A05Constants.getDriveLength(), -A05Constants.getDriveWidth());
+        m_RF_lastRadians.atan2(DRIVE_LENGTH, -DRIVE_WIDTH);
+        m_LF_lastRadians.atan2(DRIVE_LENGTH, DRIVE_WIDTH);
+        m_LR_lastRadians.atan2(-DRIVE_LENGTH, DRIVE_WIDTH);
+        m_RR_lastRadians.atan2(-DRIVE_LENGTH, -DRIVE_WIDTH);
 
         double deltaTics = new AngleD(targetHeading).subtract(m_navx.getHeading()).getRadians()
                 * A05Constants.getDrivePosTicsPerRadian();
@@ -328,7 +404,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
         // the maximum distance we could travel in this interval at max speed
         long now = System.currentTimeMillis();
-        double maxDistanceInInterval = A05Constants.getMaxMetersPerSec() * (double) (now - m_lastTime) / 1000.0;
+        double maxDistanceInInterval = Mk4NeoModule.MAX_METERS_PER_SEC * (double) (now - m_lastTime) / 1000.0;
 
         // compute the distance in field X and Y and update the field position
         double sinHeading = aveHeading.sin();

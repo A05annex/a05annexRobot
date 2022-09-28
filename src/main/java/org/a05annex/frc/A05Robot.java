@@ -64,7 +64,7 @@ public abstract class A05Robot extends TimedRobot {
      */
     @SuppressWarnings("unused")
     protected void labviewTelemetry(int port, String key, String var) {
-        if ((lastLabviewTelemetry[port] == null) || ((var != (String)lastLabviewTelemetry[port])) &&
+        if ((lastLabviewTelemetry[port] == null) || ((var != lastLabviewTelemetry[port])) &&
                 !var.equals(lastLabviewTelemetry[port])) {
             SmartDashboard.putString(String.format("DB/String %d", port), String.format("%s: %s", key, var));
             lastLabviewTelemetry[port] = var;

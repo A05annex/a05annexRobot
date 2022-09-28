@@ -7,7 +7,59 @@ import org.a05annex.util.AngleD;
  * Our interface specific to controlling the swerve drive. This is abstracted into an interface, so we can build
  * mock implementations of the drive subsystem for testing and so that we can build swerve drive commands
  */
+@SuppressWarnings("unused")
 public interface ISwerveDrive {
+
+    /**
+     * Set the swerve drive geometry and calibration constants. This must be called in your {@code Robot.robotInit()}
+     * to describe the geometry and calibration of the swerve drive before any commands using this geometry
+     * (like drive commands) are called. It should <i><b>NEVER</b></i> be called a second time.
+     *
+     * @param driveLength   (double) The length of the drive in meters.
+     * @param driveWidth    (double) The width of the drive in meters.
+     * @param rfCalibration (double) The reading of the right front spin encoder when the wheel is facing
+     *                      directly forward.
+     * @param rrCalibration (double) The reading of the right rear spin encoder when the wheel is facing
+     *                      directly forward.
+     * @param lfCalibration (double) The reading of the left front spin encoder when the wheel is facing
+     *                      directly forward.
+     * @param lrCalibration (double) The reading of the left rear spin encoder when the wheel is facing
+     *                      directly forward.
+     */
+    void setDriveGeometry(double driveLength, double driveWidth,
+                                 double rfCalibration, double rrCalibration,
+                                 double lfCalibration, double lrCalibration);
+
+    /**
+     * Get the wheel center to center distance between the front wheels and the rear wheels - the length of
+     * the swerve drive.
+     *
+     * @return the wheel center to center length of the swerve drive.
+     */
+    double getDriveLength();
+
+    /**
+     * Get the wheel center to center distance between the left wheels and the right wheels - the width of
+     * the swerve drive.
+     *
+     * @return the wheel center to center width of the swerve drive.
+     */
+    double getDriveWidth();
+
+    /**
+     * Get the maximum speed of this drive in meters/sec. This is the maximum speed with no rotation.
+     *
+     * @return the maximum speed (meters/sec).
+     */
+    double getMaxMetersPerSec();
+
+    /**
+     * Get the maximum rotational speed of the robot in radians/sec. This is the maximum rotational speed
+     * with no translation.
+     *
+     * @return the maximum rotational speed (radians/sec)
+     */
+    double getMaxRadiansPerSec();
 
     /**
      * Set the field position of the robot. This is typically called at the beginning of the autonomous
@@ -19,7 +71,7 @@ public interface ISwerveDrive {
      * @param fieldY  (double) The Y location of the robot on the field.
      * @param heading (AngleD) The heading of the robot on the field.
      */
-    public void setFieldPosition(double fieldX, double fieldY, AngleD heading);
+    void setFieldPosition(double fieldX, double fieldY, AngleD heading);
 
     /**
      * Run the swerve drive with the specified {@code  forward}, {@code strafe}, and {@code rotation} chassis

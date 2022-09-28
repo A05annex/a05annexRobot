@@ -39,7 +39,7 @@ public class Mk4NeoModule {
      */
     public static final double MAX_METERS_PER_SEC = 2.68;
     /**
-     * Based on telemetry feedback, 1 wheel direction revolution maps to 18 spin encoder revolutions
+     * Based on telemetry feedback, 1 wheel direction revolution maps to 12.7999 spin encoder revolutions
      */
     static final double RADIANS_TO_SPIN_ENCODER = 12.7999 / AngleD.TWO_PI.getRadians();
 
@@ -60,6 +60,7 @@ public class Mk4NeoModule {
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical hardware
     // -----------------------------------------------------------------------------------------------------------------
+    private final String swerveDrivePosition;
     // This is the physical hardware wired to the roborio
     @SuppressWarnings("FieldCanBeLocal")
     private final CANSparkMax driveMotor;
@@ -76,8 +77,10 @@ public class Mk4NeoModule {
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical state
     // -----------------------------------------------------------------------------------------------------------------
-    // This is the initial 0.0 degree position calibration
-    private final double calibrationOffset;
+    /**
+     * The CANcoder reading when the wheel is aligned directly forward.
+     */
+    private double calibrationOffset;
     /**
      * A multiplier for the speed that is either 1.0 (forward) or -1.0 (backwards) because the shortest
      * spin to the desired direction may be the backwards direction of the wheel, which requires the speed
@@ -108,13 +111,15 @@ public class Mk4NeoModule {
     /**
      * * The factory that creates the DriveModule given the
      *
-     * @param driveCAN          CAN address for the motor that drives the wheel forward.
-     * @param spinCAN           CAN address for the motor that spins the wheel around.
-     * @param calibrationCAN    CAN address for the CANcoder.
-     * @param calibrationOffset The value of the direction potentiometer that will point the module forward.
+     * @param swerveDrivePosition (string, not null) The named position of this module in the swerve drive for error
+     *                            messaging.
+     * @param driveCAN          (int) CAN address for the motor that drives the wheel forward.
+     * @param spinCAN           (int) CAN address for the motor that spins the wheel around.
+     * @param calibrationCAN    (int) CAN address for the CANcoder.
      * @return (not null) Returns the initialized drive module.
      */
-    public static Mk4NeoModule factory(int driveCAN, int spinCAN, int calibrationCAN, double calibrationOffset) {
+    public static Mk4NeoModule factory(@NotNull String swerveDrivePosition,int driveCAN,
+                                       int spinCAN, int calibrationCAN) {
         // basic code representations for physical hardware
         CANSparkMax driveMotor = new CANSparkMax(driveCAN, MotorType.kBrushless);
         CANSparkMax spinMotor = new CANSparkMax(spinCAN, MotorType.kBrushless);
@@ -124,15 +129,16 @@ public class Mk4NeoModule {
         SparkMaxPIDController drivePID = driveMotor.getPIDController();
         RelativeEncoder spinEncoder = spinMotor.getEncoder();
         SparkMaxPIDController spinPID = spinMotor.getPIDController();
-        return new Mk4NeoModule(driveMotor, driveEncoder, drivePID,
-                spinMotor, spinEncoder, spinPID,
-                calibrationEncoder, calibrationOffset);
+        return new Mk4NeoModule(swerveDrivePosition, driveMotor, driveEncoder, drivePID,
+                spinMotor, spinEncoder, spinPID, calibrationEncoder);
     }
 
     /**
      * Instantiate a DriveModule. All of instanced robot hardware control classes are passed in so this
      * module can be tested using the JUnit test framework.
      *
+     * @param swerveDrivePosition (string, not null) The named position of this module in the swerve drive for error
+     *                            messaging.
      * @param driveMotor         (CANSparkMax, not null) The drive motor controller.
      * @param driveEncoder       (RelativeEncoder, not null) The drive motor encoder.
      * @param drivePID           (CANPIDController, not null) The drive motor PID controller.
@@ -141,12 +147,13 @@ public class Mk4NeoModule {
      * @param directionPID       (CANPIDController, not null) The spin motor PID controller.
      * @param calibrationEncoder (CANCoder, not null) The spin analog position encoder which provides
      *                           the absolute spin position of the module.
-     * @param calibrationOffset  The value of the analog potentiometer that will point the module forward.
      */
-    public Mk4NeoModule(@NotNull CANSparkMax driveMotor, @NotNull RelativeEncoder driveEncoder,
+    public Mk4NeoModule(@NotNull String swerveDrivePosition,
+                        @NotNull CANSparkMax driveMotor, @NotNull RelativeEncoder driveEncoder,
                         @NotNull SparkMaxPIDController drivePID, @NotNull CANSparkMax directionMotor,
                         @NotNull RelativeEncoder directionEncoder, @NotNull SparkMaxPIDController directionPID,
-                        @NotNull CANCoder calibrationEncoder, double calibrationOffset) {
+                        @NotNull CANCoder calibrationEncoder) {
+        this.swerveDrivePosition = swerveDrivePosition;
 
         this.driveMotor = driveMotor;
         this.driveEncoder = driveEncoder;
@@ -173,10 +180,22 @@ public class Mk4NeoModule {
         // update PID controllers for spin and drive motors and initialize them
         setDrivePID();
         setSpinPID();
+    }
 
-        // calibrate
+
+    /**
+     * Set the calibration offset, initialize the direction motor encoder, spin the wheel until it faces
+     * forward (the direction is 0.0), and set up the internal tracking/setting of direction relative to the last
+     * direction and last direction motor position encoder.
+     *
+     * @param calibrationOffset The position reported by the calibration CANcoder wen the wheel is physically
+     *                          positioned to be facing forward.
+     */
+    public void setCalibrationOffset(double calibrationOffset) {
         this.calibrationOffset = calibrationOffset;
         calibrate(); // reset direction encoder position
+        // set the wheel direction to 0.0 (son the wheel is now facing forward), and setup the remembered
+        // last wheel direction and last direction encoder  position.
         this.directionPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
         lastDirection.setValue(AngleUnit.RADIANS, 0.0);
         lastDirectionEncoder = 0.0;
@@ -287,26 +306,19 @@ public class Mk4NeoModule {
      * reading of 0 tics.
      */
     private void calibrate() {
-        // (actual - offset) * 360 / 20
         double absolutePosition;
+        // get the absolute position of the calibration CANcoder. The difference between this and the
+        // calibration offset is the change indirection required to set the direction to 0. Note, this loop
+        // is here because it occasionally takes a bit for the CANcoder to correctly initialize, and
+        // out of range values may be reported.
         do {
             absolutePosition = calibrationEncoder.getAbsolutePosition();
         } while (absolutePosition < 0.0 || absolutePosition > Math.PI*2);
+        // Now we know where the wheel actually is pointing, initialize the direction encoder on direction
+        // motor controller to reflect the actual position of the wheel.
         directionEncoder.setPosition(
-                (calibrationEncoder.getAbsolutePosition() - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
+                (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
     }
-
-//    /**
-//     * Set the direction and speed of the drive wheel in this module.
-//     *
-//     * @param targetDegrees (double) The direction from -180.0 to 180.0 degrees where 0.0 is towards the
-//     *                      front of the robot, and positive is clockwise.
-//     * @param speed         (double) The normalized speed of the wheel from 0.0 to 1.0 where 1.0 is the maximum
-//     *                      forward velocity.
-//     */
-//    public void setDegreesAndSpeed(double targetDegrees, double speed) {
-//        setRadiansAndSpeed(Math.toRadians(targetDegrees), speed);
-//    }
 
     /**
      * Set the module direction in radians. This code finds the closest forward-backward direction and sets the
