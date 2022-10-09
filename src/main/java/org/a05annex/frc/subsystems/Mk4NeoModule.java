@@ -316,8 +316,13 @@ public class Mk4NeoModule {
         } while (absolutePosition < 0.0 || absolutePosition > Math.PI*2);
         // Now we know where the wheel actually is pointing, initialize the direction encoder on direction
         // motor controller to reflect the actual position of the wheel.
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            // this means somebody's trying to stop the robot process
+        }
         directionEncoder.setPosition(
-                (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
+                (calibrationEncoder.getAbsolutePosition() - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
     }
 
     /**

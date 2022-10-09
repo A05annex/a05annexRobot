@@ -92,7 +92,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
         m_lf = Mk4NeoModule.factory("left-front", 7, 8,23);
 
-        m_lr = Mk4NeoModule.factory("left-rear", 5, 6,24);
+        m_lr = Mk4NeoModule.factory("left-rear", 5, 6,22);
     }
 
     /**
@@ -419,8 +419,8 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         m_lastChassisStrafe = m_thisChassisStrafe;
         m_lastTime = now;
 
-//        // telemetry
-//        printAllAngles();
+        // telemetry
+        printAllAngles();
     }
 }
 
