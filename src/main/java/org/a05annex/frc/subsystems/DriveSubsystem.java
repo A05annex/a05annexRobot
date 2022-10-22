@@ -85,13 +85,11 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * the {@link #getInstance()} method to get the singleton instance.
      */
     private DriveSubsystem() {
-        // initialize drive modules
+        // initialize drive modules. The IDs are as described in the README for the project. We could make these
+        // constants somewhere, but that does not make it anymore understandable. This is just what it is.
         m_rf = Mk4NeoModule.factory("right-front", 1, 2, 20);
-
         m_rr = Mk4NeoModule.factory("right-rear", 3, 4, 21);
-
         m_lf = Mk4NeoModule.factory("left-front", 7, 8, 23);
-
         m_lr = Mk4NeoModule.factory("left-rear", 5, 6, 22);
     }
 
