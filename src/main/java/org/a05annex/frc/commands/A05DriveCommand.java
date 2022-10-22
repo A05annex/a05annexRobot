@@ -11,7 +11,7 @@ import org.a05annex.util.Utl;
 
 /**
  * <p>The basic drive command for controlling the swerve base from an Xbox controller. The actual robot project
- * will probably override this command to add competition-specific functionality like targetting, position tracking
+ * will probably override this command to add competition-specific functionality like targeting, position tracking
  * or field position goals, etc. An override of this class will probably add some instance variables for the added
  * functionality, instantiation or initialization setting/defaulting of these instance  variables, and an
  * override of the execute command that implements these additional capabilities and falls-back to basic
