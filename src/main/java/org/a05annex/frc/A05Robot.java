@@ -3,6 +3,7 @@ package org.a05annex.frc;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public abstract class A05Robot extends TimedRobot {
@@ -15,6 +16,8 @@ public abstract class A05Robot extends TimedRobot {
         a05RobotContainer = container;
     }
 
+    private Command autonomousCommand;
+
     @Override
     public void robotPeriodic() {
 
@@ -23,6 +26,34 @@ public abstract class A05Robot extends TimedRobot {
         // and running subsystem periodic() methods.  This must be called from the robot's periodic
         // block in order for anything in the Command-based framework to work.
         CommandScheduler.getInstance().run();
+    }
+
+    @Override
+    public void teleopInit()
+    {
+
+        // This makes sure that the autonomous stops running when
+        // teleop starts running. If you want the autonomous to
+        // continue until interrupted by another command, remove
+        // this line or comment it out.
+        if (autonomousCommand != null)
+        {
+            autonomousCommand.cancel();
+        }
+
+    }
+
+    /** This autonomous runs the autonomous command selected by your {@link A05RobotContainer} class. */
+    @Override
+    public void autonomousInit()
+    {
+        autonomousCommand = a05RobotContainer.getAutonomousCommand();
+
+        // schedule the autonomous command (example)
+        if (autonomousCommand != null)
+        {
+            autonomousCommand.schedule();
+        }
     }
 
     /**

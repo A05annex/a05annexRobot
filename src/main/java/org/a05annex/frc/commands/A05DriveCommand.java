@@ -161,7 +161,7 @@ public class A05DriveCommand extends CommandBase {
         conditionStick();
 
         // now ask the drive subsystem to do that.
-        m_driveSubsystem.swerveDriveFieldRelative(m_conditionedDirection, m_conditionedSpeed, m_lastConditionedRotate);
+        m_driveSubsystem.swerveDriveFieldRelative(m_conditionedDirection, m_conditionedSpeed, m_conditionedRotate);
     }
 
     @Override
@@ -246,7 +246,7 @@ public class A05DriveCommand extends CommandBase {
         //   * Need the rotation to be between 0.0 and 1.0 to apply deadband and sensitivity
         double rotation = Math.abs(m_rawStickRotate);
         // are we rotating?
-        if (m_rawStickRotate < ROTATE_DEADBAND) {
+        if (rotation < ROTATE_DEADBAND) {
             // no rotate, keep current heading or 0 if no NavX
             NavX.HeadingInfo headingInfo = m_navx.getHeadingInfo();
             if (headingInfo != null) {
@@ -262,7 +262,7 @@ public class A05DriveCommand extends CommandBase {
         } else {
             // rotating
             // adjust for deadband
-            rotation = (m_rawStickRotate - ROTATE_DEADBAND) / (1.0 - ROTATE_DEADBAND);
+            rotation = (rotation - ROTATE_DEADBAND) / (1.0 - ROTATE_DEADBAND);
             // update expected heading
             m_navx.setExpectedHeadingToCurrent();
             // add sensitivity, gain and sign

@@ -1,8 +1,15 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.a05annex.frc.subsystems.Mk4NeoModule;
 import org.a05annex.util.Utl;
+import org.a05annex.util.geo2d.KochanekBartelsSpline;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class A05Constants {
 
@@ -58,4 +65,57 @@ public abstract class A05Constants {
     public static boolean hasLimelight() {
         return HAS_LIMELIGHT;
     }
+
+    // Digital input switchboard
+    private static final DigitalInput switch0 = new DigitalInput(4);
+    private static final DigitalInput switch1 = new DigitalInput(3);
+    private static final DigitalInput switch2 = new DigitalInput(2);
+    private static final DigitalInput switch3 = new DigitalInput(1);
+    private static final DigitalInput switch4 = new DigitalInput(0);
+
+    public static int readDriverID() {
+        return (switch0.get() ? 0 : 1) + (switch1.get() ? 0 : 2);
+    }
+
+    public static int readAutoID() {
+        return (switch2.get() ? 0 : 1) + (switch3.get() ? 0 : 2) + (switch4.get() ? 0 : 4);
+    }
+
+    public static void printIDs() {
+        SmartDashboard.putNumber("driver", readDriverID());
+        SmartDashboard.putNumber("auto", readAutoID());
+    }
+
+    public static class AutonomousPath {
+        private final String m_pathName;
+        private final int m_id;
+        private final String m_filename;
+
+        public AutonomousPath(String skill, int id, String filename) {
+            m_pathName = skill;
+            m_id = id;
+            m_filename = filename;
+        }
+
+        public String getName() {
+            return m_pathName;
+        }
+
+        /**
+         * Load this autonomous path.
+         *
+         * @return The loaded path, {@code null} if the path could npot be loaded.
+         */
+        public KochanekBartelsSpline load() {
+            KochanekBartelsSpline spline = new KochanekBartelsSpline();
+            if (spline.loadPath(Filesystem.getDeployDirectory().toString() + "/paths/" +
+                    m_filename)) {
+                return spline;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    public static final List<AutonomousPath> AUTONOMOUS_PATH_LIST = new ArrayList<>();
 }
