@@ -86,13 +86,13 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     private DriveSubsystem() {
         // initialize drive modules
-        m_rf = Mk4NeoModule.factory("right-front", 1, 2,20);
+        m_rf = Mk4NeoModule.factory("right-front", 1, 2, 20);
 
-        m_rr = Mk4NeoModule.factory("right-rear", 3, 4,21);
+        m_rr = Mk4NeoModule.factory("right-rear", 3, 4, 21);
 
-        m_lf = Mk4NeoModule.factory("left-front", 7, 8,23);
+        m_lf = Mk4NeoModule.factory("left-front", 7, 8, 23);
 
-        m_lr = Mk4NeoModule.factory("left-rear", 5, 6,22);
+        m_lr = Mk4NeoModule.factory("left-rear", 5, 6, 22);
     }
 
     /**
