@@ -254,7 +254,13 @@ public class A05DriveCommand extends CommandBase {
                 rotation = new AngleD(headingInfo.expectedHeading).subtract(new AngleD(headingInfo.heading))
                         .getRadians() * A05Constants.getDriveOrientationkp();
                 // clip and add speed multiplier
-                rotation = Utl.clip(rotation, -0.5, 0.5) * m_conditionedSpeed;
+                rotation = Utl.clip(rotation, -0.5, 0.5) * this.m_conditionedSpeed;
+                if (A05Constants.getPrintDebug()) {
+                    System.out.println("**********");
+                    System.out.println("Expected Heading: " + headingInfo.expectedHeading.getRadians());
+                    System.out.println("Actual Heading:   " + headingInfo.heading.getRadians());
+                    System.out.println("Rotation:         " + rotation);
+                }
             } else {
                 // no NavX
                 rotation =  0.0;

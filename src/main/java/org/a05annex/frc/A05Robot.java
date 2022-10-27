@@ -47,12 +47,19 @@ public abstract class A05Robot extends TimedRobot {
     @Override
     public void autonomousInit()
     {
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("A05Robot.autonomousInit called");
+        }
+
         autonomousCommand = a05RobotContainer.getAutonomousCommand();
 
         // schedule the autonomous command (example)
         if (autonomousCommand != null)
         {
             autonomousCommand.schedule();
+            if (A05Constants.getPrintDebug()) {
+                System.out.println("A05Robot.autonomousInit scheduled autonomousCommand");
+            }
         }
     }
 

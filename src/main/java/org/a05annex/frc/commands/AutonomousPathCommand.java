@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.ISwerveDrive;
+import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 public class AutonomousPathCommand extends CommandBase {
 
     private final ISwerveDrive swerveDrive;
+    private final A05Constants.AutonomousPath path;
     private final KochanekBartelsSpline spline;
     private KochanekBartelsSpline.PathFollower pathFollower;
     protected KochanekBartelsSpline.PathPoint pathPoint = null;
@@ -42,14 +44,18 @@ public class AutonomousPathCommand extends CommandBase {
      * @param driveSubsystem The swerve drive subsystem.
      * @param additionalRequirements Additional required subsystems.
      */
-    public AutonomousPathCommand(@NotNull KochanekBartelsSpline path, @NotNull Subsystem driveSubsystem,
+    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, @NotNull Subsystem driveSubsystem,
                                  Subsystem... additionalRequirements) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements(driveSubsystem);
         addRequirements(additionalRequirements);
         swerveDrive = (ISwerveDrive)driveSubsystem;
-        spline = path;
+        this.path = path;
+        spline = this.path.getSpline();
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("AutonomousPathCommand instantiated for path " + path.getName());
+        }
     }
 
     // Called when the command is initially scheduled.
@@ -59,6 +65,9 @@ public class AutonomousPathCommand extends CommandBase {
         startTime = System.currentTimeMillis();
         isFinished = false;
         initializeRobotForPath();
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("AutonomousPathCommand.initialize() called for path " + path.getName());
+        }
     }
     /**
      * Initialize the robot to run this path. This initialization consists specifically of
@@ -87,7 +96,9 @@ public class AutonomousPathCommand extends CommandBase {
             }
             lastPathPoint = pathPoint;
         }
-
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("AutonomousPathCommand.initializeRobotForPath() called for path " + path.getName());
+        }
     }
 
     /**
@@ -131,6 +142,9 @@ public class AutonomousPathCommand extends CommandBase {
             // actual path time.
             double pathTime = (System.currentTimeMillis() - startTime - stopAndRunDuration) / 1000.0;
             pathPoint = pathFollower.getPointAt(pathTime);
+            if (A05Constants.getPrintDebug()) {
+                System.out.println("AutonomousPathCommand.execute() get point at time: " + pathTime);
+            }
             if (pathPoint == null) {
                 // We have reached the end of the path, stop the robot and finish this command.
                 isFinished = true;
@@ -172,7 +186,8 @@ public class AutonomousPathCommand extends CommandBase {
 //                double errorRotation = 0.0;  // when calibrating rotation rate.
                 double errorRotation = (lastPathPoint.fieldHeading.getRadians() -
                         NavX.getInstance().getHeading().getRadians()) * A05Constants.getDriveOrientationkp();
-                double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec()) + errorRotation;
+                //double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec()) + errorRotation;
+                double rotation = Utl.clip(errorRotation, -0.5, 0.5) * Utl.length(forward, strafe);
                 swerveDrive.swerveDriveComponents(forward, strafe, rotation);
                 NavX.getInstance().setExpectedHeadingToCurrent();
 
@@ -222,6 +237,9 @@ public class AutonomousPathCommand extends CommandBase {
                 }
             }
         }
+        if (A05Constants.getPrintDebug() &&  isFinished) {
+            System.out.println("AutonomousPathCommand.isFinished() returns true for path " + path.getName());
+        }
         return isFinished;
     }
 
@@ -237,5 +255,8 @@ public class AutonomousPathCommand extends CommandBase {
             stopAndRunCommand.end(true);
         }
         swerveDrive.swerveDriveComponents(0, 0, 0);
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("AutonomousPathCommand.end() called for path " + path.getName());
+        }
     }
 }

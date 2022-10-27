@@ -8,12 +8,15 @@ import org.a05annex.frc.subsystems.Mk4NeoModule;
 import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class A05Constants {
 
     private static boolean HAS_LIMELIGHT, HAS_USB_CAMERA;
+
+    private static boolean PRINT_DEBUG = false;
 
     public static final int DRIVE_XBOX_PORT = 0;
 
@@ -25,6 +28,13 @@ public abstract class A05Constants {
 
     private static double DRIVE_ORIENTATION_kP;
 
+    public static boolean getPrintDebug() {
+        return PRINT_DEBUG;
+    }
+
+    public static void setPrintDebug(boolean print) {
+        PRINT_DEBUG = print;
+    }
 
     public static double getDrivePosTicsPerRadian() {
         return DRIVE_POS_TICS_PER_RADIAN;
@@ -91,6 +101,8 @@ public abstract class A05Constants {
         private final int m_id;
         private final String m_filename;
 
+        private KochanekBartelsSpline m_spline = null;
+
         public AutonomousPath(String skill, int id, String filename) {
             m_pathName = skill;
             m_id = id;
@@ -101,19 +113,22 @@ public abstract class A05Constants {
             return m_pathName;
         }
 
+        public KochanekBartelsSpline getSpline() {
+            return m_spline;
+        }
         /**
          * Load this autonomous path.
          *
-         * @return The loaded path, {@code null} if the path could npot be loaded.
+         * @throws FileNotFoundException Thrown if the spline file could not be loaded.
          */
-        public KochanekBartelsSpline load() {
+        public void load() throws FileNotFoundException {
             KochanekBartelsSpline spline = new KochanekBartelsSpline();
-            if (spline.loadPath(Filesystem.getDeployDirectory().toString() + "/paths/" +
+            if (!spline.loadPath(Filesystem.getDeployDirectory().toString() + "/paths/" +
                     m_filename)) {
-                return spline;
-            } else {
-                return null;
+                throw new FileNotFoundException("Could not load file '" + Filesystem.getDeployDirectory().toString() + "/paths/" +
+                        m_filename + "' for path" + m_pathName);
             }
+            m_spline = spline;
         }
     }
 

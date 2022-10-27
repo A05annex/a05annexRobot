@@ -8,6 +8,8 @@ import org.a05annex.frc.commands.AutonomousPathCommand;
 import org.a05annex.frc.subsystems.DriveSubsystem;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 
+import java.io.FileNotFoundException;
+
 public abstract class A05RobotContainer {
 
     // declare NavX, used for resetting initial heading
@@ -25,17 +27,17 @@ public abstract class A05RobotContainer {
         // autonomous
         int autoId = A05Constants.readAutoID();
 
+        A05Constants.AutonomousPath autonomousPath = null;
+
         try {
-            A05Constants.AutonomousPath autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
-            KochanekBartelsSpline path = autonomousPath.load();
-            if (path != null) {
-                m_autoCommand = new AutonomousPathCommand(path, m_driveSubsystem);
-                SmartDashboard.putString("Autonomous", autonomousPath.getName());
-            } else {
-                SmartDashboard.putString("Autonomous", String.format("Could not load path: %s", autonomousPath.getName()));
-            }
+            autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
+            autonomousPath.load();
+            m_autoCommand = new AutonomousPathCommand(autonomousPath, m_driveSubsystem);
+            SmartDashboard.putString("Autonomous", autonomousPath.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Autonomous", String.format("Path ID %d does not exist", autoId));
+        } catch (FileNotFoundException e) {
+            SmartDashboard.putString("Autonomous", String.format("Could not load path: %s", autonomousPath.getName()));
         }
     }
 
