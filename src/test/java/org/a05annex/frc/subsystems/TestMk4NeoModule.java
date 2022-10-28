@@ -1,23 +1,19 @@
 package org.a05annex.frc.subsystems;
 
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.SparkMaxPIDController;
 import com.ctre.phoenix.sensors.CANCoder;
-
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
 import org.junit.platform.suite.api.Suite;
-import org.junit.runner.RunWith;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**

@@ -94,6 +94,21 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     /**
+     * Call this at the beginning of any method that requires a functioning swerve drive. If the drive
+     * geometry has not been set, then there will not be a functioning swerve drive.
+     */
+    private void testGeometryIsSet() {
+        if (!isDriveGeometrySet) {
+            System.out.println();
+            System.out.println("**********************************************************************");
+            System.out.println("***** THE DRIVE GEOMETRY MUST BE SET BEFORE YOU TRY TO DRIVE !!! *****");
+            System.out.println("**********************************************************************");
+            System.out.println();
+            throw new IllegalStateException("The drive geometry has not been set!");
+        }
+    }
+
+    /**
      * Set the swerve drive geometry and calibration constants. This must be called in your {@code Robot.robotInit()}
      * to describe the geometry and calibration of the swerve drive before any commands using this geometry
      * (like drive commands) are called. It should <i><b>NEVER</b></i> be called a second time.
@@ -133,37 +148,45 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
     @Override
     public double getDriveLength() {
+        testGeometryIsSet();
         return DRIVE_LENGTH;
     }
 
     @Override
     public double getDriveWidth() {
+        testGeometryIsSet();
         return DRIVE_WIDTH;
     }
 
     @Override
     public double getMaxMetersPerSec() {
+        testGeometryIsSet();
         return Mk4NeoModule.MAX_METERS_PER_SEC;
     }
 
     @Override
     public double getMaxRadiansPerSec() {
+        testGeometryIsSet();
         return MAX_RADIANS_PER_SEC;
     }
 
     // getter methods for modules
+    @SuppressWarnings("unused")
     public Mk4NeoModule getRFModule() {
         return m_rf;
     }
 
+    @SuppressWarnings("unused")
     public Mk4NeoModule getRRModule() {
         return m_rr;
     }
 
+    @SuppressWarnings("unused")
     public Mk4NeoModule getLFModule() {
         return m_lf;
     }
 
+    @SuppressWarnings("unused")
     public Mk4NeoModule getLRModule() {
         return m_lr;
     }
@@ -267,6 +290,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     @Override
     public void swerveDriveComponents(double forward, double strafe,
                                       double rotation) {
+        testGeometryIsSet();
         setModulesForChassisMotion(forward, strafe, rotation, true);
     }
 
@@ -284,6 +308,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     @Override
     public void prepareForDriveComponents(double forward, double strafe,
                                           double rotation) {
+        testGeometryIsSet();
         setModulesForChassisMotion(forward, strafe, rotation, false);
         try {
             Thread.sleep(100);

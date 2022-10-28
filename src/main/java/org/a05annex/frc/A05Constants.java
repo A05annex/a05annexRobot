@@ -4,19 +4,57 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import org.a05annex.frc.subsystems.Mk4NeoModule;
-import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This is the default constants class for our swerve drive base with NavX, and switch selection of driver
+ * configuration and autonomous configurations
+ */
 public abstract class A05Constants {
 
-    private static boolean HAS_LIMELIGHT, HAS_USB_CAMERA;
+    // ---------------------
+    // Does this robot have cameras that need to be initialized, and what are they
+    /**
+     *
+     */
+    private static boolean HAS_LIMELIGHT = false;
+    /**
+     *
+     */
+    private static boolean HAS_USB_CAMERA = false;
 
-    private static boolean PRINT_DEBUG = false;
+    /**
+     * @param hasUSB
+     * @param hasLimelight
+     */
+    @SuppressWarnings("unused")
+    public static void setCameras(boolean hasUSB, boolean hasLimelight) {
+        HAS_USB_CAMERA = hasUSB;
+        HAS_LIMELIGHT = hasLimelight;
+    }
+
+    /**
+     * @return
+     */
+    @SuppressWarnings("unused")
+    public static boolean hasUsbCamera() {
+        return HAS_USB_CAMERA;
+    }
+
+    /**
+     * @return
+     */
+    @SuppressWarnings("unused")
+    public static boolean hasLimelight() {
+        return HAS_LIMELIGHT;
+    }
+    // ---------------------
 
     public static final int DRIVE_XBOX_PORT = 0;
 
@@ -28,13 +66,33 @@ public abstract class A05Constants {
 
     private static double DRIVE_ORIENTATION_kP;
 
+    // ---------------------
+    // Controlling whether there is debugging logging of this library in the console file for the run.
+    /**
+     * {@code true} if this a05annexRobot classes should add debugging output to the console,
+     * {@code false} otherwise (and by default).
+     */
+    private static boolean PRINT_DEBUG = false;
+
+    /**
+     * Ask whether debugging output should be printed to the console for this a05annexRobot library.
+     *
+     * @return {@code true} if a05annexRobot logging is enabled, {@code false} otherwise.
+     */
     public static boolean getPrintDebug() {
         return PRINT_DEBUG;
     }
 
+    /**
+     * Set whether debugging output should be printed to the console for this a05annexRobot library.
+     *
+     * @param print {@code true} if a05annexRobot logging should be enabled, {@code false} otherwise.
+     */
+    @SuppressWarnings("unused")
     public static void setPrintDebug(boolean print) {
         PRINT_DEBUG = print;
     }
+    // ---------------------
 
     public static double getDrivePosTicsPerRadian() {
         return DRIVE_POS_TICS_PER_RADIAN;
@@ -63,19 +121,6 @@ public abstract class A05Constants {
     }
 
 
-    public static void setCameras(boolean hasUSB, boolean hasLimelight) {
-        HAS_USB_CAMERA = hasUSB;
-        HAS_LIMELIGHT = hasLimelight;
-    }
-
-    public static boolean hasUsbCamera() {
-        return HAS_USB_CAMERA;
-    }
-
-    public static boolean hasLimelight() {
-        return HAS_LIMELIGHT;
-    }
-
     // Digital input switchboard
     private static final DigitalInput switch0 = new DigitalInput(4);
     private static final DigitalInput switch1 = new DigitalInput(3);
@@ -97,36 +142,76 @@ public abstract class A05Constants {
     }
 
     public static class AutonomousPath {
-        private final String m_pathName;
-        private final int m_id;
-        private final String m_filename;
+        protected final String m_pathName;
+        protected final int m_id;
+        protected final String m_filename;
+        protected KochanekBartelsSpline m_spline;
 
-        private KochanekBartelsSpline m_spline = null;
-
-        public AutonomousPath(String skill, int id, String filename) {
-            m_pathName = skill;
+        /**
+         * Instantiate an autonomous path description.
+         *
+         * @param pathName The path name, usually related to what this path does as in "left start, shot 1",
+         *                 "center start, 4 ball"
+         * @param id       The position of this path in the path array, used to check that the path that was retrieved
+         *                 was the path asked for by the switches.
+         * @param filename The filename of this path. This file is expected to be in the /deploy/paths
+         *                 subdirectory of ./src/main in your development project.
+         */
+        public AutonomousPath(@NotNull String pathName, int id, @NotNull String filename) {
+            m_pathName = pathName;
             m_id = id;
             m_filename = filename;
         }
 
+        /**
+         * Get the ID of this autonomous path.
+         *
+         * @return Returns the ID (index in the paths list) of this autonomous path.
+         */
+        public int getId() {
+            return m_id;
+        }
+
+        /**
+         * Gets the name of this autonomous path, mostly used in messaging.
+         *
+         * @return Returns the name of this path.
+         */
+        @NotNull
         public String getName() {
             return m_pathName;
         }
 
+        /**
+         * Get the filename where this path is stored.
+         *
+         * @return Returns the filename for this path.
+         */
+        @NotNull
+        public String getFilename() {
+            return m_filename;
+        }
+
+        /**
+         * The loaded spline. If this is called before {@link #load()}, or the load fails, this will be {@code null}.
+         *
+         * @return Returns the spline for this path.
+         */
+        @Nullable
         public KochanekBartelsSpline getSpline() {
             return m_spline;
         }
+
         /**
-         * Load this autonomous path.
+         * Load this autonomous path on the robot.
          *
          * @throws FileNotFoundException Thrown if the spline file could not be loaded.
          */
         public void load() throws FileNotFoundException {
             KochanekBartelsSpline spline = new KochanekBartelsSpline();
-            if (!spline.loadPath(Filesystem.getDeployDirectory().toString() + "/paths/" +
-                    m_filename)) {
-                throw new FileNotFoundException("Could not load file '" + Filesystem.getDeployDirectory().toString() + "/paths/" +
-                        m_filename + "' for path" + m_pathName);
+            String filePath = Filesystem.getDeployDirectory() + "/paths/" + m_filename;
+            if (!spline.loadPath(filePath)) {
+                throw new FileNotFoundException("Could not load file '" + filePath + "' for path" + m_pathName);
             }
             m_spline = spline;
         }

@@ -6,7 +6,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import org.a05annex.frc.commands.A05DriveCommand;
 import org.a05annex.frc.commands.AutonomousPathCommand;
 import org.a05annex.frc.subsystems.DriveSubsystem;
-import org.a05annex.util.geo2d.KochanekBartelsSpline;
 
 import java.io.FileNotFoundException;
 
@@ -26,9 +25,7 @@ public abstract class A05RobotContainer {
         m_driveCommand = new A05DriveCommand(m_driveXbox);
         // autonomous
         int autoId = A05Constants.readAutoID();
-
         A05Constants.AutonomousPath autonomousPath = null;
-
         try {
             autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
             autonomousPath.load();
@@ -37,7 +34,8 @@ public abstract class A05RobotContainer {
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Autonomous", String.format("Path ID %d does not exist", autoId));
         } catch (FileNotFoundException e) {
-            SmartDashboard.putString("Autonomous", String.format("Could not load path: %s", autonomousPath.getName()));
+            SmartDashboard.putString("Autonomous",
+                    String.format("Could not load path: '%s'", autonomousPath.getName()));
         }
     }
 

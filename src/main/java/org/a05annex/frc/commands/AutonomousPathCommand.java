@@ -66,7 +66,7 @@ public class AutonomousPathCommand extends CommandBase {
         isFinished = false;
         initializeRobotForPath();
         if (A05Constants.getPrintDebug()) {
-            System.out.println("AutonomousPathCommand.initialize() called for path " + path.getName());
+            System.out.println("AutonomousPathCommand.initialize() called for path '" + path.getName() + "'");
         }
     }
     /**
@@ -97,7 +97,8 @@ public class AutonomousPathCommand extends CommandBase {
             lastPathPoint = pathPoint;
         }
         if (A05Constants.getPrintDebug()) {
-            System.out.println("AutonomousPathCommand.initializeRobotForPath() called for path " + path.getName());
+            System.out.println("AutonomousPathCommand.initializeRobotForPath() called for path '" +
+                    path.getName() + "'");
         }
     }
 
@@ -233,7 +234,7 @@ public class AutonomousPathCommand extends CommandBase {
                     double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec());
                     swerveDrive.prepareForDriveComponents(forward, strafe, rotation);
                 } catch (InterruptedException e) {
-                    return isFinished;
+                    // do nothing here, it means the sleep was interrupted.
                 }
             }
         }
@@ -256,7 +257,7 @@ public class AutonomousPathCommand extends CommandBase {
         }
         swerveDrive.swerveDriveComponents(0, 0, 0);
         if (A05Constants.getPrintDebug()) {
-            System.out.println("AutonomousPathCommand.end() called for path " + path.getName());
+            System.out.println("AutonomousPathCommand.end() called for path '" + path.getName() + "'");
         }
     }
 }

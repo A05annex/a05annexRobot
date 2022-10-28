@@ -1,23 +1,37 @@
 package org.a05annex.frc;
 
-import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
+/**
+ * This is the basic A05annex Robot that does All the common stuff for a swerve drive base with NavX mounted
+ * under the base of the robot, and switches for autonomous program and driver selection. This should free
+ * the programmers to only worry about the attachments specific to the competition.
+ */
 public abstract class A05Robot extends TimedRobot {
 
     private A05RobotContainer a05RobotContainer;
 
-    Object[] lastLabviewTelemetry = {null, null, null, null, null, null, null, null, null, null};
+    private Command autonomousCommand = null;
 
+    /**
+     * Set the robot container, which must be a superclass of {@link A05RobotContainer}, for this robot.
+     *
+     * @param container The robot container.
+     */
     protected void setRobotContainer(A05RobotContainer container) {
         a05RobotContainer = container;
     }
 
-    private Command autonomousCommand;
-
+    /**
+     * This method is called every robot command cycle, no matter the mode. Use this for items like
+     * diagnostics that you want ran during disabled, autonomous, teleoperated and test.
+     *
+     * <p>This runs after the mode specific periodic methods, but before LiveWindow and
+     * SmartDashboard integrated updating.
+     */
     @Override
     public void robotPeriodic() {
 
@@ -43,7 +57,9 @@ public abstract class A05Robot extends TimedRobot {
 
     }
 
-    /** This autonomous runs the autonomous command selected by your {@link A05RobotContainer} class. */
+    /**
+     *  This is the initialization at the start of the autonomous period. If an autonomous command is obtained from
+     *  the {@link A05RobotContainer}, then is scheduled to be run in autonomous. */
     @Override
     public void autonomousInit()
     {
@@ -52,8 +68,7 @@ public abstract class A05Robot extends TimedRobot {
         }
 
         autonomousCommand = a05RobotContainer.getAutonomousCommand();
-
-        // schedule the autonomous command (example)
+        // if there is an autonomous command, schedule it.
         if (autonomousCommand != null)
         {
             autonomousCommand.schedule();
@@ -62,6 +77,12 @@ public abstract class A05Robot extends TimedRobot {
             }
         }
     }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // This next section is for telemetry in the default labview driver station dashboard, Which allows 10 telemetry
+    // slots. If you are using the Shuffleboard dashboard, you will never use these.
+    // -----------------------------------------------------------------------------------------------------------------
+    Object[] lastLabviewTelemetry = {null, null, null, null, null, null, null, null, null, null};
 
     /**
      * Update telemetry feedback for a real number value. If the value has not changed, no update is sent
