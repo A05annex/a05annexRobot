@@ -8,6 +8,13 @@ import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
 
+/**
+ * This is the code that controls the A05annex default swerve base with MK4 drive modules. In your
+ * {@code RobotContainer} constructor, please call the
+ * {@link #setDriveGeometry(double, double, double, double, double, double)}
+ * method to setup drive module calibration and geometry before any attempts are made to send
+ * drive commands.
+ */
 public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     /**
      * The Singleton instance of this DriveSubsystem. Code should use
@@ -20,6 +27,8 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * Returns the Singleton instance of this DriveSubsystem. This static method
      * should be used, rather than the constructor, to get the single instance
      * of this class. For example: {@code DriveSubsystem.getInstance();}
+     *
+     * return Returns this {@link DriveSubsystem}
      */
     @SuppressWarnings("WeakerAccess")
     public static DriveSubsystem getInstance() {
@@ -170,27 +179,51 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         return MAX_RADIANS_PER_SEC;
     }
 
-    // getter methods for modules
+    /**
+     * Get the right-front drive module. Useful is you want to get information from the module (like the
+     * absolute spin encoder value for spin calibration).
+     *
+     * @return Returns the right-front drive module.
+     */
     @SuppressWarnings("unused")
     public Mk4NeoModule getRFModule() {
         return m_rf;
     }
 
+    /**
+     * Get the right-rear drive module. Useful is you want to get information from the module (like the
+     * absolute spin encoder value for spin calibration).
+     *
+     * @return Returns the right-rear drive module.
+     */
     @SuppressWarnings("unused")
     public Mk4NeoModule getRRModule() {
         return m_rr;
     }
 
+    /**
+     * Get the left-front drive module. Useful is you want to get information from the module (like the
+     * absolute spin encoder value for spin calibration).
+     *
+     * @return Returns the left-front drive module.
+     */
     @SuppressWarnings("unused")
     public Mk4NeoModule getLFModule() {
         return m_lf;
     }
 
+    /**
+     * Get the left-rear drive module. Useful is you want to get information from the module (like the
+     * absolute spin encoder value for spin calibration).
+     *
+     * @return Returns the left-rear drive module.
+     */
     @SuppressWarnings("unused")
     public Mk4NeoModule getLRModule() {
         return m_lr;
     }
 
+    @SuppressWarnings("unused")
     public void resetDrivePID() {
         m_rf.setDrivePID();
         m_rr.setDrivePID();
@@ -344,8 +377,9 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         swerveDrive(new AngleD(fieldDirection).subtract(m_navx.getHeading()), speed, rotation);
     }
 
-    //end swerve methods
-    //begin odometry methods
+    // end swerve methods
+    // -------------------------------
+    // begin odometry methods
 
     /**
      * Set the field position of the robot. This is typically called at the beginning of the autonomous
@@ -366,10 +400,22 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         m_lastTime = System.currentTimeMillis();
     }
 
+    /**
+     * Get what the swerve drive estimates to be the current X location of the robot on the field.
+     *
+     * @return The estimated X location of the robot on the field
+     */
+    @SuppressWarnings("unused")
     public double getFieldX() {
         return m_fieldX;
     }
 
+    /**
+     * Get what the swerve drive estimates to be the current Y location of the robot on the field.
+     *
+     * @return The estimated Y location of the robot on the field
+     */
+    @SuppressWarnings("unused")
     public double getFieldY() {
         return m_fieldY;
     }
@@ -379,6 +425,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      *
      * @return (AngleD) A copy of the heading of the robot.
      */
+    @SuppressWarnings("unused")
     public AngleD getFieldHeading() {
         return m_fieldHeading.cloneAngleD();
     }

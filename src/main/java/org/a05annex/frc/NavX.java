@@ -26,28 +26,33 @@ public class NavX {
      */
     private final AHRS m_ahrs;
 
-    /** The heading we are trying to track with the robot, i.e. this is the heading the robot is expected to
-     *  be on given the commands we have sent to the robot.
+    /**
+     * The heading we are trying to track with the robot, i.e. this is the heading the robot is expected to
+     * be on given the commands we have sent to the robot.
      */
     private final AngleD m_expectedHeading = new AngleD(AngleD.ZERO);
 
-    /** This is the update count from the NavX. This count is incremented whenever the NavX updates its position
-     *  information. The NavX updates at a faster rate than the WPI command loop rate, so, the update count should
-     *  always change between command cycles of there is a NavX communication problem.
+    /**
+     * This is the update count from the NavX. This count is incremented whenever the NavX updates its position
+     * information. The NavX updates at a faster rate than the WPI command loop rate, so, the update count should
+     * always change between command cycles of there is a NavX communication problem.
      */
     private double m_updateCt;
 
-    /** The raw heading, not corrected for the spins, read directly from the NavX, in the range
+    /**
+     * The raw heading, not corrected for the spins, read directly from the NavX, in the range
      * -180 to +180 degrees. Used for determining whether the boundary between -180 and 180 has been crossed.
      */
     private final AngleD m_headingRawLast = new AngleD(AngleD.ZERO);
 
-    /** The number of complete revolutions the robot has made.
+    /**
+     * The number of complete revolutions the robot has made.
      */
     private int m_headingRevs = 0;
 
-    /** The actual heading of the robot from -infinity to infinity, so the spins are included in this
-     *  heading.
+    /**
+     * The actual heading of the robot from -infinity to infinity, so the spins are included in this
+     * heading.
      */
     private final AngleD m_heading = new AngleD(AngleD.ZERO);
     private boolean m_setExpectedToCurrent = false;
@@ -266,16 +271,19 @@ public class NavX {
         public final AngleConstantD expectedHeading;
 
         /**
-         * {@code true} if the expected heading is being reset to the current heading at each call to
+         * {@code true} if the expected heading was reset to the current heading at the last call to
          * {@link NavX#initializeHeadingAndNav()}, and {@code false} otherwise.
          */
         public final boolean isExpectedTrackingCurrent;
 
         /**
+         * Initialize the {@link NavX.HeadingInfo} at construction.
          *
-         * @param heading
-         * @param expectedHeading
-         * @param isExpectedTrackingCurrent
+         * @param heading                   The actual robot heading.
+         * @param expectedHeading           The expected robot heading.
+         * @param isExpectedTrackingCurrent {@code true} if the expected heading was reset to the current heading
+         *                                  at the last call to {@link NavX#initializeHeadingAndNav()}, and
+         *                                  {@code false} otherwise.
          */
         HeadingInfo(AngleD heading, AngleD expectedHeading, boolean isExpectedTrackingCurrent) {
             this.heading = heading;
@@ -293,18 +301,27 @@ public class NavX {
          * was first initialized, or relative to when the NavX orientation was last reset.
          */
         public final AngleConstantD pitch;
+        /**
+         * The pitch (lean forward or backward) as reported by the NavX.
+         */
         public final AngleConstantD rawPitch;
         /**
          * The yaw (rotation or turn) of the robot, with positive being clockwise (to the right), from when the
          * robot was first initialized, or relative to when the NavX orientation was last reset.
          */
         public final AngleConstantD yaw;
+        /**
+         * The yaw (rotation or turn) as reported by the NavX.
+         */
         public final AngleConstantD rawYaw;
         /**
          * The roll (lean sideways) of the robot, with positive being the robot falling over on it's left
          * side, from when the robot was first initialized.
          */
         public final AngleConstantD roll;
+        /**
+         * The roll (lean sideways) as reported by the NavX.
+         */
         public final AngleConstantD rawRoll;
 
         NavInfo(AngleConstantD pitch, AngleConstantD yaw, AngleConstantD roll,
