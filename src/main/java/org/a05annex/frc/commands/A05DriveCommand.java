@@ -54,6 +54,8 @@ public class A05DriveCommand extends CommandBase {
 
     protected double m_gain;
 
+    private A05Constants.DriverSettings m_driver;
+
     /**
      * The raw stick Y read from the controller and corrected for direction
      */
@@ -110,42 +112,13 @@ public class A05DriveCommand extends CommandBase {
      */
     public static double DRIVE_MAX_ROTATE_INC = 0.075;
 
-    // ---------------------------------------------
-    // deadband of drive and rotate joysticks
-    /**
-     *
-     */
-    public static double DRIVE_DEADBAND = 0.05;
-    /**
-     *
-     */
-    public static double ROTATE_DEADBAND = 0.05;
-
-    // ---------------------------------------------
-    // sensitivity and gain
-    /**
-     *
-     */
-    public static double DRIVE_SPEED_SENSITIVITY = 2.0;
-    /**
-     *
-     */
-    public static double DRIVE_SPEED_GAIN = 0.7;
-    /**
-     *
-     */
-    public static double ROTATE_SENSITIVITY = 1.5;
-    public static double ROTATE_GAIN = 0.5;
-
-    // boost button gain, slow, and trigger threshold
-    public static final double DRIVE_BOOST_GAIN = 1.0;
-    public static final double DRIVE_SLOW_GAIN = 0.3;
     public static final double BOOST_TRIGGER_THRESHOLD = 0.5;
 
 
-    public A05DriveCommand(XboxController xbox) {
+    public A05DriveCommand(XboxController xbox, A05Constants.DriverSettings driver) {
         addRequirements(m_driveSubsystem);
         m_driveXbox = xbox;
+        m_driver = driver;
     }
 
     /**
@@ -194,13 +167,11 @@ public class A05DriveCommand extends CommandBase {
      */
     protected void conditionStick() {
         // if pressing boost button, set gain to boost gain
-        m_gain = DRIVE_SPEED_GAIN;
-        if ((A05Constants.getIncreaseGainAxis() != null) &&
-                (m_driveXbox.getRawAxis(A05Constants.getIncreaseGainAxis().value)) >= BOOST_TRIGGER_THRESHOLD) {
-            m_gain = DRIVE_BOOST_GAIN;
-        } else if ((A05Constants.getDecreaseGainAxis() != null) &&
-                (m_driveXbox.getRawAxis(A05Constants.getDecreaseGainAxis().value)) >= BOOST_TRIGGER_THRESHOLD) {
-            m_gain = DRIVE_SLOW_GAIN;
+        m_gain = m_driver.getDriveSpeedGain();
+        if (m_driveXbox.getRawAxis(m_driver.getBoostTrigger().value) >= BOOST_TRIGGER_THRESHOLD) {
+            m_gain = m_driver.getBoostGain();
+        } else if (m_driveXbox.getRawAxis(m_driver.getSlowTrigger().value) >= BOOST_TRIGGER_THRESHOLD) {
+            m_gain = m_driver.getSlowGain();
         }
 
         // get the raw stick values - these the values ae read from the controller. The Y value is negated
@@ -220,7 +191,7 @@ public class A05DriveCommand extends CommandBase {
         // * the direction is computed from the raw stick X and Y values. Note that is the speed distance is less
         //   than the DRIVE_DEADBAND, then we assume we are still going in the last direction until the driver moves
         //   the stick enough to tell us what is happening next.
-        if (speedDistance < DRIVE_DEADBAND) {
+        if (speedDistance < m_driver.getDriveDeadband()) {
             m_conditionedDirection.setValue(m_lastConditionedDirection);
         } else {
             m_conditionedDirection.atan2(m_rawStickX, m_rawStickY);
@@ -231,11 +202,11 @@ public class A05DriveCommand extends CommandBase {
         // deadband
         // * first, lets do speed - remember that in getting speedDistance the value is 0.0 to 1.0
         //   * deadband and sensitivity
-        if (speedDistance < DRIVE_DEADBAND) {
+        if (speedDistance < m_driver.getDriveDeadband()) {
             speedDistance = 0.0;
         } else {
-            speedDistance = (speedDistance - DRIVE_DEADBAND) / (1.0 - DRIVE_DEADBAND);
-            speedDistance = Math.pow(speedDistance, DRIVE_SPEED_SENSITIVITY) * m_gain;
+            speedDistance = (speedDistance - m_driver.getDriveDeadband()) / (1.0 - m_driver.getDriveDeadband());
+            speedDistance = Math.pow(speedDistance, m_driver.getDriveSpeedSensitivity()) * m_gain;
         }
         //   * delta limiting
         m_conditionedSpeed = Utl.clip(speedDistance, m_lastConditionedSpeed - DRIVE_MAX_SPEED_INC,
@@ -246,7 +217,7 @@ public class A05DriveCommand extends CommandBase {
         //   * Need the rotation to be between 0.0 and 1.0 to apply deadband and sensitivity
         double rotation = Math.abs(m_rawStickRotate);
         // are we rotating?
-        if (rotation < ROTATE_DEADBAND) {
+        if (rotation < m_driver.getRotateDeadband()) {
             // no rotate, keep current heading or 0 if no NavX
             NavX.HeadingInfo headingInfo = m_navx.getHeadingInfo();
             if (headingInfo != null) {
@@ -268,11 +239,11 @@ public class A05DriveCommand extends CommandBase {
         } else {
             // rotating
             // adjust for deadband
-            rotation = (rotation - ROTATE_DEADBAND) / (1.0 - ROTATE_DEADBAND);
+            rotation = (rotation - m_driver.getRotateDeadband()) / (1.0 - m_driver.getRotateDeadband());
             // update expected heading
             m_navx.setExpectedHeadingToCurrent();
             // add sensitivity, gain and sign
-            rotation =  Math.pow(rotation, ROTATE_SENSITIVITY) * ROTATE_GAIN * rotationMult;
+            rotation =  Math.pow(rotation, m_driver.getRotateSensitivity()) * m_driver.getRotateGain() * rotationMult;
         }
         m_conditionedRotate = Utl.clip(rotation, m_lastConditionedRotate - DRIVE_MAX_ROTATE_INC,
                 m_lastConditionedRotate + DRIVE_MAX_ROTATE_INC);

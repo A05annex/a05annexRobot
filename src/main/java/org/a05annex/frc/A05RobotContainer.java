@@ -21,8 +21,23 @@ public abstract class A05RobotContainer {
 
     protected Command m_autoCommand = null;
 
+    protected A05Constants.DriverSettings m_driver = null;
+
     public A05RobotContainer() {
-        m_driveCommand = new A05DriveCommand(m_driveXbox);
+        int driverId = A05Constants.readDriverID();
+        try {
+            m_driver = A05Constants.DRIVER_SETTINGS_LIST.get(driverId);
+            m_driver.load();
+            m_driveCommand = new A05DriveCommand(m_driveXbox, m_driver);
+            SmartDashboard.putString("Driver", m_driver.getName());
+        } catch (IndexOutOfBoundsException e) {
+            SmartDashboard.putString("Driver", String.format("Driver ID %d does not exist", driverId));
+        } catch (RuntimeException e) {
+            SmartDashboard.putString("Driver",
+                    String.format("Could not load driver: '%s'", m_driver.getName()));
+            throw e;
+        }
+
         // autonomous
         int autoId = A05Constants.readAutoID();
         A05Constants.AutonomousPath autonomousPath = null;

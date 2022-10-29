@@ -5,12 +5,17 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
+import static org.a05annex.util.JsonSupport.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PrimitiveIterator;
 
 /**
  * This is the default constants class for our swerve drive base with NavX, and switch selection of driver
@@ -58,9 +63,6 @@ public abstract class A05Constants {
 
     public static final int DRIVE_XBOX_PORT = 0;
 
-    private static XboxController.Axis INCREASE_GAIN_AXIS = null,
-            DECREASE_GAIN_AXIS = null;
-
     // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
     private static double DRIVE_POS_TICS_PER_RADIAN;
 
@@ -102,20 +104,6 @@ public abstract class A05Constants {
         return DRIVE_ORIENTATION_kP;
     }
 
-    public static XboxController.Axis getIncreaseGainAxis() {
-        return INCREASE_GAIN_AXIS;
-    }
-
-    public static XboxController.Axis getDecreaseGainAxis() {
-        return DECREASE_GAIN_AXIS;
-    }
-
-    public static void setGainAxis(XboxController.Axis increaseGain, XboxController.Axis decreaseGain) {
-        INCREASE_GAIN_AXIS = increaseGain;
-        DECREASE_GAIN_AXIS = decreaseGain;
-    }
-
-
     public static void setDriveOrientationkp(double kp) {
         DRIVE_ORIENTATION_kP = kp;
     }
@@ -141,6 +129,8 @@ public abstract class A05Constants {
         SmartDashboard.putNumber("auto", readAutoID());
     }
 
+    //------------------------------------
+    // This is the auto path stuff
     public static class AutonomousPath {
         protected final String m_pathName;
         protected final int m_id;
@@ -218,4 +208,99 @@ public abstract class A05Constants {
     }
 
     public static final List<AutonomousPath> AUTONOMOUS_PATH_LIST = new ArrayList<>();
+
+    //------------------------------------
+    // This is the driver selection stuff
+    public static class DriverSettings{
+        private static final String DRIVE_DEADBAND = "DRIVE_DEADBAND";
+        private static final String DRIVE_SPEED_SENSITIVITY = "DRIVE_SPEED_SENSITIVITY";
+        private static final String DRIVE_SPEED_GAIN = "DRIVE_SPEED_GAIN";
+        private static final String ROTATE_DEADBAND = "ROTATE_DEADBAND";
+        private static final String ROTATE_SENSITIVITY = "ROTATE_SENSITIVITY";
+        private static final String ROTATE_GAIN = "ROTATE_GAIN";
+        private static final String BOOST_GAIN = "BOOST_GAIN";
+        private static final String SLOW_GAIN = "SLOW_GAIN";
+        private static final String BOOST_TRIGGER = "BOOST_TRIGGER";
+        private static final String SLOW_TRIGGER = "SLOW_TRIGGER";
+        private static final String LEFT_TRIGGER = "LEFT";
+        private static final String RIGHT_TRIGGER = "RIGHT";
+
+        protected double m_driveDeadband, m_driveSpeedSensitivity, m_driveSpeedGain, m_rotateDeadband, m_rotateSensitivity,
+                m_rotateGain, m_boostGain, m_slowGain;
+        protected XboxController.Axis m_boostTrigger, m_slowTrigger;
+
+        protected final String m_driverName;
+        protected final int m_id;
+
+        public DriverSettings(@NotNull String driverName, int id) {
+            m_driverName = driverName;
+            m_id = id;
+        }
+
+        public void load() {
+            try {
+                String filePath = Filesystem.getDeployDirectory().toString() + "/drivers/" + m_driverName + ".json";
+                JSONObject dict = readJsonFileAsJSONObject(filePath);
+                if (dict != null) {
+                    // Read in the driver data
+                    m_driveDeadband = (double)dict.get(DRIVE_DEADBAND);
+                    m_driveSpeedSensitivity = (double)dict.get(DRIVE_SPEED_SENSITIVITY);
+                    m_driveSpeedGain = (double)dict.get(DRIVE_SPEED_GAIN);
+                    m_rotateDeadband = (double)dict.get(ROTATE_DEADBAND);
+                    m_rotateSensitivity = (double)dict.get(ROTATE_SENSITIVITY);
+                    m_rotateGain = (double)dict.get(ROTATE_GAIN);
+                    m_boostGain = (double)dict.get(BOOST_GAIN);
+                    m_slowGain = (double)dict.get(SLOW_GAIN);
+                    m_boostTrigger = ((String)dict.get(BOOST_TRIGGER)).equals(LEFT_TRIGGER) ?
+                            XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                    m_slowTrigger = ((String)dict.get(SLOW_TRIGGER)).equals(LEFT_TRIGGER) ?
+                            XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                }
+
+            } catch (IOException | ParseException | ClassCastException | NullPointerException e) {
+                e.printStackTrace();
+                throw new RuntimeException("Driver " + m_driverName + " could not be loaded");
+            }
+        }
+
+        public double getDriveDeadband() {
+            return m_driveDeadband;
+        }
+        public double getDriveSpeedSensitivity() {
+            return m_driveSpeedSensitivity;
+        }
+        public double getDriveSpeedGain() {
+            return m_driveSpeedGain;
+        }
+        public double getRotateDeadband() {
+            return m_rotateDeadband;
+        }
+        public double getRotateSensitivity() {
+            return m_rotateSensitivity;
+        }
+        public double getRotateGain() {
+            return m_rotateGain;
+        }
+        public double getBoostGain() {
+            return m_boostGain;
+        }
+        public double getSlowGain() {
+            return m_slowGain;
+        }
+        public XboxController.Axis getBoostTrigger() {
+            return m_boostTrigger;
+        }
+        public XboxController.Axis getSlowTrigger() {
+            return m_slowTrigger;
+        }
+
+        public String getName() {
+            return m_driverName;
+        }
+        public int getId() {
+            return m_id;
+        }
+    }
+
+    public static final List<DriverSettings> DRIVER_SETTINGS_LIST = new ArrayList<>();
 }
