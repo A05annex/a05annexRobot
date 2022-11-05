@@ -109,28 +109,55 @@ public abstract class A05Constants {
     }
 
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // This is the switch panel for autonomous, driver, and robot selection.
+    // -----------------------------------------------------------------------------------------------------------------
     // Digital input switchboard
     private static final DigitalInput switch0 = new DigitalInput(4);
     private static final DigitalInput switch1 = new DigitalInput(3);
     private static final DigitalInput switch2 = new DigitalInput(2);
     private static final DigitalInput switch3 = new DigitalInput(1);
     private static final DigitalInput switch4 = new DigitalInput(0);
+    private static final DigitalInput switch5 = new DigitalInput(5);
 
+    /**
+     * Read and return the driver Id from the switch panel.
+     * @return The driver Id, {@code 0} if the switch panel is not connected.
+     */
     public static int readDriverID() {
         return (switch0.get() ? 0 : 1) + (switch1.get() ? 0 : 2);
     }
 
+    /**
+     * Read and return the autonomous path Id from the switch panel.
+     * @return The autonomous path Id, {@code 0} if the switch panel is not connected.
+     */
     public static int readAutoID() {
         return (switch2.get() ? 0 : 1) + (switch3.get() ? 0 : 2) + (switch4.get() ? 0 : 4);
     }
 
-    public static void printIDs() {
-        SmartDashboard.putNumber("driver", readDriverID());
-        SmartDashboard.putNumber("auto", readAutoID());
+    /**
+     * Read and return the robot Id from digital IO 5. Install a jumper on the practice robot
+     * so the input reads {@code 1}. On the  competition robot without a jumper, the value will default to {@code 0}
+     * @return The robot Id, {@code 1} is the practice robot, and {@code 0} is the competition robot.
+     */
+    public static int readRobotID() {
+        return switch5.get() ? 0 : 1;
     }
 
-    //------------------------------------
+    /**
+     * Print the driver Id, autonomous Id, and robot Id to the smart dashboard.
+     */
+    @SuppressWarnings("unused")
+    public static void printIDs() {
+        SmartDashboard.putNumber("driver Id", readDriverID());
+        SmartDashboard.putNumber("auto Id", readAutoID());
+        SmartDashboard.putNumber("robot Id", readRobotID());
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
     // This is the auto path stuff
+    // -----------------------------------------------------------------------------------------------------------------
     public static class AutonomousPath {
         protected final String m_pathName;
         protected final int m_id;
@@ -209,8 +236,9 @@ public abstract class A05Constants {
 
     public static final List<AutonomousPath> AUTONOMOUS_PATH_LIST = new ArrayList<>();
 
-    //------------------------------------
+    // -----------------------------------------------------------------------------------------------------------------
     // This is the driver selection stuff
+    // -----------------------------------------------------------------------------------------------------------------
     public static class DriverSettings{
         private static final String DRIVE_DEADBAND = "DRIVE_DEADBAND";
         private static final String DRIVE_SPEED_SENSITIVITY = "DRIVE_SPEED_SENSITIVITY";

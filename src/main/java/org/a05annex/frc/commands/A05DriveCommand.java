@@ -52,8 +52,9 @@ public class A05DriveCommand extends CommandBase {
      */
     protected XboxController m_driveXbox;
 
-    protected double m_gain;
-
+    /**
+     * The custom driver settings for the current driver.
+     */
     private A05Constants.DriverSettings m_driver;
 
     /**
@@ -112,9 +113,16 @@ public class A05DriveCommand extends CommandBase {
      */
     public static double DRIVE_MAX_ROTATE_INC = 0.075;
 
-    public static final double BOOST_TRIGGER_THRESHOLD = 0.5;
+    /**
+     * How far the trigger needs to be depressed before the boost or slow is activated.
+     */
+    public static final double TRIGGER_THRESHOLD = 0.5;
 
-
+    /**
+     * The constructor for the drive command.
+     * @param xbox The driver xbox controller.
+     * @param driver The custom driver settings for the current driver.
+     */
     public A05DriveCommand(XboxController xbox, A05Constants.DriverSettings driver) {
         addRequirements(m_driveSubsystem);
         m_driveXbox = xbox;
@@ -147,9 +155,11 @@ public class A05DriveCommand extends CommandBase {
     }
 
     /**
-     * Condition the stick to set {@link #m_rawStickX}, {@link #m_rawStickX},
-     * and {@link #m_rawStickRotate}. Conditioning
-     * the stick means reading the stick position and applying corrections to go from the physical stick positions
+     * Read and save the raw stick values {@link #m_rawStickX}, {@link #m_rawStickX},
+     * and {@link #m_rawStickRotate}. Condition the raw stick to set {@link #m_conditionedDirection},
+     * {@link #m_conditionedSpeed}, and {@link #m_conditionedRotate}.
+     * <p>
+     * Conditioning the stick means reading the stick position and applying corrections to go from the physical stick positions
      * to effective values that should be used as the actual drive inputs. These corrections are:
      * <ul>
      *     <li>Determine whether a gain boost or slow should be applied. This is a temporary reset of the
@@ -162,16 +172,17 @@ public class A05DriveCommand extends CommandBase {
      *     <li>Do the deadband and sensitivity conditioning of speed and rotation</li>
      *     <li>Do the gain correction and delta-limiting of speed and rotation</li>
      *     <li>Save these newly computed direction, speed, and rotation as the last conditioned direction,
-     *         speed, and rotation so they are available for delta limiting then next time this method is called.</li>
+     *         speed, and rotation so they are available for delta limiting them the next time this method
+     *         is called.</li>
      * </ul>
      */
     protected void conditionStick() {
         // if pressing boost button, set gain to boost gain
-        m_gain = m_driver.getDriveSpeedGain();
-        if (m_driveXbox.getRawAxis(m_driver.getBoostTrigger().value) >= BOOST_TRIGGER_THRESHOLD) {
-            m_gain = m_driver.getBoostGain();
-        } else if (m_driveXbox.getRawAxis(m_driver.getSlowTrigger().value) >= BOOST_TRIGGER_THRESHOLD) {
-            m_gain = m_driver.getSlowGain();
+        double gain = m_driver.getDriveSpeedGain();
+        if (m_driveXbox.getRawAxis(m_driver.getBoostTrigger().value) >= TRIGGER_THRESHOLD) {
+            gain = m_driver.getBoostGain();
+        } else if (m_driveXbox.getRawAxis(m_driver.getSlowTrigger().value) >= TRIGGER_THRESHOLD) {
+            gain = m_driver.getSlowGain();
         }
 
         // get the raw stick values - these the values ae read from the controller. The Y value is negated
@@ -206,7 +217,7 @@ public class A05DriveCommand extends CommandBase {
             speedDistance = 0.0;
         } else {
             speedDistance = (speedDistance - m_driver.getDriveDeadband()) / (1.0 - m_driver.getDriveDeadband());
-            speedDistance = Math.pow(speedDistance, m_driver.getDriveSpeedSensitivity()) * m_gain;
+            speedDistance = Math.pow(speedDistance, m_driver.getDriveSpeedSensitivity()) * gain;
         }
         //   * delta limiting
         m_conditionedSpeed = Utl.clip(speedDistance, m_lastConditionedSpeed - DRIVE_MAX_SPEED_INC,

@@ -26,20 +26,58 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("unused")
 public class AutonomousPathCommand extends CommandBase {
 
+    /**
+     * The swerve drive
+     */
     private final ISwerveDrive swerveDrive;
+    /**
+     * The autonomous path description set by the switches.
+     */
     private final A05Constants.AutonomousPath path;
+    /**
+     * The spline of the path - which includes descriptions of all commands that should be run while the
+     * autonomous oath is being followed.
+     */
     private final KochanekBartelsSpline spline;
+    /**
+     * The {@link KochanekBartelsSpline.PathFollower} which accepts a time from start of the path and returns
+     * a {@link KochanekBartelsSpline.PathPoint}.
+     */
     private KochanekBartelsSpline.PathFollower pathFollower;
+    /**
+     * The current {@link KochanekBartelsSpline.PathPoint} for this call of {@link #execute()}
+     */
     protected KochanekBartelsSpline.PathPoint pathPoint = null;
+    /**
+     * The last {@link KochanekBartelsSpline.PathPoint} for the last call of {@link #execute()}
+     */
     protected KochanekBartelsSpline.PathPoint lastPathPoint = null;
+    /**
+     * Whether this command is finished. Because there are other commands that can be launched by this command, this
+     * command does not finish until the end of the path is reached, and until those launched commands have lso finished.
+     */
     private boolean isFinished = false;
+    /**
+     * The start time for the path.
+     */
     private long startTime;
+    /**
+     * The start time for the current {@link #stopAndRunCommand}. When the current {@link #stopAndRunCommand}
+     * finishes, this is used to compute the duration of that command, which is added to {@link #stopAndRunDuration}
+     */
     private long stopAndRunStartTime = 0;
-    protected long stopAndRunDuration = 0;
+    /**
+     * The current <i>stop-and-run-command</i>, {@code null} if there is no current <i>stop-and-run-command</i>.
+     */
     private Command stopAndRunCommand = null;
+    /**
+     * The time consumed by the <i>stop and run</i> commands. The time on the path is the
+     * <code>{@link System#currentTimeMillis()} - {@link #startTime} - {@link #stopAndRunDuration}</code>
+     */
+    protected long stopAndRunDuration = 0;
 
     /**
-     * Instantiate the {@code AutonomousPathCommand}.
+     * Constructor for the {@code AutonomousPathCommand}.
      * @param path The path description.
      * @param driveSubsystem The swerve drive subsystem.
      * @param additionalRequirements Additional required subsystems.

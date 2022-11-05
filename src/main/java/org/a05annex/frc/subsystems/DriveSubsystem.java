@@ -28,7 +28,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * should be used, rather than the constructor, to get the single instance
      * of this class. For example: {@code DriveSubsystem.getInstance();}
      *
-     * return Returns this {@link DriveSubsystem}
+     * @return Returns this {@link DriveSubsystem}
      */
     @SuppressWarnings("WeakerAccess")
     public static DriveSubsystem getInstance() {
@@ -223,6 +223,9 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         return m_lr;
     }
 
+    /**
+     *
+     */
     @SuppressWarnings("unused")
     public void resetDrivePID() {
         m_rf.setDrivePID();
