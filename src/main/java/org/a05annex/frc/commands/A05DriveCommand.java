@@ -100,18 +100,6 @@ public class A05DriveCommand extends CommandBase {
      * The last conditioned rotation value.
      */
     protected double m_lastConditionedRotate = 0.0;
-    /**
-     * Maximum change in joystick speed value per 20ms command cycle. This limits the change in speed for each
-     * command cycle to a delta that minimizes slippage and damage to the field surface. Additionally, reducing
-     * slippage helps us predict robot position on the field with greater accuracy.
-     */
-    public static double DRIVE_MAX_SPEED_INC = 0.075;
-    /**
-     * Maximum change in joystick rotation value per 20ms command cycle. This limits the change in rotation for each
-     * command cycle to a delta that minimizes slippage and damage to the field surface. Additionally, reducing
-     * slippage helps us predict robot position on the field with greater accuracy.
-     */
-    public static double DRIVE_MAX_ROTATE_INC = 0.075;
 
     /**
      * How far the trigger needs to be depressed before the boost or slow is activated.
@@ -179,9 +167,11 @@ public class A05DriveCommand extends CommandBase {
     protected void conditionStick() {
         // if pressing boost button, set gain to boost gain
         double gain = m_driver.getDriveSpeedGain();
-        if (m_driveXbox.getRawAxis(m_driver.getBoostTrigger().value) >= TRIGGER_THRESHOLD) {
+        if ((null != m_driver.getBoostTrigger()) &&
+                (m_driveXbox.getRawAxis(m_driver.getBoostTrigger().value) >= TRIGGER_THRESHOLD)) {
             gain = m_driver.getBoostGain();
-        } else if (m_driveXbox.getRawAxis(m_driver.getSlowTrigger().value) >= TRIGGER_THRESHOLD) {
+        } else if ((null != m_driver.getSlowTrigger()) &&
+                (m_driveXbox.getRawAxis(m_driver.getSlowTrigger().value) >= TRIGGER_THRESHOLD)) {
             gain = m_driver.getSlowGain();
         }
 
@@ -220,8 +210,8 @@ public class A05DriveCommand extends CommandBase {
             speedDistance = Math.pow(speedDistance, m_driver.getDriveSpeedSensitivity()) * gain;
         }
         //   * delta limiting
-        m_conditionedSpeed = Utl.clip(speedDistance, m_lastConditionedSpeed - DRIVE_MAX_SPEED_INC,
-                m_lastConditionedSpeed + DRIVE_MAX_SPEED_INC);
+        m_conditionedSpeed = Utl.clip(speedDistance, m_lastConditionedSpeed - m_driver.getDriveSpeedMaxInc(),
+                m_lastConditionedSpeed + m_driver.getDriveSpeedMaxInc());
         // * Now let's do rotation - note, tha value here ranges from -1.0 to 1.0
         //   * take out rotation sign and store it for later
         double rotationMult = (m_rawStickRotate < 0.0) ? -1.0 : 1.0;
@@ -256,8 +246,8 @@ public class A05DriveCommand extends CommandBase {
             // add sensitivity, gain and sign
             rotation =  Math.pow(rotation, m_driver.getRotateSensitivity()) * m_driver.getRotateGain() * rotationMult;
         }
-        m_conditionedRotate = Utl.clip(rotation, m_lastConditionedRotate - DRIVE_MAX_ROTATE_INC,
-                m_lastConditionedRotate + DRIVE_MAX_ROTATE_INC);
+        m_conditionedRotate = Utl.clip(rotation, m_lastConditionedRotate - m_driver.getRotateMaxInc(),
+                m_lastConditionedRotate + m_driver.getRotateMaxInc());
 
         // set the last values as references for the delta limiting in the next call to this method
         m_lastConditionedDirection = m_conditionedDirection;

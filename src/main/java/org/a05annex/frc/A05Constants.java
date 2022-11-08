@@ -12,10 +12,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PrimitiveIterator;
 
 /**
  * This is the default constants class for our swerve drive base with NavX, and switch selection of driver
@@ -26,17 +26,19 @@ public abstract class A05Constants {
     // ---------------------
     // Does this robot have cameras that need to be initialized, and what are they
     /**
-     *
+     * Set to {@code true} if the robot has a limelight camera, {@code false} otherwise.
      */
     private static boolean HAS_LIMELIGHT = false;
     /**
-     *
+     * Set to {@code true} if the robot has a USB camera, {@code false} otherwise.
      */
     private static boolean HAS_USB_CAMERA = false;
 
     /**
-     * @param hasUSB
-     * @param hasLimelight
+     * Sets the cameras for the robot.
+     *
+     * @param hasUSB {@code true} if the robot has a USB camera, {@code false} otherwise.
+     * @param hasLimelight {@code true} if the robot has a limelight camera, {@code false} otherwise.
      */
     @SuppressWarnings("unused")
     public static void setCameras(boolean hasUSB, boolean hasLimelight) {
@@ -45,7 +47,8 @@ public abstract class A05Constants {
     }
 
     /**
-     * @return
+     * Query whether this robot has a USB camera
+     * @return {@code true} if the robot has a USB camera, {@code false} otherwise.
      */
     @SuppressWarnings("unused")
     public static boolean hasUsbCamera() {
@@ -53,7 +56,8 @@ public abstract class A05Constants {
     }
 
     /**
-     * @return
+     * Query whether this robot has a limelight
+     * @return {@code true} if the robot has a limelight camera, {@code false} otherwise.
      */
     @SuppressWarnings("unused")
     public static boolean hasLimelight() {
@@ -158,17 +162,39 @@ public abstract class A05Constants {
     // -----------------------------------------------------------------------------------------------------------------
     // This is the auto path stuff
     // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * This class is an autonomous path description for the robot. A list of autonomous path descriptions is loaded
+     * into {@link #AUTONOMOUS_PATH_LIST}. The autonomous path switches select the path that will be loaded into
+     * the {@link org.a05annex.frc.commands.AutonomousPathCommand} by the {@link A05RobotContainer} constructor.
+     */
     public static class AutonomousPath {
+        /**
+         * The path name, usually related to what this path does as in "left start, shoot 1",
+         * "center start, shoot 4". Mostly used for visual feedback of the selected autonomous in
+         * the smart dashboard, or, for error messaging.
+         */
         protected final String m_pathName;
+        /**
+         * The path Id. This is the expected index of the path description in the {@link #AUTONOMOUS_PATH_LIST}. If
+         * the Id does not match the expected position, then there is a problem in the declaration of the
+         * autonomous descriptions.
+         */
         protected final int m_id;
+        /**
+         * The filename. This file is expected to be in the /deploy/paths
+         *  subdirectory of ./src/main in your development project.
+         */
         protected final String m_filename;
+        /**
+         * The spline loaded from the {@link #m_filename}. {@code null} if the spline was not, or could not be loaded.
+         */
         protected KochanekBartelsSpline m_spline;
 
         /**
          * Instantiate an autonomous path description.
          *
-         * @param pathName The path name, usually related to what this path does as in "left start, shot 1",
-         *                 "center start, 4 ball"
+         * @param pathName The path name, usually related to what this path does as in "left start, shoot 1",
+         *                 "center start, shoot 4"
          * @param id       The position of this path in the path array, used to check that the path that was retrieved
          *                 was the path asked for by the switches.
          * @param filename The filename of this path. This file is expected to be in the /deploy/paths
@@ -234,18 +260,32 @@ public abstract class A05Constants {
         }
     }
 
+    /**
+     * This is the empty list of {@link AutonomousPath} descriptions that should be initialized in the robot
+     * {@link A05Robot} {@code Robot} extension by loading the list with the autonomous paths specific to that
+     * robot and competition for the season..
+     */
     public static final List<AutonomousPath> AUTONOMOUS_PATH_LIST = new ArrayList<>();
 
     // -----------------------------------------------------------------------------------------------------------------
     // This is the driver selection stuff
     // -----------------------------------------------------------------------------------------------------------------
+
+    /**
+     * This class is the description of customized driver settings for a specific driver. A list of driver
+     * descriptions is loaded into {@link #DRIVER_SETTINGS_LIST}. The driver switches select the driver settings
+     * that will be loaded into the {@link org.a05annex.frc.commands.A05DriveCommand} by
+     * the {@link A05RobotContainer} constructor.
+     */
     public static class DriverSettings{
         private static final String DRIVE_DEADBAND = "DRIVE_DEADBAND";
         private static final String DRIVE_SPEED_SENSITIVITY = "DRIVE_SPEED_SENSITIVITY";
         private static final String DRIVE_SPEED_GAIN = "DRIVE_SPEED_GAIN";
+        private static final String DRIVE_SPEED_MAX_INC = "DRIVE_SPEED_MAX_INC";
         private static final String ROTATE_DEADBAND = "ROTATE_DEADBAND";
         private static final String ROTATE_SENSITIVITY = "ROTATE_SENSITIVITY";
         private static final String ROTATE_GAIN = "ROTATE_GAIN";
+        private static final String ROTATE_MAX_INC = "ROTATE_MAX_INC";
         private static final String BOOST_GAIN = "BOOST_GAIN";
         private static final String SLOW_GAIN = "SLOW_GAIN";
         private static final String BOOST_TRIGGER = "BOOST_TRIGGER";
@@ -253,82 +293,318 @@ public abstract class A05Constants {
         private static final String LEFT_TRIGGER = "LEFT";
         private static final String RIGHT_TRIGGER = "RIGHT";
 
-        protected double m_driveDeadband, m_driveSpeedSensitivity, m_driveSpeedGain, m_rotateDeadband, m_rotateSensitivity,
-                m_rotateGain, m_boostGain, m_slowGain;
-        protected XboxController.Axis m_boostTrigger, m_slowTrigger;
-
+        /**
+         * The driver name, usually a first name like "Nolan", "Ethan", "Calvin", etc. Mostly used
+         * for visual feedback of the selected driver in the smart dashboard, or, for error messaging.
+         */
         protected final String m_driverName;
+        /**
+         * The driver Id. This is the expected index of the driver description in the {@link #DRIVER_SETTINGS_LIST}. If
+         * the Id does not match the expected position, then there is a problem in the declaration of the
+         * driver descriptions.
+         */
         protected final int m_id;
+        /**
+         * The deadband of the drive joystick. This is the distance from {@code 0.0} that is considered to be
+         * {@code 0.0}. This accounts for failure of the stick to reliably recenter to {@code 0.0} as well as minor
+         * unintentional pressure on the stick.
+         */
+        protected double m_driveDeadband;
+        /**
+         * The linearity (sensitivity) of the speed control. At {@code 1.0}, the stick reading is proportional to the
+         * distance from {@code 0.0}. a value greater than {@code 1.0} raises the stick distance to that power,
+         * which flattens the requested speed relative to stick position around {@code 0.0}. For example,
+         * if the {@link #m_driveSpeedSensitivity} {@code = 2.0}, then if you move the stick
+         * to a distance of {@code 0.5}, the actual requested speed is {@code 0.5 ^ 2} or {@code 0.25}. Practically,
+         * a greater sensitivity means there is more fine control for subtle movements.
+         */
+        protected double m_driveSpeedSensitivity;
+        /**
+         * The maximum speed that will be sent to the drive subsystem during normal driving.
+         */
+        protected double m_driveSpeedGain;
+        /**
+         * The maximum change im speed that can happen in one command cycle (20ms). This is analogous to anti-lock
+         * braking systems (ABS) in cars to minimize skidding that generally causes loss of driver control and slower
+         * braking or acceleration than could be achieved without skidding. Additionally, reducing
+         * skidding helps us predict robot position on the field with greater accuracy. Also, reducing skidding
+         * helps minimize damage to the field surface.
+         */
+        protected double m_driveSpeedMaxInc;
+        /**
+         * The deadband of the rotate joystick. This is the distance from {@code 0.0} that is considered to be
+         * {@code 0.0}. This accounts for failure of the stick to reliably recenter to {@code 0.0} as well as minor
+         * unintentional pressure on the stick.
+         */
+        protected double m_rotateDeadband;
+        /**
+         * The linearity (sensitivity) of the rotation control. At {@code 1.0}, the stick reading is proportional to
+         * the distance from {@code 0.0}. a value greater than {@code 1.0} raises the stick distance to that power,
+         * which flattens the requested rotation relative to stick position around {@code 0.0}. For example,
+         * if the {@link #m_rotateSensitivity} {@code = 2.0}, then if you move the stick
+         * to a distance of {@code 0.5}, the actual requested rotation is {@code 0.5 ^ 2} or {@code 0.25}. Practically,
+         * a greater sensitivity means there is more fine control for subtle movements.
+         */
+        protected double m_rotateSensitivity;
+        /**
+         * The maximum rotation that will be sent to the drive subsystem during normal driving.
+         */
+        protected double m_rotateGain;
+        /**
+         * The maximum change im rotation that can happen in one command cycle (20ms). This is analogous to anti-lock
+         * braking systems (ABS) in cars to minimize skidding that generally causes loss of driver control and slower
+         * braking or acceleration than could be achieved without skidding. Additionally, reducing
+         * skidding helps us predict robot position on the field with greater accuracy. Also, reducing skidding
+         * helps minimize damage to the field surface.
+         */
+        protected double m_rotateMaxInc;
+        /**
+         * The trigger (right or left) that initiates a boost in gain. Analogous to a <i>turbo*</i> button. Useful
+         * when the robot is doing something really simple, like heading down field, and you just need fast speed
+         * with minimal control. {@code null} if boost gain is not enabled.
+         */
+        protected XboxController.Axis m_boostTrigger;
+        /**
+         * The maximum speed that will be sent to the drive subsystem when boost is activated.
+         */
+        protected double m_boostGain;
+        /**
+         * The trigger (right or left) that initiates a reduction in gain. Analogous to a <i>fine control</i> button.
+         * Useful when the robot is doing a fine adjustment, and you need fine control of the robot. {@code null}
+         * if slow gain is not enabled.
+         */
+        protected XboxController.Axis m_slowTrigger;
+        /**
+         * The maximum speed that will be sent to the drive subsystem when slow is activated.
+         */
+        protected double m_slowGain;
 
+        /**
+         * Construct a driver settings description.
+         * @param driverName The driver name (no spaces please).
+         * @param id The driver index in the {@link #DRIVER_SETTINGS_LIST}.
+         */
         public DriverSettings(@NotNull String driverName, int id) {
             m_driverName = driverName;
             m_id = id;
         }
 
+        /**
+         * Load this driver's settings from the driver settings file.
+         */
         public void load() {
+            String filePath = Filesystem.getDeployDirectory().toString() + "/drivers/" + m_driverName + ".json";
+            loadFilePath(filePath);
+        }
+
+        /**
+         * Load the driver settings from the specified path.
+         * @param filePath The path to the settings file.
+         */
+        protected void loadFilePath(String filePath) {
             try {
-                String filePath = Filesystem.getDeployDirectory().toString() + "/drivers/" + m_driverName + ".json";
                 JSONObject dict = readJsonFileAsJSONObject(filePath);
                 if (dict != null) {
                     // Read in the driver data
                     m_driveDeadband = (double)dict.get(DRIVE_DEADBAND);
                     m_driveSpeedSensitivity = (double)dict.get(DRIVE_SPEED_SENSITIVITY);
                     m_driveSpeedGain = (double)dict.get(DRIVE_SPEED_GAIN);
+                    m_driveSpeedMaxInc = (double)dict.get(DRIVE_SPEED_MAX_INC);
                     m_rotateDeadband = (double)dict.get(ROTATE_DEADBAND);
                     m_rotateSensitivity = (double)dict.get(ROTATE_SENSITIVITY);
                     m_rotateGain = (double)dict.get(ROTATE_GAIN);
-                    m_boostGain = (double)dict.get(BOOST_GAIN);
-                    m_slowGain = (double)dict.get(SLOW_GAIN);
-                    m_boostTrigger = ((String)dict.get(BOOST_TRIGGER)).equals(LEFT_TRIGGER) ?
-                            XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
-                    m_slowTrigger = ((String)dict.get(SLOW_TRIGGER)).equals(LEFT_TRIGGER) ?
-                            XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                    m_rotateMaxInc = (double)dict.get(ROTATE_MAX_INC);
+                    String boostTrigger = (String)dict.get(BOOST_TRIGGER);
+                    if (null != boostTrigger) {
+                        m_boostTrigger = boostTrigger.equals(LEFT_TRIGGER) ?
+                                XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                        m_boostGain = (double)dict.get(BOOST_GAIN);
+                    }
+                    String slowTrigger = (String)dict.get(SLOW_TRIGGER);
+                    if (null != slowTrigger) {
+                            m_slowTrigger = slowTrigger.equals(LEFT_TRIGGER) ?
+                                    XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                            m_slowGain = (double) dict.get(SLOW_GAIN);
+                    }
+
                 }
 
-            } catch (IOException | ParseException | ClassCastException | NullPointerException e) {
+            } catch (IOException | ParseException e) {
                 e.printStackTrace();
-                throw new RuntimeException("Driver " + m_driverName + " could not be loaded");
+                throw new RuntimeException("Driver " + m_driverName + " could not be loaded", e);
+            }
+
+        }
+
+        /**
+         * Save this driver's settings to the driver settings file.
+         */
+        public void save() {
+            String filePath = Filesystem.getDeployDirectory().toString() + "/drivers/" + m_driverName + ".json";
+            saveFilePath(filePath);
+        }
+
+        /**
+         * Save the driver settings to the specified path.
+         * @param filePath The path to the settings file.
+         */
+        protected void saveFilePath(String filePath) {
+            JSONObject dict = new JSONObject();
+            dict.put(DRIVE_DEADBAND, m_driveDeadband);
+            dict.put(DRIVE_SPEED_SENSITIVITY, m_driveSpeedSensitivity);
+            dict.put(DRIVE_SPEED_GAIN, m_driveSpeedGain);
+            dict.put(DRIVE_SPEED_MAX_INC, m_driveSpeedMaxInc);
+            dict.put(ROTATE_DEADBAND, m_rotateDeadband);
+            dict.put(ROTATE_SENSITIVITY, m_rotateSensitivity);
+            dict.put(ROTATE_GAIN, m_rotateGain);
+            dict.put(ROTATE_MAX_INC, m_rotateMaxInc);
+            if (null != m_boostTrigger) {
+                dict.put(BOOST_TRIGGER,
+                        m_boostTrigger == XboxController.Axis.kLeftTrigger ? LEFT_TRIGGER : RIGHT_TRIGGER);
+                dict.put(BOOST_GAIN, m_boostGain);
+            }
+            if (null != m_slowTrigger) {
+                dict.put(SLOW_TRIGGER,
+                        m_slowTrigger == XboxController.Axis.kLeftTrigger ? LEFT_TRIGGER : RIGHT_TRIGGER);
+                dict.put(SLOW_GAIN, m_slowGain);
+            }
+
+            try (FileWriter file = new FileWriter(filePath)) {
+                file.write(dict.toJSONString());
+                file.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
 
+        /**
+         * Gets the name of this driver, mostly used in messaging.
+         *
+         * @return Returns the name of this driver.
+         */
+        public String getName() {
+            return m_driverName;
+        }
+
+        /**
+         * Get the ID of this driver.
+         *
+         * @return Returns the ID (index in the drivers list) of this driver.
+         */
+        public int getId() {
+            return m_id;
+        }
+        /**
+         * Get the deadband for the direction/speed stick, see {@link #m_driveDeadband}.
+         *
+         * @return Returns the drive deadband.
+         */
         public double getDriveDeadband() {
             return m_driveDeadband;
         }
+        /**
+         * Get the sensitivity exponent for the direction/speed stick, see {@link #m_driveSpeedSensitivity}.
+         *
+         * @return Returns the drive speed sensitivity.
+         */
         public double getDriveSpeedSensitivity() {
             return m_driveSpeedSensitivity;
         }
+        /**
+         * Get the maximum directional speed, see {@link #m_driveSpeedGain}.
+         *
+         * @return Returns the maximum directional speed.
+         */
         public double getDriveSpeedGain() {
             return m_driveSpeedGain;
         }
+
+        /**
+         * Get the maximum change in speed per command cycle, see {@link #m_driveSpeedMaxInc}.
+         *
+         * @return Returns the maximum change in speed per command cycle.
+         */
+        public double getDriveSpeedMaxInc() {
+            return m_driveSpeedMaxInc;
+        }
+
+        /**
+         * Get the deadband for the rotate stick, see {@link #m_rotateDeadband}.
+         *
+         * @return Returns the rotate deadband.
+         */
         public double getRotateDeadband() {
             return m_rotateDeadband;
         }
+
+        /**
+         * Get the sensitivity exponent for the rotation stick, see {@link #m_rotateSensitivity}.
+         *
+         * @return Returns the drive rotate sensitivity.
+         */
         public double getRotateSensitivity() {
             return m_rotateSensitivity;
         }
+
+        /**
+         * Get the maximum rotational speed, see {@link #m_rotateGain}.
+         *
+         * @return Returns the maximum rotational speed.
+         */
         public double getRotateGain() {
             return m_rotateGain;
         }
-        public double getBoostGain() {
-            return m_boostGain;
+
+        /**
+         * Get the maximum change in rotation per command cycle, see {@link #m_rotateMaxInc}.
+         *
+         * @return Returns the maximum change in rotation per command cycle.
+         */
+        public double getRotateMaxInc() {
+            return m_rotateMaxInc;
         }
-        public double getSlowGain() {
-            return m_slowGain;
-        }
+
+        /**
+         * Get the trigger that activates boost gain, see {@link #m_boostTrigger}.
+         *
+         * @return Returns the trigger that activates boost gain, {@code null} if boost gain is not an option.
+         */
+        @Nullable
         public XboxController.Axis getBoostTrigger() {
             return m_boostTrigger;
         }
+
+        /**
+         * The maximum speed when boost is activated, see {@link #m_boostGain}.
+         *
+         * @return Returns the maximum speed when boost is activated
+         */
+        public double getBoostGain() {
+            return m_boostGain;
+        }
+
+        /**
+         * Get the trigger that activates slow gain, see {@link #m_slowTrigger}.
+         *
+         * @return Returns the trigger that activates slow gain, {@code null} if slow gain is not an option.
+         */
+        @Nullable
         public XboxController.Axis getSlowTrigger() {
             return m_slowTrigger;
         }
 
-        public String getName() {
-            return m_driverName;
-        }
-        public int getId() {
-            return m_id;
+        /**
+         * The maximum speed when slow is activated, see {@link #m_slowGain}.
+         *
+         * @return Returns the maximum speed when slow is activated.
+         */
+        public double getSlowGain() {
+            return m_slowGain;
         }
     }
 
+    /**
+     *
+     */
     public static final List<DriverSettings> DRIVER_SETTINGS_LIST = new ArrayList<>();
 }

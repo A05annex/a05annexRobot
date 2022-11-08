@@ -32,6 +32,7 @@ public abstract class A05RobotContainer {
             SmartDashboard.putString("Driver", m_driver.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Driver", String.format("Driver ID %d does not exist", driverId));
+            throw e;
         } catch (RuntimeException e) {
             SmartDashboard.putString("Driver",
                     String.format("Could not load driver: '%s'", m_driver.getName()));
