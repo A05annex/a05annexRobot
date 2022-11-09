@@ -9,26 +9,31 @@ import org.junit.platform.suite.api.Suite;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- *
+ * This test uses a set of test driver .json settings file to verify error handling, reading, and writing of
+ * driver settings files.
  */
 @Suite
 public class TestDriverSettings {
 
     /**
-     *
+     * An extension of {@link A05Constants.DriverSettings} to override the {@link #load()} and add a
+     * {@link #save(String)} that map driver names to file paths in the test file system rather than the
+     * deployment roborio file system.
      */
     static class DriverSettingsForTest extends A05Constants.DriverSettings {
 
         /**
-         * @param driverName
-         * @param id
+         * Construct a driver settings description for testing.
+         * @param driverName The driver name (no spaces please).
+         * @param id The driver index in the {@link #testDriverSettings} array.
          */
         public DriverSettingsForTest(@NotNull String driverName, int id) {
             super(driverName, id);
         }
 
         /**
-         *
+         * Maps the driver name to a settings file in the project test file system (rather than the deploy
+         * roborio file system).
          */
         @Override
         public void load() {
@@ -36,8 +41,15 @@ public class TestDriverSettings {
             loadFilePath(filePath);
         }
 
-        public void save(String filename) {
-            String filePath = "./src/test/resources/drivers/" + filename + ".json";
+        /**
+         * This save lets us save these driver settings to a different driver name so that we can verify that
+         * the save actually saves what is in the driver settings by reading what was saved and comparing the read
+         * settings to the original settings.
+         *
+         * @param driverName The driver name for the settings save.
+         */
+        public void save(String driverName) {
+            String filePath = "./src/test/resources/drivers/" + driverName + ".json";
             saveFilePath(filePath);
         }
     }
@@ -161,7 +173,6 @@ public class TestDriverSettings {
         assertEquals(1.0, driver.getBoostGain());
         assertEquals(XboxController.Axis.kLeftTrigger, driver.getSlowTrigger());
         assertEquals(0.3, driver.getSlowGain());
-
     }
 
 }
