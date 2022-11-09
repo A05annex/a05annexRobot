@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
-import static org.a05annex.util.JsonSupport.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.simple.JSONObject;
@@ -17,9 +16,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.a05annex.util.JsonSupport.readJsonFileAsJSONObject;
+
 /**
  * This is the default constants class for our swerve drive base with NavX, and switch selection of driver
- * configuration and autonomous configurations
+ * configuration and autonomous configurations. Override this class to build the constants for your robot project.
  */
 public abstract class A05Constants {
 
@@ -262,8 +263,7 @@ public abstract class A05Constants {
 
     /**
      * This is the empty list of {@link AutonomousPath} descriptions that should be initialized in the robot
-     * {@link A05Robot} {@code Robot} extension by loading the list with the autonomous paths specific to that
-     * robot and competition for the season..
+     * {@link A05Robot#robotInit()} override.
      */
     public static final List<AutonomousPath> AUTONOMOUS_PATH_LIST = new ArrayList<>();
 
@@ -604,7 +604,8 @@ public abstract class A05Constants {
     }
 
     /**
-     *
+     * This list of drivers will be loaded in the {@link A05Robot#robotInit()} override. A driver will
+     * be loaded from this list as specified by the driver selection switches.
      */
     public static final List<DriverSettings> DRIVER_SETTINGS_LIST = new ArrayList<>();
 }

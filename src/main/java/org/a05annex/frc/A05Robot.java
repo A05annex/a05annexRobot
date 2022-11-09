@@ -21,6 +21,7 @@ public abstract class A05Robot extends TimedRobot {
      *
      * @param container The robot container.
      */
+    @SuppressWarnings("unused")
     protected void setRobotContainer(A05RobotContainer container) {
         a05RobotContainer = container;
     }

@@ -1,5 +1,10 @@
 package org.a05annex.frc.commands;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.commands.DummyScheduledCommand;
+import frc.robot.commands.DummyStopAndRunCommand;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.subsystems.DummySwerveDriveSubsystem;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
@@ -11,6 +16,9 @@ import org.junit.platform.suite.api.Suite;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+
 /**
  * This is a test of the {@link AutonomousPathCommand} that uses a test path
  * with both scheduled commands and stop-and-run commands. The test path is a 5 control point path. Stop-and-run
@@ -20,6 +28,11 @@ import java.io.FileNotFoundException;
 @Suite
 public class TestAutonomousPathCommand {
 
+    /**
+     *  This override of {@link A05Constants.AutonomousPath} overrides the {@link #load()} function to
+     *  account for the code being run in the project test filesystem rather than on the Roborio file
+     *  system.
+     */
     static class TestAutonomousPath extends A05Constants.AutonomousPath {
 
         public TestAutonomousPath(@NotNull String pathName, int id, @NotNull String filename) {
@@ -50,6 +63,35 @@ public class TestAutonomousPathCommand {
 
     }
 
+    /**
+     * An override to say this command runs when disabled ,so we can use the {@link CommandScheduler} for testing
+     * so things are running as on the robot (without a real driver station to connect to, the scheduler decides
+     * the robot is disabled, and will not schedule anything.
+     */
+    class ExtendedAutonomousPathCommand extends AutonomousPathCommand {
+
+        /**
+         * Constructor for the {@code AutonomousPathCommand}.
+         *
+         * @param path                   The path description.
+         * @param driveSubsystem         The swerve drive subsystem.
+         * @param additionalRequirements Additional required subsystems.
+         */
+        public ExtendedAutonomousPathCommand(A05Constants.@NotNull AutonomousPath path,
+                                             @NotNull Subsystem driveSubsystem, Subsystem... additionalRequirements) {
+            super(path, driveSubsystem, additionalRequirements);
+        }
+
+        /**
+         * return true so we can test this thing.
+         * @return {@code true}
+         */
+        @Override
+        public boolean runsWhenDisabled() {
+            return true;
+        }
+    }
+
     private static final double TEST_DRIVE_LENGTH = 0.5969;
     private static final double TEST_DRIVE_WIDTH = 0.5969;
 
@@ -71,22 +113,43 @@ public class TestAutonomousPathCommand {
 
         DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TEST_DRIVE_LENGTH, TEST_DRIVE_WIDTH,
                 0.0, 0.0, 0.0, 0.0);
-        AutonomousPathCommand autonomousPathCommend = new AutonomousPathCommand(
+        AutonomousPathCommand autonomousPathCommend = new ExtendedAutonomousPathCommand(
                 testPath, DummySwerveDriveSubsystem.getInstance());
-        autonomousPathCommend.initialize();
 
         long startTime = System.currentTimeMillis();
         System.out.printf("Start time: %d%n", startTime);
         long nextTime = startTime + 20;
+
+        CommandScheduler.getInstance().enable();
+        CommandScheduler.getInstance().schedule(autonomousPathCommend);
         while (!autonomousPathCommend.isFinished()) {
-            autonomousPathCommend.execute();
+            CommandScheduler.getInstance().run();
             try {
-                Thread.sleep(nextTime-System.currentTimeMillis());
+                long msSleep = nextTime-System.currentTimeMillis();
+                if (msSleep > 0) {
+                    Thread.sleep(nextTime - System.currentTimeMillis());
+                }
             } catch (InterruptedException e) {
                 break;
             }
             nextTime += 20;
         }
-        autonomousPathCommend.end(false);
+
+        // OK, now that we've run the path, verify that the commands were properly run
+        // The DummyScheduledCommand runs twice
+        assertEquals(2, DummyScheduledCommand.instantiationCt);
+        assertEquals(2, DummyScheduledCommand.initializationCt);
+        assertEquals(2, DummyScheduledCommand.endCt);
+        assertEquals(2 * DummyScheduledCommand.EXECUTES_PER_SCHEDULED_RUN, DummyScheduledCommand.executeCt);
+        // The DummyStopAndRunCommand runs 3 times
+        assertEquals(3, DummyStopAndRunCommand.instantiationCt);
+        assertEquals(3, DummyStopAndRunCommand.initializationCt);
+        assertEquals(3, DummyStopAndRunCommand.endCt);
+        assertEquals(3 * DummyStopAndRunCommand.STOP_AND_RUN_DURATION,
+                DummyStopAndRunCommand.stopAndRunDuration);
+        // and the actual duration may be a bit more/less. The executes should be the
+        // cumulative duration / 20 + a couple extra executes because of timing uncertainties, say maybe 10 (.2 sec)
+        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) + 10 > DummyStopAndRunCommand.executeCt);
+        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) < DummyStopAndRunCommand.executeCt);
     }
 }
