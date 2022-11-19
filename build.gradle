@@ -22,10 +22,9 @@ test {
 }
 
 dependencies {
-    //implementation 'org.a05annex:a05annexUtil:0.9.1'
+    implementation 'org.a05annex:a05annexUtil:0.9.4'
     api 'org.jetbrains:annotations:23.0.0'
     api 'com.googlecode.json-simple:json-simple:1.1.1'
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
