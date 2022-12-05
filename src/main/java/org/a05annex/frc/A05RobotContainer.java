@@ -23,6 +23,8 @@ public abstract class A05RobotContainer {
 
     protected A05Constants.DriverSettings m_driver = null;
 
+    protected A05Constants.RobotSettings m_robotSettings = null;
+
     public A05RobotContainer() {
         int driverId = A05Constants.readDriverID();
         try {
@@ -38,6 +40,9 @@ public abstract class A05RobotContainer {
                     String.format("Could not load driver: '%s'", m_driver.getName()));
             throw e;
         }
+
+        int robotId = A05Constants.readRobotID();
+        m_robotSettings = A05Constants.ROBOT_SETTINGS_LIST.get(robotId);
 
         // autonomous
         int autoId = A05Constants.readAutoID();

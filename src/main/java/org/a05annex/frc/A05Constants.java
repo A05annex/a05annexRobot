@@ -1,5 +1,6 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.cscore.VideoListener;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
@@ -118,11 +119,11 @@ public abstract class A05Constants {
     // This is the switch panel for autonomous, driver, and robot selection.
     // -----------------------------------------------------------------------------------------------------------------
     // Digital input switchboard
-    private static final DigitalInput switch0 = new DigitalInput(4);
-    private static final DigitalInput switch1 = new DigitalInput(3);
+    private static final DigitalInput switch0 = new DigitalInput(0);
+    private static final DigitalInput switch1 = new DigitalInput(1);
     private static final DigitalInput switch2 = new DigitalInput(2);
-    private static final DigitalInput switch3 = new DigitalInput(1);
-    private static final DigitalInput switch4 = new DigitalInput(0);
+    private static final DigitalInput switch3 = new DigitalInput(3);
+    private static final DigitalInput switch4 = new DigitalInput(4);
     private static final DigitalInput switch5 = new DigitalInput(5);
 
     /**
@@ -130,7 +131,7 @@ public abstract class A05Constants {
      * @return The driver Id, {@code 0} if the switch panel is not connected.
      */
     public static int readDriverID() {
-        return (switch0.get() ? 0 : 1) + (switch1.get() ? 0 : 2);
+        return (switch1.get() ? 0 : 1) + (switch0.get() ? 0 : 2);
     }
 
     /**
@@ -138,7 +139,7 @@ public abstract class A05Constants {
      * @return The autonomous path Id, {@code 0} if the switch panel is not connected.
      */
     public static int readAutoID() {
-        return (switch2.get() ? 0 : 1) + (switch3.get() ? 0 : 2) + (switch4.get() ? 0 : 4);
+        return (switch4.get() ? 0 : 1) + (switch3.get() ? 0 : 2) + (switch2.get() ? 0 : 4);
     }
 
     /**
@@ -608,4 +609,25 @@ public abstract class A05Constants {
      * be loaded from this list as specified by the driver selection switches.
      */
     public static final List<DriverSettings> DRIVER_SETTINGS_LIST = new ArrayList<>();
+
+
+    public static class RobotSettings{
+        public final double m_length, m_width;
+        public final double m_rf, m_rr, m_lf, m_lr;
+        public final int m_id;
+        public final String m_name;
+
+        public RobotSettings(int id, String name, double length, double width, double rf, double rr, double lf, double lr) {
+            m_id = id;
+            m_name = name;
+            m_length = length;
+            m_width = width;
+            m_rf = rf;
+            m_rr = rr;
+            m_lf = lf;
+            m_lr = lr;
+        }
+    }
+
+    public static final List<RobotSettings> ROBOT_SETTINGS_LIST = new ArrayList<>();
 }
