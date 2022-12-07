@@ -21,6 +21,30 @@ control the drive, and the motor controllers and encoders must have the CAN bus 
 We spent a lot of time working on optimal module performance, and this is
 the [Swerve Programming paper](./resources/SwerveProgramming.pdf) that describes the details.
 
-## Drive Control
+## Drive Control and Driver Tuning
+
+Over multiple seasons we discovered that there are 2 driving modes for swerve drives that are critical:
+* **Field Relative** - The driver is in a fixed position watching the robot on the field, and there is often no
+  clear front/back to a robot. The speed-direction stick describes where the driver wants the robot to got relative
+ to the field
+* **Robot Relative** - This is what we always did with a conventional tank drive (right and left banks of wheels
+  that here steered by setting some delta between right and left). The control is as though the driver is sitting
+  in the robot (which is backwards when the robot is moving towards the driver). However, when you are performing 
+  a precision task watching the screen display of the robot camera - you now need driver mode.
+
+### Field Relative
+
+What is happening in field-relative mode is we simply difference the stick direction with the
+robot heading to transform the field relative direction to a robot relative direction.
+
+### Robot Relative
+
+What is happening in robot-relative mode is that stick direction is the robot-relative direction. Note that if
+the camera is not facing directly forward, it is easy to change the robot-relative to camera relative by simply
+differencing the stick direction with the
+camera heading (relative to the robot) to transform the camera relative direction to a robot relative direction.
 
 ## NavX
+
+
+## Autonomous Paths

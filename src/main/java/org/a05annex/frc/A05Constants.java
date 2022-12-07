@@ -405,29 +405,26 @@ public abstract class A05Constants {
         protected void loadFilePath(String filePath) {
             try {
                 JSONObject dict = readJsonFileAsJSONObject(filePath);
-                if (dict != null) {
-                    // Read in the driver data
-                    m_driveDeadband = (double)dict.get(DRIVE_DEADBAND);
-                    m_driveSpeedSensitivity = (double)dict.get(DRIVE_SPEED_SENSITIVITY);
-                    m_driveSpeedGain = (double)dict.get(DRIVE_SPEED_GAIN);
-                    m_driveSpeedMaxInc = (double)dict.get(DRIVE_SPEED_MAX_INC);
-                    m_rotateDeadband = (double)dict.get(ROTATE_DEADBAND);
-                    m_rotateSensitivity = (double)dict.get(ROTATE_SENSITIVITY);
-                    m_rotateGain = (double)dict.get(ROTATE_GAIN);
-                    m_rotateMaxInc = (double)dict.get(ROTATE_MAX_INC);
-                    String boostTrigger = (String)dict.get(BOOST_TRIGGER);
-                    if (null != boostTrigger) {
-                        m_boostTrigger = boostTrigger.equals(LEFT_TRIGGER) ?
+                // Read in the driver data
+                m_driveDeadband = (double)dict.get(DRIVE_DEADBAND);
+                m_driveSpeedSensitivity = (double)dict.get(DRIVE_SPEED_SENSITIVITY);
+                m_driveSpeedGain = (double)dict.get(DRIVE_SPEED_GAIN);
+                m_driveSpeedMaxInc = (double)dict.get(DRIVE_SPEED_MAX_INC);
+                m_rotateDeadband = (double)dict.get(ROTATE_DEADBAND);
+                m_rotateSensitivity = (double)dict.get(ROTATE_SENSITIVITY);
+                m_rotateGain = (double)dict.get(ROTATE_GAIN);
+                m_rotateMaxInc = (double)dict.get(ROTATE_MAX_INC);
+                String boostTrigger = (String)dict.get(BOOST_TRIGGER);
+                if (null != boostTrigger) {
+                    m_boostTrigger = boostTrigger.equals(LEFT_TRIGGER) ?
+                            XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                    m_boostGain = (double)dict.get(BOOST_GAIN);
+                }
+                String slowTrigger = (String)dict.get(SLOW_TRIGGER);
+                if (null != slowTrigger) {
+                        m_slowTrigger = slowTrigger.equals(LEFT_TRIGGER) ?
                                 XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
-                        m_boostGain = (double)dict.get(BOOST_GAIN);
-                    }
-                    String slowTrigger = (String)dict.get(SLOW_TRIGGER);
-                    if (null != slowTrigger) {
-                            m_slowTrigger = slowTrigger.equals(LEFT_TRIGGER) ?
-                                    XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
-                            m_slowGain = (double) dict.get(SLOW_GAIN);
-                    }
-
+                        m_slowGain = (double) dict.get(SLOW_GAIN);
                 }
 
             } catch (IOException | ParseException e) {
@@ -449,6 +446,7 @@ public abstract class A05Constants {
          * Save the driver settings to the specified path.
          * @param filePath The path to the settings file.
          */
+        @SuppressWarnings("unchecked")
         protected void saveFilePath(String filePath) {
             JSONObject dict = new JSONObject();
             dict.put(DRIVE_DEADBAND, m_driveDeadband);
@@ -530,9 +528,9 @@ public abstract class A05Constants {
         }
 
         /**
-         * Get the deadband for the rotate stick, see {@link #m_rotateDeadband}.
+         * Get the dead-band for the rotation stick, see {@link #m_rotateDeadband}.
          *
-         * @return Returns the rotate deadband.
+         * @return Returns the rotation dead-band.
          */
         public double getRotateDeadband() {
             return m_rotateDeadband;
@@ -610,16 +608,41 @@ public abstract class A05Constants {
      */
     public static final List<DriverSettings> DRIVER_SETTINGS_LIST = new ArrayList<>();
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // This is the multiple robot support stuff (practice robot and competition robot)
+    // -----------------------------------------------------------------------------------------------------------------
 
+    /**
+     * This class is the description of swerve drive base geometry and calibration. It is used to allow the same
+     * code to be used across multiple bases with different geometry and unique calibration values.
+     */
     public static class RobotSettings{
+        public final int m_id;
+        public final String m_robotName;
         public final double m_length, m_width;
         public final double m_rf, m_rr, m_lf, m_lr;
-        public final int m_id;
-        public final String m_name;
 
-        public RobotSettings(int id, String name, double length, double width, double rf, double rr, double lf, double lr) {
+        /**
+         * Instantiate a robot description of a swerve drive base with a specified drive geometry and
+         * calibration constants.
+         *
+         * @param id The robot index in the {@link #ROBOT_SETTINGS_LIST}.
+         * @param robotName The robot name.
+         * @param length   (double) The length of the drive in meters.
+         * @param width    (double) The width of the drive in meters.
+         * @param rf (double) The reading of the right front spin absolute position encoder when the wheel is facing
+         *                      directly forward.
+         * @param rr (double) The reading of the right rear spin absolute position encoder when the wheel is facing
+         *                      directly forward.
+         * @param lf (double) The reading of the left front spin absolute position encoder when the wheel is facing
+         *                      directly forward.
+         * @param lr (double) The reading of the left rear spin absolute position encoder when the wheel is facing
+         *                      directly forward.
+         */
+        public RobotSettings(int id, String robotName, double length, double width,
+                             double rf, double rr, double lf, double lr) {
             m_id = id;
-            m_name = name;
+            m_robotName = robotName;
             m_length = length;
             m_width = width;
             m_rf = rf;
@@ -629,5 +652,10 @@ public abstract class A05Constants {
         }
     }
 
+    /**
+     * This list of robots will be loaded in the {@link A05Robot#robotInit()} override. A robot will
+     * be initialized from this list as specified by robot selection jumper. It is currently anticipated
+     * that there will be no more than 2 robots running the same code.
+     */
     public static final List<RobotSettings> ROBOT_SETTINGS_LIST = new ArrayList<>();
 }
