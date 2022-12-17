@@ -117,6 +117,15 @@ public interface ISwerveDrive {
     void swerveDriveFieldRelative(AngleConstantD fieldDirection, double speed, double rotation);
 
     /**
+     * Swerve drive with a robot-relative direction, a speed and a rotation.
+     *
+     * @param robotDirection (AngleD) The direction in radians from -PI to PI where 0.0 is forward and positive is clockwise.
+     * @param speed          (double) Speed from 0.0 to 1.0.
+     * @param rotation       (double) Clockwise rotation speed from -1.0 to 1.0.
+     */
+    void swerveDriveRobotRelative(AngleConstantD robotDirection, double speed, double rotation);
+
+    /**
      * Rotate the chassis to the specified heading with no field translation. This controls the module using distance
      * (i.e. moving a specified number of ticks) rather than speed because this adjustment of heading is faster
      * and more reliable.

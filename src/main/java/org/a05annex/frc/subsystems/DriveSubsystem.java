@@ -380,6 +380,11 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         swerveDrive(new AngleD(fieldDirection).subtract(m_navx.getHeading()), speed, rotation);
     }
 
+    @Override
+    public void swerveDriveRobotRelative(AngleConstantD robotDirection, double speed, double rotation) {
+        swerveDrive(robotDirection, speed, rotation);
+    }
+
     // end swerve methods
     // -------------------------------
     // begin odometry methods
