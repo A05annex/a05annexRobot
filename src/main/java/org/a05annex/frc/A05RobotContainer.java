@@ -1,5 +1,6 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -57,6 +58,11 @@ public abstract class A05RobotContainer {
         } catch (FileNotFoundException e) {
             SmartDashboard.putString("Autonomous",
                     String.format("Could not load path: '%s'", autonomousPath.getName()));
+        }
+
+        if (A05Constants.hasUsbCamera()) {
+            // Start logitech camera
+            CameraServer.startAutomaticCapture();
         }
     }
 
