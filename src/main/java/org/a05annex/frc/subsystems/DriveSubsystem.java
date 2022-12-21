@@ -88,6 +88,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     private double m_fieldY = 0.0;
     private final AngleD m_fieldHeading = new AngleD(AngleD.ZERO);
 
+    private boolean fieldRelative = true;
     /**
      * Creates a new instance of this DriveSubsystem. This constructor
      * is private since this class is a Singleton. Code should use
@@ -356,33 +357,29 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     /**
      * Swerve drive with a robot-relative direction, a speed and a rotation speed.
      *
-     * @param chassisDirection (AngleConstantD) The robot chassis relative direction in radians from -PI to
+     * @param direction (AngleConstantD) The robot chassis relative direction in radians from -PI to
      *                         PI where 0.0 is towards the front of the robot, and positive is clockwise.
      * @param speed            (double) Speed from 0.0 to 1.0.
      * @param rotation         (double) Clockwise rotation speed from -1.0 to 1.0.
      */
     @Override
-    public void swerveDrive(AngleConstantD chassisDirection, double speed, double rotation) {
-        swerveDriveComponents(chassisDirection.cos() * speed,
-                chassisDirection.sin() * speed, rotation);
+    public void swerveDrive(AngleConstantD direction, double speed, double rotation) {
+        if (fieldRelative) {
+            AngleD chassisDirection = new AngleD(direction).subtract(m_navx.getHeading());
+            swerveDriveComponents(chassisDirection.cos() * speed,
+                    chassisDirection.sin() * speed, rotation);
+        } else {
+            swerveDriveComponents(direction.cos() * speed,
+                    direction.sin() * speed, rotation);
+        }
     }
 
-    /**
-     * Swerve drive with a field-relative direction, a speed and a rotation.
-     *
-     * @param fieldDirection (AngleD) The direction in radians from -PI to PI where 0.0 is away from the
-     *                       driver, and positive is clockwise.
-     * @param speed          (double) Speed from 0.0 to 1.0.
-     * @param rotation       (double) Clockwise rotation speed from -1.0 to 1.0.
-     */
-    @Override
-    public void swerveDriveFieldRelative(AngleConstantD fieldDirection, double speed, double rotation) {
-        swerveDrive(new AngleD(fieldDirection).subtract(m_navx.getHeading()), speed, rotation);
+    public void toggleDriveMode() {
+        fieldRelative = !fieldRelative;
     }
 
-    @Override
-    public void swerveDriveRobotRelative(AngleConstantD robotDirection, double speed, double rotation) {
-        swerveDrive(robotDirection, speed, rotation);
+    public boolean getDriveMode() {
+        return fieldRelative;
     }
 
     // end swerve methods

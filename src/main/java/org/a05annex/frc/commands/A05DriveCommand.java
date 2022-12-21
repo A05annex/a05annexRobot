@@ -130,7 +130,7 @@ public class A05DriveCommand extends CommandBase {
         conditionStick();
 
         // now ask the drive subsystem to do that.
-        m_driveSubsystem.swerveDriveFieldRelative(m_conditionedDirection, m_conditionedSpeed, m_conditionedRotate);
+        m_driveSubsystem.swerveDrive(m_conditionedDirection, m_conditionedSpeed, m_conditionedRotate);
     }
 
     @Override
