@@ -28,6 +28,7 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     private double MAX_RADIANS_PER_SEC;
     // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
     private static double DRIVE_POS_TICS_PER_RADIAN;
+    private boolean fieldRelative = true;
 
     /**
      * The Singleton instance of this DummySwerveDriveSubsystem. Code should use
@@ -136,10 +137,18 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
-    public void swerveDriveFieldRelative(AngleConstantD fieldDirection, double speed, double rotation) {
-        testGeometryIsSet();
-        System.out.printf("swerveDriveFieldRelative:  %d %10.3f %10.3f %10.3f%n", System.currentTimeMillis(),
-                fieldDirection.getRadians(), speed, rotation);
+    public void toggleDriveMode() {
+        fieldRelative = !fieldRelative;
+    }
+
+    @Override
+    public boolean getDriveMode() {
+        return fieldRelative;
+    }
+
+    @Override
+    public void setDriveMode(boolean fieldRelative) {
+        this.fieldRelative = fieldRelative;
     }
 
     @Override

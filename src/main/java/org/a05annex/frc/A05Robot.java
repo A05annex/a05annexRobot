@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.a05annex.frc.subsystems.DriveSubsystem;
 
 /**
  * This is the basic A05annex Robot that does All the common stuff for a swerve drive base with NavX mounted
@@ -72,6 +73,8 @@ public abstract class A05Robot extends TimedRobot {
         // if there is an autonomous command, schedule it.
         if (autonomousCommand != null)
         {
+            // Autonomous paths ALWAYS assume FIELD_RELATIVE
+            DriveSubsystem.getInstance().setDriveMode(DriveSubsystem.FIELD_RELATIVE);
             autonomousCommand.schedule();
             if (A05Constants.getPrintDebug()) {
                 System.out.println("A05Robot.autonomousInit scheduled autonomousCommand");

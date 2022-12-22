@@ -107,12 +107,25 @@ public interface ISwerveDrive {
     void swerveDrive(AngleConstantD direction, double speed, double rotation);
 
     /**
-     * Toggle between field relative and robot relative driving
+     * Toggle between field relative and robot (robot camera) relative driving.
      */
     void toggleDriveMode();
 
+    /**
+     * Get the swerve drive mode, either field relative or driver (robot camera) relative.
+     *
+     * @return {@code true} if the drive mode is field relative, {@code false} if the drive mode is
+     * driver (robot camera) relative.
+     */
     boolean getDriveMode();
 
+    /**
+     * Set the drive mode.
+     *
+     * @param fieldRelative {@code true} to set the drive mode is field relative, {@code false} to set the drive
+     *                                  mode to driver (robot camera) relative.
+     */
+    void setDriveMode(boolean fieldRelative);
     /**
      * Rotate the chassis to the specified heading with no field translation. This controls the module using distance
      * (i.e. moving a specified number of ticks) rather than speed because this adjustment of heading is faster

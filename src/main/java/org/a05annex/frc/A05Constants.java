@@ -394,7 +394,7 @@ public abstract class A05Constants {
          * Load this driver's settings from the driver settings file.
          */
         public void load() {
-            String filePath = Filesystem.getDeployDirectory().toString() + "/drivers/" + m_driverName + ".json";
+            String filePath = Filesystem.getDeployDirectory() + "/drivers/" + m_driverName + ".json";
             loadFilePath(filePath);
         }
 
@@ -438,7 +438,7 @@ public abstract class A05Constants {
          * Save this driver's settings to the driver settings file.
          */
         public void save() {
-            String filePath = Filesystem.getDeployDirectory().toString() + "/drivers/" + m_driverName + ".json";
+            String filePath = Filesystem.getDeployDirectory() + "/drivers/" + m_driverName + ".json";
             saveFilePath(filePath);
         }
 
