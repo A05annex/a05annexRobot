@@ -51,7 +51,7 @@ public abstract class A05RobotContainer {
         try {
             autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
             autonomousPath.load();
-            m_autoCommand = new AutonomousPathCommand(autonomousPath, m_driveSubsystem);
+            m_autoCommand = new AutonomousPathCommand(autonomousPath, false, m_driveSubsystem);
             SmartDashboard.putString("Autonomous", autonomousPath.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Autonomous", String.format("Path ID %d does not exist", autoId));

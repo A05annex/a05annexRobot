@@ -7,6 +7,8 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.ISwerveDrive;
+import org.a05annex.util.AngleConstantD;
+import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +28,25 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("unused")
 public class AutonomousPathCommand extends CommandBase {
 
+
+    class PathPoint {
+        final KochanekBartelsSpline.PathPoint m_pathPoint;
+        final boolean m_mirror;
+        PathPoint(KochanekBartelsSpline.PathPoint pathPoint, boolean mirror) {
+            m_pathPoint = pathPoint;
+            m_mirror = mirror;
+        }
+        double speedForward() { return m_pathPoint.speedForward; }
+        double speedStrafe() { return m_mirror ? -m_pathPoint.speedStrafe : m_pathPoint.speedStrafe; }
+        double speedRotation() { return m_mirror ? -m_pathPoint.speedRotation : m_pathPoint.speedRotation; }
+        AngleConstantD fieldHeading() {
+            return m_mirror ?
+                    new AngleConstantD(AngleUnit.RADIANS,-m_pathPoint.fieldHeading.getRadians()) :
+                    m_pathPoint.fieldHeading;
+        }
+
+        KochanekBartelsSpline.RobotAction action() { return m_pathPoint.action; }
+    }
     /**
      * The swerve drive
      */
@@ -45,13 +66,13 @@ public class AutonomousPathCommand extends CommandBase {
      */
     private KochanekBartelsSpline.PathFollower pathFollower;
     /**
-     * The current {@link KochanekBartelsSpline.PathPoint} for this call of {@link #execute()}
+     * The current {@link AutonomousPathCommand.PathPoint} for this call of {@link #execute()}
      */
-    protected KochanekBartelsSpline.PathPoint pathPoint = null;
+    protected PathPoint pathPoint = null;
     /**
-     * The last {@link KochanekBartelsSpline.PathPoint} for the last call of {@link #execute()}
+     * The last {@link AutonomousPathCommand.PathPoint} for the last call of {@link #execute()}
      */
-    protected KochanekBartelsSpline.PathPoint lastPathPoint = null;
+    protected PathPoint lastPathPoint = null;
     /**
      * Whether this command is finished. Because there are other commands that can be launched by this command, this
      * command does not finish until the end of the path is reached, and until those launched commands have lso finished.
@@ -76,13 +97,16 @@ public class AutonomousPathCommand extends CommandBase {
      */
     protected long stopAndRunDuration = 0;
 
+    protected boolean mirror;
+
     /**
      * Constructor for the {@code AutonomousPathCommand}.
      * @param path The path description.
+     * @param mirror {@code false} if the path should be followed as specified, {@code true} if X should be mirrored.
      * @param driveSubsystem The swerve drive subsystem.
      * @param additionalRequirements Additional required subsystems.
      */
-    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, @NotNull Subsystem driveSubsystem,
+    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, boolean mirror, @NotNull Subsystem driveSubsystem,
                                  Subsystem... additionalRequirements) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
@@ -90,10 +114,15 @@ public class AutonomousPathCommand extends CommandBase {
         addRequirements(additionalRequirements);
         swerveDrive = (ISwerveDrive)driveSubsystem;
         this.path = path;
+        this.mirror = mirror;
         spline = this.path.getSpline();
         if (A05Constants.getPrintDebug()) {
             System.out.println("AutonomousPathCommand instantiated for path " + path.getName());
         }
+    }
+
+    private PathPoint getPointAt(double time) {
+        return new PathPoint(pathFollower.getPointAt(time), mirror);
     }
 
     // Called when the command is initially scheduled.
@@ -117,17 +146,17 @@ public class AutonomousPathCommand extends CommandBase {
      * </ul>
      */
     public void initializeRobotForPath() {
-        pathPoint = pathFollower.getPointAt(0.0);
-        if (pathPoint != null) {
-            NavX.getInstance().initializeHeadingAndNav(pathPoint.fieldHeading);
-            double forward = pathPoint.speedForward / swerveDrive.getMaxMetersPerSec();
-            double strafe = pathPoint.speedStrafe / swerveDrive.getMaxMetersPerSec();
-            double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec());
+        pathPoint = getPointAt(0.0);
+        if (pathPoint.m_pathPoint != null) {
+            NavX.getInstance().initializeHeadingAndNav(pathPoint.fieldHeading());
+            double forward = pathPoint.speedForward() / swerveDrive.getMaxMetersPerSec();
+            double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
+            double rotation = (pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec());
             swerveDrive.prepareForDriveComponents(forward, strafe, rotation);
             startTime = System.currentTimeMillis();
-            if ((null != pathPoint.action) && (null != pathPoint.action.command) &&
-                    (KochanekBartelsSpline.RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action.actionType)) {
-                if (null != (stopAndRunCommand = instantiateActionCommand(pathPoint.action.command))) {
+            if ((null != pathPoint.action()) && (null != pathPoint.action().command) &&
+                    (KochanekBartelsSpline.RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action().actionType)) {
+                if (null != (stopAndRunCommand = instantiateActionCommand(pathPoint.action().command))) {
                     stopAndRunStartTime = System.currentTimeMillis();
                     stopAndRunCommand.initialize();
                 }
@@ -180,11 +209,11 @@ public class AutonomousPathCommand extends CommandBase {
             // commands. The duration of any stop-and-run commands is tracked and subtracted to get the
             // actual path time.
             double pathTime = (System.currentTimeMillis() - startTime - stopAndRunDuration) / 1000.0;
-            pathPoint = pathFollower.getPointAt(pathTime);
+            pathPoint = getPointAt(pathTime);
             if (A05Constants.getPrintDebug()) {
                 System.out.println("AutonomousPathCommand.execute() get point at time: " + pathTime);
             }
-            if (pathPoint == null) {
+            if (pathPoint.m_pathPoint == null) {
                 // We have reached the end of the path, stop the robot and finish this command.
                 isFinished = true;
                 swerveDrive.swerveDriveComponents(0.0, 0.0, 0.0);
@@ -195,14 +224,14 @@ public class AutonomousPathCommand extends CommandBase {
                 // actual code and commands that may be scheduled or stop_and_run. These commands are instantiated
                 // by reflection, so only the name of the command is required during path planning.
                 Command command;
-                if ((null != pathPoint.action) && (null != pathPoint.action.command) &&
-                        (null != (command = instantiateActionCommand(pathPoint.action.command)))) {
+                if ((null != pathPoint.action()) && (null != pathPoint.action().command) &&
+                        (null != (command = instantiateActionCommand(pathPoint.action().command)))) {
                     // OK, we've instantiated the command, now either schedule it, or run it inside this command.
-                    if (KochanekBartelsSpline.RobotActionType.SCHEDULE_COMMAND == pathPoint.action.actionType) {
+                    if (KochanekBartelsSpline.RobotActionType.SCHEDULE_COMMAND == pathPoint.action().actionType) {
                         // this one is really simple - we just schedule the command, and it happens in
                         // parallel with path following.
                         CommandScheduler.getInstance().schedule(command);
-                    } else if (KochanekBartelsSpline.RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action.actionType) {
+                    } else if (KochanekBartelsSpline.RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action().actionType) {
                         // this is a bit more complicated, we are going to run the command inside this command,
                         // then resume path following when this command completes. So we assume the robot is stopped,
                         //that we know the start time of the command, and that the command is initialized.
@@ -214,8 +243,8 @@ public class AutonomousPathCommand extends CommandBase {
                     }
                 }
 
-                double forward = pathPoint.speedForward / swerveDrive.getMaxMetersPerSec();
-                double strafe = pathPoint.speedStrafe / swerveDrive.getMaxMetersPerSec();
+                double forward = pathPoint.speedForward() / swerveDrive.getMaxMetersPerSec();
+                double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
                 // The expected heading is included in the PathPoint. The path point is the instantaneous
                 // speed and position that we want to be at when we go through the path point. So, we are
                 // actually telling the swerve drive what to do to get from the last control point to this
@@ -223,7 +252,7 @@ public class AutonomousPathCommand extends CommandBase {
                 // speeds are not in the right direction. So here we have a heading PID error correction to
                 //try and keep us on path.
 //                double errorRotation = 0.0;  // when calibrating rotation rate.
-                double errorRotation = (lastPathPoint.fieldHeading.getRadians() -
+                double errorRotation = (lastPathPoint.fieldHeading().getRadians() -
                         NavX.getInstance().getHeading().getRadians()) * A05Constants.getDriveOrientationkp();
                 //double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec()) + errorRotation;
                 double rotation = Utl.clip(errorRotation, -0.5, 0.5) * Utl.length(forward, strafe);
@@ -264,12 +293,12 @@ public class AutonomousPathCommand extends CommandBase {
                 stopAndRunStartTime = 0;
                 // I'm going to assume that if we stop to do something it may involve rotation to aim
                 // for shooting, but, probably does not involve any translation.
-                swerveDrive.setHeading(pathPoint.fieldHeading);
+                swerveDrive.setHeading(pathPoint.fieldHeading());
                 try {
                     Thread.sleep(15);
-                    double forward = pathPoint.speedForward / swerveDrive.getMaxMetersPerSec();
-                    double strafe = pathPoint.speedStrafe / swerveDrive.getMaxMetersPerSec();
-                    double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec());
+                    double forward = pathPoint.speedForward() / swerveDrive.getMaxMetersPerSec();
+                    double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
+                    double rotation = (pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec());
                     swerveDrive.prepareForDriveComponents(forward, strafe, rotation);
                 } catch (InterruptedException e) {
                     // do nothing here, it means the sleep was interrupted.

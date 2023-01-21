@@ -77,9 +77,9 @@ public class TestAutonomousPathCommand {
          * @param driveSubsystem         The swerve drive subsystem.
          * @param additionalRequirements Additional required subsystems.
          */
-        public ExtendedAutonomousPathCommand(A05Constants.@NotNull AutonomousPath path,
+        public ExtendedAutonomousPathCommand(A05Constants.@NotNull AutonomousPath path, boolean mirror,
                                              @NotNull Subsystem driveSubsystem, Subsystem... additionalRequirements) {
-            super(path, driveSubsystem, additionalRequirements);
+            super(path, mirror, driveSubsystem, additionalRequirements);
         }
 
         /**
@@ -114,7 +114,7 @@ public class TestAutonomousPathCommand {
         DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TEST_DRIVE_LENGTH, TEST_DRIVE_WIDTH,
                 0.0, 0.0, 0.0, 0.0);
         AutonomousPathCommand autonomousPathCommend = new ExtendedAutonomousPathCommand(
-                testPath, DummySwerveDriveSubsystem.getInstance());
+                testPath, false, DummySwerveDriveSubsystem.getInstance());
 
         long startTime = System.currentTimeMillis();
         System.out.printf("Start time: %d%n", startTime);
