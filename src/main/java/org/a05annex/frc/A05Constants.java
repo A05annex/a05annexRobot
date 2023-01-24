@@ -69,9 +69,6 @@ public abstract class A05Constants {
 
     public static final int DRIVE_XBOX_PORT = 0;
 
-    // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
-    private static double DRIVE_POS_TICS_PER_RADIAN;
-
     private static double DRIVE_ORIENTATION_kP;
 
     // ---------------------
@@ -101,10 +98,6 @@ public abstract class A05Constants {
         PRINT_DEBUG = print;
     }
     // ---------------------
-
-    public static double getDrivePosTicsPerRadian() {
-        return DRIVE_POS_TICS_PER_RADIAN;
-    }
 
     public static double getDriveOrientationkp() {
         return DRIVE_ORIENTATION_kP;
