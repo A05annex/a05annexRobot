@@ -25,10 +25,13 @@ public interface ISwerveDrive {
      *                      directly forward.
      * @param lrCalibration (double) The reading of the left rear spin encoder when the wheel is facing
      *                      directly forward.
+     * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
+     *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
+     *                            the empirically measured max m/sec.
      */
     void setDriveGeometry(double driveLength, double driveWidth,
                                  double rfCalibration, double rrCalibration,
-                                 double lfCalibration, double lrCalibration);
+                                 double lfCalibration, double lrCalibration, double maxSpeedCalibration);
 
     /**
      * Get the wheel center to center distance between the front wheels and the rear wheels - the length of

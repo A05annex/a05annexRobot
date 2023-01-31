@@ -11,7 +11,7 @@ import org.a05annex.util.Utl;
 /**
  * This is the code that controls the A05annex default swerve base with MK4 drive modules. In your
  * {@code RobotContainer} constructor, please call the
- * {@link #setDriveGeometry(double, double, double, double, double, double)}
+ * {@link #setDriveGeometry(double, double, double, double, double, double, double)}
  * method to setup drive module calibration and geometry before any attempts are made to send
  * drive commands.
  */
@@ -72,6 +72,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     private double MAX_RADIANS_PER_SEC;
     // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
     private double DRIVE_TICS_PER_RADIAN;
+    private double MAX_METERS_PER_SEC;
 
     // keep track of last angles
     private final AngleD m_RF_lastRadians = new AngleD(AngleD.ZERO);
@@ -137,11 +138,15 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      *                      directly forward.
      * @param lrCalibration (double) The reading of the left rear spin encoder when the wheel is facing
      *                      directly forward.
+     * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
+     *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
+     *                            the empirically measured max m/sec.
      */
     @Override
     public void setDriveGeometry(double driveLength, double driveWidth,
                                  double rfCalibration, double rrCalibration,
-                                 double lfCalibration, double lrCalibration) {
+                                 double lfCalibration, double lrCalibration,
+                                 double maxSpeedCalibration ) {
         if (isDriveGeometrySet) {
             throw new IllegalStateException("The drive geometry has already been set for this swerve drive.");
         }
@@ -151,11 +156,12 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         double driveDiagonal = Utl.length(DRIVE_LENGTH, DRIVE_WIDTH);
         LENGTH_OVER_DIAGONAL = DRIVE_LENGTH / driveDiagonal;
         WIDTH_OVER_DIAGONAL = DRIVE_WIDTH / driveDiagonal;
+        MAX_METERS_PER_SEC = Mk4NeoModule.MAX_METERS_PER_SEC * maxSpeedCalibration;
         // For a module to travel 1radian, it moves a distance of:
         //    radius = (0.5 * driveDiagonal)
         // Note, this is in meters. Max m/sec / m/rad = rad/sec, so
         //    max m/sec / (0.5 * driveDiagonal) =  max rad/sec
-        MAX_RADIANS_PER_SEC = Mk4NeoModule.MAX_METERS_PER_SEC / (0.5 * driveDiagonal);
+        MAX_RADIANS_PER_SEC = MAX_METERS_PER_SEC / (0.5 * driveDiagonal);
         // tics/m * m/rad = tics/rad
         DRIVE_TICS_PER_RADIAN = Mk4NeoModule.TICS_PER_METER * 0.5 * driveDiagonal;
         m_rf.setCalibrationOffset(rfCalibration);
@@ -179,7 +185,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     @Override
     public double getMaxMetersPerSec() {
         testGeometryIsSet();
-        return Mk4NeoModule.MAX_METERS_PER_SEC;
+        return MAX_METERS_PER_SEC;
     }
 
     @Override

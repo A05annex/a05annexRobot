@@ -20,7 +20,7 @@ public abstract class A05RobotContainer {
 
     protected final XboxController m_driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
 
-    protected Command m_autoCommand = null;
+    protected AutonomousPathCommand m_autoCommand = null;
 
     protected A05Constants.DriverSettings m_driver = null;
 
@@ -51,7 +51,7 @@ public abstract class A05RobotContainer {
         try {
             autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
             autonomousPath.load();
-            m_autoCommand = new AutonomousPathCommand(autonomousPath, false, m_driveSubsystem);
+            m_autoCommand = new AutonomousPathCommand(autonomousPath, m_driveSubsystem);
             SmartDashboard.putString("Autonomous", autonomousPath.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Autonomous", String.format("Path ID %d does not exist", autoId));

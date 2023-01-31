@@ -19,15 +19,11 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     private double DRIVE_LENGTH;
     private double DRIVE_WIDTH;
 
-    // The maximum spin of the robot when only spinning. Since the robot drive centers are
-    // rectangular, all wheels are aligned so their axis passes through the center of that rectangle, and all wheels
-    // follow the same circular path at a radius of DRIVE_DIAGONAL/2.0 at MAX_METERS_PER_SEC. So this is
-    // computed from DRIVE_DIAGONAL and MAX_METERS_PER_SEC:
-    //     Max [radians/sec] = max speed [meters/sec] / (PI * radius) [meters/radian]
+    private double MAX_METERS_PER_SEC;
     //     Max [radians/sec] = MAX_METERS_PER_SEC / (Math.PI * DRIVE_DIAGONAL * 0.5)
     private double MAX_RADIANS_PER_SEC;
     // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
-    private static double DRIVE_POS_TICS_PER_RADIAN;
+    private static double DRIVE_TICS_PER_RADIAN;
     private boolean fieldRelative = true;
 
     /**
@@ -73,15 +69,15 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     @Override
     public void setDriveGeometry(double driveLength, double driveWidth,
                                  double rfCalibration, double rrCalibration,
-                                 double lfCalibration, double lrCalibration) {
+                                 double lfCalibration, double lrCalibration, double maxSpeedCalibration) {
 
         isDriveGeometrySet = true;
         DRIVE_LENGTH = driveLength;
         DRIVE_WIDTH = driveWidth;
         double driveDiagonal = Utl.length(DRIVE_LENGTH, DRIVE_WIDTH);
-        MAX_RADIANS_PER_SEC = (377.0/360.0) * // tested
-                ((Mk4NeoModule.MAX_METERS_PER_SEC * 2 * Math.PI) / (Math.PI * driveDiagonal));
-        DRIVE_POS_TICS_PER_RADIAN = 10; //TODO: Really compute this number
+        MAX_METERS_PER_SEC = Mk4NeoModule.MAX_METERS_PER_SEC * maxSpeedCalibration;
+        MAX_RADIANS_PER_SEC = MAX_METERS_PER_SEC / (0.5 * driveDiagonal);
+        DRIVE_TICS_PER_RADIAN = Mk4NeoModule.TICS_PER_METER * 0.5 * driveDiagonal;
     }
 
     @Override
@@ -99,7 +95,7 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     @Override
     public double getMaxMetersPerSec() {
         testGeometryIsSet();
-        return DRIVE_POS_TICS_PER_RADIAN;
+        return DRIVE_TICS_PER_RADIAN;
     }
 
     @Override

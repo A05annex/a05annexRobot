@@ -29,9 +29,30 @@ import org.jetbrains.annotations.NotNull;
 public class AutonomousPathCommand extends CommandBase {
 
 
+    /**
+     * This is a wrapper for a {@link KochanekBartelsSpline.PathPoint} that provides mirroring around Y for the path.
+     * It provides getter functions for the parameters in the {@link KochanekBartelsSpline.PathPoint} and performs
+     * the mirroring functionality as required.
+     */
     class PathPoint {
+
+        /**
+         * This is the {@link KochanekBartelsSpline.PathPoint} returned by the
+         * {@link KochanekBartelsSpline.PathFollower}.
+         */
         final KochanekBartelsSpline.PathPoint m_pathPoint;
+        /**
+         * {@code true} if the path should be mirrored, {@code false} if the path should be run as specified.
+         */
         final boolean m_mirror;
+
+        /**
+         * Instantiate a {@code PathPoint}.
+         * @param pathPoint The actual {@link KochanekBartelsSpline.PathPoint} returned by the
+         *              {@link KochanekBartelsSpline.PathFollower}.
+         * @param mirror {@code true} if the path should be mirrored, {@code false} if the path should be run
+         *                           as specified.
+         */
         PathPoint(KochanekBartelsSpline.PathPoint pathPoint, boolean mirror) {
             m_pathPoint = pathPoint;
             m_mirror = mirror;
@@ -97,16 +118,15 @@ public class AutonomousPathCommand extends CommandBase {
      */
     protected long stopAndRunDuration = 0;
 
-    protected boolean mirror;
+    protected boolean mirror = false;
 
     /**
      * Constructor for the {@code AutonomousPathCommand}.
      * @param path The path description.
-     * @param mirror {@code false} if the path should be followed as specified, {@code true} if X should be mirrored.
      * @param driveSubsystem The swerve drive subsystem.
      * @param additionalRequirements Additional required subsystems.
      */
-    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, boolean mirror, @NotNull Subsystem driveSubsystem,
+    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, @NotNull Subsystem driveSubsystem,
                                  Subsystem... additionalRequirements) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
@@ -114,11 +134,19 @@ public class AutonomousPathCommand extends CommandBase {
         addRequirements(additionalRequirements);
         swerveDrive = (ISwerveDrive)driveSubsystem;
         this.path = path;
-        this.mirror = mirror;
         spline = this.path.getSpline();
         if (A05Constants.getPrintDebug()) {
             System.out.println("AutonomousPathCommand instantiated for path " + path.getName());
         }
+    }
+
+    /**
+     * This should be called after {@link AutonomousPathCommand} instantiation, and before the command is initialized.
+     * Normally this would be in your {@code RobotContainer} constructor.
+     * @param mirror {@code false} if the path should be followed as specified, {@code true} if X should be mirrored.
+     */
+    public void setMirror(boolean mirror) {
+        this.mirror = mirror;
     }
 
     private PathPoint getPointAt(double time) {
