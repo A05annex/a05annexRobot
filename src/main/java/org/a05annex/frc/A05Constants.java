@@ -1,6 +1,5 @@
 package org.a05annex.frc;
 
-import edu.wpi.first.cscore.VideoListener;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
@@ -279,20 +278,20 @@ public abstract class A05Constants {
      * the {@link A05RobotContainer} constructor.
      */
     public static class DriverSettings{
-        private static final String DRIVE_DEADBAND = "DRIVE_DEADBAND";
-        private static final String DRIVE_SPEED_SENSITIVITY = "DRIVE_SPEED_SENSITIVITY";
-        private static final String DRIVE_SPEED_GAIN = "DRIVE_SPEED_GAIN";
-        private static final String DRIVE_SPEED_MAX_INC = "DRIVE_SPEED_MAX_INC";
-        private static final String ROTATE_DEADBAND = "ROTATE_DEADBAND";
-        private static final String ROTATE_SENSITIVITY = "ROTATE_SENSITIVITY";
-        private static final String ROTATE_GAIN = "ROTATE_GAIN";
-        private static final String ROTATE_MAX_INC = "ROTATE_MAX_INC";
-        private static final String BOOST_GAIN = "BOOST_GAIN";
-        private static final String SLOW_GAIN = "SLOW_GAIN";
-        private static final String BOOST_TRIGGER = "BOOST_TRIGGER";
-        private static final String SLOW_TRIGGER = "SLOW_TRIGGER";
-        private static final String LEFT_TRIGGER = "LEFT";
-        private static final String RIGHT_TRIGGER = "RIGHT";
+        protected static final String DRIVE_DEADBAND = "DRIVE_DEADBAND";
+        protected static final String DRIVE_SPEED_SENSITIVITY = "DRIVE_SPEED_SENSITIVITY";
+        protected static final String DRIVE_SPEED_GAIN = "DRIVE_SPEED_GAIN";
+        protected static final String DRIVE_SPEED_MAX_INC = "DRIVE_SPEED_MAX_INC";
+        protected static final String ROTATE_DEADBAND = "ROTATE_DEADBAND";
+        protected static final String ROTATE_SENSITIVITY = "ROTATE_SENSITIVITY";
+        protected static final String ROTATE_GAIN = "ROTATE_GAIN";
+        protected static final String ROTATE_MAX_INC = "ROTATE_MAX_INC";
+        protected static final String BOOST_GAIN = "BOOST_GAIN";
+        protected static final String SLOW_GAIN = "SLOW_GAIN";
+        protected static final String BOOST_TRIGGER = "BOOST_TRIGGER";
+        protected static final String SLOW_TRIGGER = "SLOW_TRIGGER";
+        protected static final String LEFT_TRIGGER = "LEFT";
+        protected static final String RIGHT_TRIGGER = "RIGHT";
 
         /**
          * The driver name, usually a first name like "Nolan", "Ethan", "Calvin", etc. Mostly used
