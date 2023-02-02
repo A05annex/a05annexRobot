@@ -34,7 +34,7 @@ public class AutonomousPathCommand extends CommandBase {
      * It provides getter functions for the parameters in the {@link KochanekBartelsSpline.PathPoint} and performs
      * the mirroring functionality as required.
      */
-    class PathPoint {
+    static class PathPoint {
 
         /**
          * This is the {@link KochanekBartelsSpline.PathPoint} returned by the
@@ -114,10 +114,14 @@ public class AutonomousPathCommand extends CommandBase {
     private Command stopAndRunCommand = null;
     /**
      * The time consumed by the <i>stop and run</i> commands. The time on the path is the
-     * <code>{@link System#currentTimeMillis()} - {@link #startTime} - {@link #stopAndRunDuration}</code>
+     * <code>{@link System#currentTimeMillis()} - {@link #startTime} - {@code stopAndRunDuration}</code>
      */
     protected long stopAndRunDuration = 0;
 
+    /**
+     * {@code false} if the path should be followed as specified, {@code true} if X should be mirrored
+     * around the Y axis.
+     */
     protected boolean mirror = false;
 
     /**
@@ -143,7 +147,8 @@ public class AutonomousPathCommand extends CommandBase {
     /**
      * This should be called after {@link AutonomousPathCommand} instantiation, and before the command is initialized.
      * Normally this would be in your {@code RobotContainer} constructor.
-     * @param mirror {@code false} if the path should be followed as specified, {@code true} if X should be mirrored.
+     * @param mirror {@code false} if the path should be followed as specified, {@code true} if X should be mirrored
+     *                            around the Y axis.
      */
     public void setMirror(boolean mirror) {
         this.mirror = mirror;
