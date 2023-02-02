@@ -35,9 +35,25 @@ public class Mk4NeoModule {
      */
     static final double MAX_DRIVE_RPM = 5000;
     /**
-     * The maximum speed of the module with this module implementation.
+     * The maximum speed of the module with this module implementation. This implementation sets the
+     * max NEO RPM to {@link #MAX_DRIVE_RPM} of the
+     * <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> documented 5676RPM free (unloaded) speed.
+     * The
+     * <a href="https://www.swervedrivespecialties.com/collections/kits/products/mk4-swerve-module">SDS MK4</a>
+     * documented free (unloaded) velocity with the standard gear ratio is 12.0ft/sec or 3.6576m/sec.
+     * <p>
+     * This lets us estimate the velocity at max speed as:<br/>
+     * &nbsp;&nbsp;{@link #MAX_METERS_PER_SEC} = ({@link #MAX_DRIVE_RPM} / 5676rpm) * 3.6576m/sec = 3.222m/sec<br/>
+     * However, we will express this using the calculation in the event we change {@link #MAX_DRIVE_RPM}
+     *
      */
-    public static final double MAX_METERS_PER_SEC = 2.68;
+    public static final double MAX_METERS_PER_SEC = (MAX_DRIVE_RPM / 5676) * 3.222;
+    /**
+     * The empirically measured encoder tics per meter of travel. Note that this is probably dependent on wheel wear,
+     * game surface, and other variables - so this is just an approximate value. Emperically measured by Ethan Ready
+     * using the practice robot on a concrete floor 21-jan-2023.
+     */
+    public static final double TICS_PER_METER = 28.3;
     /**
      * Based on telemetry feedback, 1 wheel direction revolution maps to 12.7999 spin encoder revolutions
      */

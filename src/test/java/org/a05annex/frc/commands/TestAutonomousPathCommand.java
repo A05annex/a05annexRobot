@@ -112,7 +112,7 @@ public class TestAutonomousPathCommand {
         }
 
         DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TEST_DRIVE_LENGTH, TEST_DRIVE_WIDTH,
-                0.0, 0.0, 0.0, 0.0);
+                0.0, 0.0, 0.0, 0.0, 1.0);
         AutonomousPathCommand autonomousPathCommend = new ExtendedAutonomousPathCommand(
                 testPath, DummySwerveDriveSubsystem.getInstance());
 

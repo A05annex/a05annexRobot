@@ -20,7 +20,7 @@ public abstract class A05RobotContainer {
 
     protected final XboxController m_driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
 
-    protected Command m_autoCommand = null;
+    protected AutonomousPathCommand m_autoCommand = null;
 
     protected A05Constants.DriverSettings m_driver = null;
 

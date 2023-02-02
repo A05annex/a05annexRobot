@@ -68,9 +68,6 @@ public abstract class A05Constants {
 
     public static final int DRIVE_XBOX_PORT = 0;
 
-    // drive encoder tics per radian of robot rotation when rotation is controlled by position rather than speed.
-    private static double DRIVE_POS_TICS_PER_RADIAN;
-
     private static double DRIVE_ORIENTATION_kP;
 
     // ---------------------
@@ -100,10 +97,6 @@ public abstract class A05Constants {
         PRINT_DEBUG = print;
     }
     // ---------------------
-
-    public static double getDrivePosTicsPerRadian() {
-        return DRIVE_POS_TICS_PER_RADIAN;
-    }
 
     public static double getDriveOrientationkp() {
         return DRIVE_ORIENTATION_kP;
@@ -620,6 +613,7 @@ public abstract class A05Constants {
         public final String m_robotName;
         public final double m_length, m_width;
         public final double m_rf, m_rr, m_lf, m_lr;
+        public final double m_maxSpeedCalibration;
 
         /**
          * Instantiate a robot description of a swerve drive base with a specified drive geometry and
@@ -637,9 +631,12 @@ public abstract class A05Constants {
          *                      directly forward.
          * @param lr (double) The reading of the left rear spin absolute position encoder when the wheel is facing
          *                      directly forward.
+         * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
+         *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
+         *                            the empirically measured max m/sec.
          */
         public RobotSettings(int id, String robotName, double length, double width,
-                             double rf, double rr, double lf, double lr) {
+                             double rf, double rr, double lf, double lr, double maxSpeedCalibration) {
             m_id = id;
             m_robotName = robotName;
             m_length = length;
@@ -648,6 +645,7 @@ public abstract class A05Constants {
             m_rr = rr;
             m_lf = lf;
             m_lr = lr;
+            m_maxSpeedCalibration = maxSpeedCalibration;
         }
     }
 
