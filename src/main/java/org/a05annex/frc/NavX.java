@@ -108,18 +108,19 @@ public class NavX {
     }
 
     /**
-     * Sets the reference start heading and navigation reference positions to the current values. This should
-     * be called immediately at the start of autonomous.
+     * Sets the reference start heading to 0.0 (the robot facing down-field) and navigation reference positions
+     * to the current values. This should be called immediately at the start of autonomous.
      */
     public void initializeHeadingAndNav() {
         initializeHeadingAndNav(AngleD.ZERO);
     }
 
     /**
-     * Sets the reference start heading and navigation reference positions to the current values. This should
-     * be called immediately at the start of autonomous.
+     * Sets the reference start heading to the specified heading, and navigation reference positions to the
+     * current values. This should be called immediately at the start of autonomous.
      *
-     * @param heading (AngleConstantD) The current field heading of the robot.
+     * @param heading (AngleConstantD) The current field heading of the robot as it is positioned at the start
+     *                of autonomous.
      */
     public void initializeHeadingAndNav(AngleConstantD heading) {
         // In the past we have always initialized with the front of the robot facing down field, so the
@@ -204,7 +205,9 @@ public class NavX {
     }
 
     /**
-     * Returns a copy of the current robot chassis heading.
+     * Returns a copy of the current robot chassis heading. Note that the robot makes a revolution the heading does
+     * not reset when the heading crosses the &pi;, -&pi; boundary - so the actual bounds of the heading is -&infin; to
+     * &infin;.
      *
      * @return (not null, AngleD) A copy of the current robot chassis heading.
      */
@@ -214,7 +217,9 @@ public class NavX {
     }
 
     /**
-     * Get the current heading information for the robot.
+     * Get the current heading information for the robot. NOTE: the returned {@link HeadingInfo} reflects snapshot
+     * in time and is not updated to reflect future conditions. Please call this method whenever you need
+     * {@link HeadingInfo} rather than caching it.
      *
      * @return Returns the heading info, returns {@code null} if there is a problem with the NavX.
      */
@@ -233,7 +238,9 @@ public class NavX {
     }
 
     /**
-     * Get the navigation info from the NavX.
+     * Get the navigation info from the NavX. NOTE: the returned {@link NavInfo} reflects snapshot
+     *      * in time and is not updated to reflect future conditions. Please call this method whenever you need
+     *      * {@link NavInfo} rather than caching it.
      *
      * @return Returns the navigation info, returns {@code null} if there is a problem with the NavX.
      */
