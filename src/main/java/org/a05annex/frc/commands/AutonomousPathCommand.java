@@ -280,17 +280,23 @@ public class AutonomousPathCommand extends CommandBase {
                 double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
                 // The expected heading is included in the PathPoint. The path point is the instantaneous
                 // speed and position that we want to be at when we go through the path point. So, we are
-                // actually telling the swerve drive what to do to get from the last control point to this
-                // control point. If the heading is not the last PathPoint heading, then forward and strafe
-                // speeds are not in the right direction. So here we have a heading PID error correction to
-                //try and keep us on path.
-//                double errorRotation = 0.0;  // when calibrating rotation rate.
-                double errorRotation = (lastPathPoint.fieldHeading().getRadians() -
-                        NavX.getInstance().getHeading().getRadians()) * A05Constants.getDriveOrientationkp();
-                //double rotation = (pathPoint.speedRotation / swerveDrive.getMaxRadiansPerSec()) + errorRotation;
-                double rotation = Utl.clip(errorRotation, -0.5, 0.5) * Utl.length(forward, strafe);
+                // actually telling the swerve drive what to do to get from this path point to the next
+                // path point. If the heading is not correct for this path point, then forward and strafe
+                // speeds are not in the right direction to get to the next path point.
+                //
+                // So here we have a heading PID error correction to try and keep us on path. The error is:
+                //     expected heading (pathPoint.fieldHeading()) -
+                //         actual robot heading (NavX.getInstance().getHeading())
+                // and we would like to correct this in several command cycles without introducing oscillation.
+                // 1 cycle time is 20ms, or .02sec -- let's guess targeting for a 3 cycle correction, so
+                //     error(radians) / (3 * .02sec) = radians/sec adjustment to the path rotation to
+                // correct the error.
+                double headingError = (pathPoint.fieldHeading().getRadians() -
+                        NavX.getInstance().getHeading().getRadians());
+                NavX.getInstance().setExpectedHeading(pathPoint.fieldHeading());
+                double headingCorrection = headingError / (3 * 0.02);
+                double rotation = (pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec()) + headingCorrection;
                 swerveDrive.swerveDriveComponents(forward, strafe, rotation);
-                NavX.getInstance().setExpectedHeadingToCurrent();
 
                 lastPathPoint = pathPoint;
             }

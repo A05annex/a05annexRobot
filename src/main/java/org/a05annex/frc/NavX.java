@@ -150,7 +150,7 @@ public class NavX {
      * @param expectedHeading (not null, AngleD) The expected heading.
      */
     @SuppressWarnings("unused")
-    public void setExpectedHeading(AngleD expectedHeading) {
+    public void setExpectedHeading(AngleConstantD expectedHeading) {
         m_expectedHeading.setValue(expectedHeading);
     }
 
