@@ -42,8 +42,8 @@ public class Mk4NeoModule {
      * <a href="https://www.swervedrivespecialties.com/collections/kits/products/mk4-swerve-module">SDS MK4</a>
      * documented free (unloaded) velocity with the standard gear ratio is 12.0ft/sec or 3.6576m/sec.
      * <p>
-     * This lets us estimate the velocity at max speed as:<br/>
-     * &nbsp;&nbsp;{@code MAX_METERS_PER_SEC} = ({@link #MAX_DRIVE_RPM} / 5676rpm) * 3.6576m/sec = 3.222m/sec<br/>
+     * This lets us estimate the velocity at max speed as:<br>
+     * &nbsp;&nbsp;{@code MAX_METERS_PER_SEC} = ({@link #MAX_DRIVE_RPM} / 5676rpm) * 3.6576m/sec = 3.222m/sec<br>
      * However, we will express this using the calculation in the event we change {@link #MAX_DRIVE_RPM}
      *
      */

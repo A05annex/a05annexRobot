@@ -113,8 +113,8 @@ public class AutonomousPathCommand extends CommandBase {
      */
     private Command stopAndRunCommand = null;
     /**
-     * The time consumed by the <i>stop and run</i> commands. The time on the path is the
-     * <code>{@link System#currentTimeMillis()} - {@link #startTime} - {@code stopAndRunDuration}</code>
+     * The time consumed by the <i>stop and run</i> commands. The time on the path is the<br>
+     * {@link System#currentTimeMillis()} - {@link #startTime} - {@code stopAndRunDuration}
      */
     protected long stopAndRunDuration = 0;
 
