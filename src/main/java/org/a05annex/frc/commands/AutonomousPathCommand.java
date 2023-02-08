@@ -287,13 +287,15 @@ public class AutonomousPathCommand extends CommandBase {
                 //     expected heading (pathPoint.fieldHeading()) -
                 //         actual robot heading (NavX.getInstance().getHeading())
                 // and we would like to correct this in several command cycles without introducing oscillation.
-                // 1 cycle time is 20ms, or .02sec -- let's guess targeting for a 3 cycle correction, so
-                //     error(radians) / (3 * .02sec) = radians/sec adjustment to the path rotation to
+                // 1 cycle time is 20ms, or .02sec -- or initial guess was 3 command cycles for correction, but
+                // that resulted in rotation oscillations typical of too high Kp in a PID loop, so we adjusted
+                // the guess targeting for a 12 cycle correction, so
+                //     error(radians) / (12 * .02sec) = radians/sec adjustment to the path rotation to
                 // correct the error.
                 double headingError = (pathPoint.fieldHeading().getRadians() -
                         NavX.getInstance().getHeading().getRadians());
                 NavX.getInstance().setExpectedHeading(pathPoint.fieldHeading());
-                double headingCorrection = headingError / (12 * 0.02);
+                double headingCorrection = headingError / (12.0 * 0.02);
                 double rotation = (pathPoint.speedRotation() + headingCorrection) / swerveDrive.getMaxRadiansPerSec();
                 swerveDrive.swerveDriveComponents(forward, strafe, rotation);
 
