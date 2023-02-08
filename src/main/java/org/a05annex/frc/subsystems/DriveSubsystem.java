@@ -517,7 +517,9 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         m_lastTime = now;
 
         // telemetry
-        printAllAngles();
+        if(A05Constants.getPrintDebug()) {
+            printAllAngles();
+        }
     }
 }
 
