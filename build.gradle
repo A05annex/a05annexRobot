@@ -5,7 +5,7 @@ plugins {
     id 'maven-publish'
     //id 'maven'
     id 'signing'
-    id 'edu.wpi.first.GradleRIO' version '2023.2.1'
+    id 'edu.wpi.first.GradleRIO' version '2023.3.2'
 }
 
 def javaVersion = JavaVersion.VERSION_11
@@ -22,7 +22,8 @@ test {
 }
 
 dependencies {
-    implementation 'org.a05annex:a05annexUtil:0.9.4'
+    //implementation 'org.a05annex:a05annexUtil:0.9.5'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     api 'org.jetbrains:annotations:23.0.0'
     api 'com.googlecode.json-simple:json-simple:1.1.1'
 
@@ -42,7 +43,7 @@ dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.9.0')
     testImplementation('org.junit.jupiter:junit-jupiter-engine:5.9.0')
     testImplementation('org.mockito:mockito-core:4.8.0')
-    testRuntimeOnly(files('libs/a05annexUtil-0.9.4.jar'))
+    testRuntimeOnly(files('libs/a05annexUtil-0.9.5.jar'))
 }
 
 
