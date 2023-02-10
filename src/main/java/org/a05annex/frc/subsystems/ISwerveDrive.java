@@ -11,6 +11,26 @@ import org.a05annex.util.AngleD;
 public interface ISwerveDrive {
 
     /**
+     * The drive modes that are used in the {@link #getDriveMode()}, {@link #toggleDriveMode()}, and
+     * {@link #setDriveMode(DriveMode)}
+     */
+    public static enum DriveMode {
+        /**
+         * Robot movement is relative to the field/driver. Forward stick moves downfield, regardless of
+         * robot orientation; right stick moves right across the field regardless of robot orientation.
+         * Rotation behaviour is unaffected by drive mode.
+         */
+        FIELD_RELATIVE,
+        /**
+         * Robot movement is relative to the robot or forward-facing robot camera. Forward stick moves in
+         * the direction the robot is headed (the direction the camera is facing), regardless of robot
+         * orientation on the field; right stick moves the robot to its right (the right of the direction
+         * of the camera) regardless of robot orientation. Rotation behaviour is unaffected by drive mode.
+         */
+        ROBOT_RELATIVE;
+    }
+
+    /**
      * Set the swerve drive geometry and calibration constants. This must be called in your {@code Robot.robotInit()}
      * to describe the geometry and calibration of the swerve drive before any commands using this geometry
      * (like drive commands) are called. It should <i><b>NEVER</b></i> be called a second time.
@@ -110,25 +130,27 @@ public interface ISwerveDrive {
     void swerveDrive(AngleConstantD direction, double speed, double rotation);
 
     /**
-     * Toggle between field relative and robot (robot camera) relative driving.
+     * Toggle between {@link DriveMode#FIELD_RELATIVE} and {@link DriveMode#ROBOT_RELATIVE} (robot camera
+     * relative) driving.
      */
     void toggleDriveMode();
 
     /**
-     * Get the swerve drive mode, either field relative or driver (robot camera) relative.
+     * Get the swerve drive mode, either {@link DriveMode#FIELD_RELATIVE} or {@link DriveMode#ROBOT_RELATIVE}.
      *
-     * @return {@code true} if the drive mode is field relative, {@code false} if the drive mode is
-     * driver (robot camera) relative.
+     * @return {@link DriveMode#FIELD_RELATIVE} if the drive mode is field relative, {@link DriveMode#ROBOT_RELATIVE}
+     * if the drive mode is driver (robot camera) relative.
      */
-    boolean getDriveMode();
+    DriveMode getDriveMode();
 
     /**
      * Set the drive mode.
      *
-     * @param fieldRelative {@code true} to set the drive mode is field relative, {@code false} to set the drive
-     *                                  mode to driver (robot camera) relative.
+     * @param driveMode {@link DriveMode#FIELD_RELATIVE} to set the drive mode is field relative,
+     *                  {@link DriveMode#ROBOT_RELATIVE} to set the drive mode to driver (robot
+     *                  camera) relative.
      */
-    void setDriveMode(boolean fieldRelative);
+    void setDriveMode(DriveMode driveMode);
     /**
      * Rotate the chassis to the specified heading with no field translation. This controls the module using distance
      * (i.e. moving a specified number of ticks) rather than speed because this adjustment of heading is faster

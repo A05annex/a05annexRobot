@@ -23,9 +23,6 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     private static DriveSubsystem INSTANCE;
 
-    public static final boolean FIELD_RELATIVE = true;
-    public static final boolean ROBOT_RELATIVE = false;
-
     /**
      * Returns the Singleton instance of this DriveSubsystem. This static method
      * should be used, rather than the constructor, to get the single instance
@@ -92,7 +89,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     private double m_fieldY = 0.0;
     private final AngleD m_fieldHeading = new AngleD(AngleD.ZERO);
 
-    private boolean fieldRelative = true;
+    private DriveMode driveMode = DriveMode.FIELD_RELATIVE;
 
     /**
      * Creates a new instance of this DriveSubsystem. This constructor
@@ -379,7 +376,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @Override
     public void swerveDrive(AngleConstantD direction, double speed, double rotation) {
-        if (fieldRelative) {
+        if (driveMode == DriveMode.FIELD_RELATIVE) {
             AngleD chassisDirection = new AngleD(direction).subtract(m_navx.getHeading());
             swerveDriveComponents(chassisDirection.cos() * speed,
                     chassisDirection.sin() * speed, rotation);
@@ -391,17 +388,18 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
     @Override
     public void toggleDriveMode() {
-        fieldRelative = !fieldRelative;
+        driveMode = (driveMode == DriveMode.FIELD_RELATIVE) ?
+                DriveMode.ROBOT_RELATIVE : DriveMode.FIELD_RELATIVE;
     }
 
     @Override
-    public boolean getDriveMode() {
-        return fieldRelative;
+    public DriveMode getDriveMode() {
+        return driveMode;
     }
 
     @Override
-    public void setDriveMode(boolean fieldRelative) {
-        this.fieldRelative = fieldRelative;
+    public void setDriveMode(DriveMode driveMode) {
+        this.driveMode = driveMode;
     }
 
     // end swerve methods

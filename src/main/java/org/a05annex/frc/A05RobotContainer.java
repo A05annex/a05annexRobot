@@ -10,22 +10,61 @@ import org.a05annex.frc.subsystems.DriveSubsystem;
 
 import java.io.FileNotFoundException;
 
+/**
+ * This is the abstract class for the RobotContainer which provides the boilerplate
+ * swerve drive, NavX, camera, driver settings, robot settings, and autonomous
+ * path configuration for the robot.
+ */
 public abstract class A05RobotContainer {
 
-    // declare NavX, used for resetting initial heading
+    /**
+     * Theis is the {@link NavX} that provides inertial navigation for the robot.
+     */
     protected NavX m_navx = NavX.getInstance();
 
+    /**
+     * This is the swerve drive subsystem.
+     */
     protected DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
+    /**
+     * This is the default drive command for this year's competition.
+     */
     protected A05DriveCommand m_driveCommand;
 
+    /**
+     * This is the robot driver XBox controller.
+     */
     protected final XboxController m_driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
 
+    /**
+     * This is the autonomous path following command initialized for the path specified
+     * by the autonomous path selection switches.
+     */
     protected AutonomousPathCommand m_autoCommand = null;
 
+    /**
+     * These are the driver-specific controller settings (gain, sensitivity, deadband, etc.) for
+     * the driver selected by the driver selection switches.
+     */
     protected A05Constants.DriverSettings m_driver = null;
 
+    /**
+     * This is the robot-specific description of this robot geometry, drive  initialization,
+     * and speed calibration correction.
+     */
     protected A05Constants.RobotSettings m_robotSettings = null;
 
+    /**
+     * The default robot container initialization, which:
+     * <ul>
+     *     <li>Reads the driver selection switches and sets the driver;</li>
+     *     <li>Reads the robot Id switch and sets the robot between the
+     *         <i>programming</i> and <i>competition robots</i>;</li>
+     *     <li>Reads the autonomous selection switches, loads the specified
+     *         autonomous path and initializes the {@link #m_autoCommand}</li>
+     *     <li>Starts the USB camera if one exists.</li>
+     * </ul>
+     */
     public A05RobotContainer() {
         int driverId = A05Constants.readDriverID();
         try {

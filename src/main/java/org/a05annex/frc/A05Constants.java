@@ -66,6 +66,9 @@ public abstract class A05Constants {
     }
     // ---------------------
 
+    /**
+     * The default USB driver station port for the xbox drive controller.
+     */
     public static final int DRIVE_XBOX_PORT = 0;
 
     private static double DRIVE_ORIENTATION_kP;
@@ -98,6 +101,12 @@ public abstract class A05Constants {
     }
     // ---------------------
 
+    /**
+     * Get the drive orientation Kp, which is the Kp for the PID loop that keeps the robot on the expected heading
+     * when no rotation is being applied during drive.
+     *
+     * @return The drive orientation Kp.
+     */
     public static double getDriveOrientationkp() {
         return DRIVE_ORIENTATION_kP;
     }
