@@ -14,7 +14,7 @@ public interface ISwerveDrive {
      * The drive modes that are used in the {@link #getDriveMode()}, {@link #toggleDriveMode()}, and
      * {@link #setDriveMode(DriveMode)}
      */
-    public static enum DriveMode {
+    enum DriveMode {
         /**
          * Robot movement is relative to the field/driver. Forward stick moves downfield, regardless of
          * robot orientation; right stick moves right across the field regardless of robot orientation.
@@ -27,7 +27,7 @@ public interface ISwerveDrive {
          * orientation on the field; right stick moves the robot to its right (the right of the direction
          * of the camera) regardless of robot orientation. Rotation behaviour is unaffected by drive mode.
          */
-        ROBOT_RELATIVE;
+        ROBOT_RELATIVE
     }
 
     /**

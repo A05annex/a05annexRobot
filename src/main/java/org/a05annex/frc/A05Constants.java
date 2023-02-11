@@ -111,6 +111,7 @@ public abstract class A05Constants {
         return DRIVE_ORIENTATION_kP;
     }
 
+    @SuppressWarnings("unused")
     public static void setDriveOrientationkp(double kp) {
         DRIVE_ORIENTATION_kP = kp;
     }
@@ -214,6 +215,7 @@ public abstract class A05Constants {
          *
          * @return Returns the ID (index in the paths list) of this autonomous path.
          */
+        @SuppressWarnings("unused")
         public int getId() {
             return m_id;
         }
@@ -233,6 +235,7 @@ public abstract class A05Constants {
          *
          * @return Returns the filename for this path.
          */
+        @SuppressWarnings("unused")
         @NotNull
         public String getFilename() {
             return m_filename;
@@ -276,24 +279,68 @@ public abstract class A05Constants {
     /**
      * This class is the description of customized driver settings for a specific driver. A list of driver
      * descriptions is loaded into {@link #DRIVER_SETTINGS_LIST}. The driver switches select the driver settings
-     * that will be loaded into the {@link org.a05annex.frc.commands.A05DriveCommand} by
+     * JSON file that will be loaded into the {@link org.a05annex.frc.commands.A05DriveCommand} by
      * the {@link A05RobotContainer} constructor.
      */
     public static class DriverSettings{
+        /**
+         * The JSON key for the {@link #m_driveDeadband}.
+         */
         protected static final String DRIVE_DEADBAND = "DRIVE_DEADBAND";
+        /**
+         * The JSON key for the {@link #m_driveSpeedSensitivity}.
+         */
         protected static final String DRIVE_SPEED_SENSITIVITY = "DRIVE_SPEED_SENSITIVITY";
+        /**
+         * The JSON key for the {@link #m_driveSpeedGain}.
+         */
         protected static final String DRIVE_SPEED_GAIN = "DRIVE_SPEED_GAIN";
+        /**
+         * The JSON key for the {@link #m_driveSpeedMaxInc}.
+         */
         protected static final String DRIVE_SPEED_MAX_INC = "DRIVE_SPEED_MAX_INC";
+        /**
+         * The JSON key for the {@link #m_rotateDeadband}.
+         */
         protected static final String ROTATE_DEADBAND = "ROTATE_DEADBAND";
+        /**
+         * The JSON key for the {@link #m_rotateSensitivity}.
+         */
         protected static final String ROTATE_SENSITIVITY = "ROTATE_SENSITIVITY";
+        /**
+         * The JSON key for the {@link #m_rotateGain}.
+         */
         protected static final String ROTATE_GAIN = "ROTATE_GAIN";
+        /**
+         * The JSON key for the {@link #m_rotateMaxInc}.
+         */
         protected static final String ROTATE_MAX_INC = "ROTATE_MAX_INC";
+        /**
+         * The JSON key for the {@link #m_boostGain}.
+         */
         protected static final String BOOST_GAIN = "BOOST_GAIN";
+        /**
+         * The JSON key for the {@link #m_slowGain}.
+         */
         protected static final String SLOW_GAIN = "SLOW_GAIN";
+        /**
+         * The JSoN key for the {@link #m_boostTrigger}.
+         */
         protected static final String BOOST_TRIGGER = "BOOST_TRIGGER";
+        /**
+         * The JSON key for the {@link #m_slowTrigger}.
+         */
         protected static final String SLOW_TRIGGER = "SLOW_TRIGGER";
+        /**
+         * The JSON value specifying the right trigger for either {@link #BOOST_TRIGGER}
+         * or {@link #SLOW_TRIGGER}.
+         */
         protected static final String LEFT_TRIGGER = "LEFT";
-        protected static final String RIGHT_TRIGGER = "RIGHT";
+        /**
+         * The JSON value specifying the left trigger for either {@link #BOOST_TRIGGER}
+         * or {@link #SLOW_TRIGGER}.
+         */
+         protected static final String RIGHT_TRIGGER = "RIGHT";
 
         /**
          * The driver name, usually a first name like "Nolan", "Ethan", "Calvin", etc. Mostly used
@@ -316,7 +363,7 @@ public abstract class A05Constants {
          * The linearity (sensitivity) of the speed control. At {@code 1.0}, the stick reading is proportional to the
          * distance from {@code 0.0}. a value greater than {@code 1.0} raises the stick distance to that power,
          * which flattens the requested speed relative to stick position around {@code 0.0}. For example,
-         * if the {@link #m_driveSpeedSensitivity} {@code = 2.0}, then if you move the stick
+         * if the {@code m_driveSpeedSensitivity = 2.0}, then if you move the stick
          * to a distance of {@code 0.5}, the actual requested speed is {@code 0.5 ^ 2} or {@code 0.25}. Practically,
          * a greater sensitivity means there is more fine control for subtle movements.
          */
@@ -343,7 +390,7 @@ public abstract class A05Constants {
          * The linearity (sensitivity) of the rotation control. At {@code 1.0}, the stick reading is proportional to
          * the distance from {@code 0.0}. a value greater than {@code 1.0} raises the stick distance to that power,
          * which flattens the requested rotation relative to stick position around {@code 0.0}. For example,
-         * if the {@link #m_rotateSensitivity} {@code = 2.0}, then if you move the stick
+         * if the {@code m_rotateSensitivity = 2.0}, then if you move the stick
          * to a distance of {@code 0.5}, the actual requested rotation is {@code 0.5 ^ 2} or {@code 0.25}. Practically,
          * a greater sensitivity means there is more fine control for subtle movements.
          */
@@ -438,6 +485,7 @@ public abstract class A05Constants {
         /**
          * Save this driver's settings to the driver settings file.
          */
+        @SuppressWarnings("unused")
         public void save() {
             String filePath = Filesystem.getDeployDirectory() + "/drivers/" + m_driverName + ".json";
             saveFilePath(filePath);
@@ -618,10 +666,54 @@ public abstract class A05Constants {
      * code to be used across multiple bases with different geometry and unique calibration values.
      */
     public static class RobotSettings{
+        /**
+         * The robot Id. This is the expected index of the robot description in the {@link #ROBOT_SETTINGS_LIST}. If
+         * the Id does not match the expected position, then there is a problem in the declaration of the
+         * robot descriptions.
+         */
         public final int m_id;
+        /**
+         * The robot name, usually a functional name like "programming", or "competition". Mostly used
+         * for visual feedback of the selected robot in the smart dashboard, or, for error messaging.
+         */
         public final String m_robotName;
-        public final double m_length, m_width;
-        public final double m_rf, m_rr, m_lf, m_lr;
+        /**
+         * The drive length of the robot in meters. Specifically, the distance between the rotation
+         * axles of the front a rear wheels.
+         */
+        public final double m_length;
+        /**
+         * The drive width of the robot in meters. Specifically, the distance between the rotation
+         * axles of the right a left wheels.
+         */
+        public final double m_width;
+        /**
+         * The absolute position encoder reading for the right-front swerve module when the
+         * drive wheel is facing forward.
+         */
+        public final double m_rf;
+        /**
+         * The absolute position encoder reading for the right-rear swerve module when the
+         * drive wheel is facing forward.
+         */
+        public final double m_rr;
+        /**
+         * The absolute position encoder reading for the left-front swerve module when the
+         * drive wheel is facing forward.
+         */
+        public final double m_lf;
+        /**
+         * The absolute position encoder reading for the left-rear swerve module when the
+         * drive wheel is facing forward.
+         */
+        public final double m_lr;
+        /**
+         * The speed calibration factor that corrects from the theoretic maximum speed to
+         * the empirically measured maximum speed. This depends on many factors such as wheel
+         * surface, field surface, wheel wear, module friction, motor/controller variation,
+         * etc., and we have measured different calibration factors for different robots as
+         * well a seasonal variations for each robot.
+         */
         public final double m_maxSpeedCalibration;
 
         /**
