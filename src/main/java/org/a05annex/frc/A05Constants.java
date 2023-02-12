@@ -111,6 +111,12 @@ public abstract class A05Constants {
         return DRIVE_ORIENTATION_kP;
     }
 
+    /**
+     * Set the drive orientation Kp, which is the Kp for the PID loop that keeps the robot on the expected heading
+     * when no rotation is being applied during drive.
+     *
+     * @param kp The drive orientation Kp.
+     */
     @SuppressWarnings("unused")
     public static void setDriveOrientationkp(double kp) {
         DRIVE_ORIENTATION_kP = kp;
