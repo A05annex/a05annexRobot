@@ -153,5 +153,25 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
         testGeometryIsSet();
         System.out.printf("setFieldHeading:        %10.3f%n", targetHeading.getRadians());
     }
+
+    @Override
+    public void translate(double distanceForward, double distanceStrafe) {
+        testGeometryIsSet();
+        System.out.printf("translate:   forward=%7.3f; strafe=%7.3f%n", distanceForward,
+                distanceStrafe);
+    }
+
+    @Override
+    public void startAbsoluteTranslate(double distanceForward, double distanceStrafe) {
+        testGeometryIsSet();
+        System.out.printf("translate:   forward=%7.3f; strafe=%7.3f%n", distanceForward,
+                distanceStrafe);
+
+    }
+
+    @Override
+    public boolean isAbsoluteTranslateDone() {
+        return true;
+    }
 }
 

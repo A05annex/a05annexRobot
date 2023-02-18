@@ -462,7 +462,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      *
      * @param targetHeading (AngleConstantD) The desired chassis heading on the field.
      */
+    @Override
     public void setHeading(AngleConstantD targetHeading) {
+        testGeometryIsSet();
+
         m_RF_lastRadians.atan2(DRIVE_LENGTH, -DRIVE_WIDTH);
         m_LF_lastRadians.atan2(DRIVE_LENGTH, DRIVE_WIDTH);
         m_LR_lastRadians.atan2(-DRIVE_LENGTH, DRIVE_WIDTH);
@@ -478,6 +481,44 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
         m_thisChassisForward = 0.0;
         m_thisChassisStrafe = 0.0;
+    }
+
+    @Override
+    public void translate(double distanceForward, double distanceStrafe) {
+        double moveDistance = Utl.length(distanceForward,distanceStrafe);
+        // limit the distance to the achievable distance per command cycle
+        if (moveDistance > MAX_METERS_PER_SEC / 50.0) {
+            double scale = MAX_METERS_PER_SEC / (50.0 * moveDistance);
+            distanceForward *= scale;
+            distanceStrafe *= scale;
+        }
+        startAbsoluteTranslate(distanceForward,distanceStrafe);
+    }
+    public void startAbsoluteTranslate(double distanceForward, double distanceStrafe) {
+        testGeometryIsSet();
+
+        m_RF_lastRadians.atan2(distanceStrafe, distanceForward);
+        m_LF_lastRadians.atan2(distanceStrafe, distanceForward);
+        m_LR_lastRadians.atan2(distanceStrafe, distanceForward);
+        m_RR_lastRadians.atan2(distanceStrafe, distanceForward);
+
+        double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
+
+        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics);
+        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics);
+        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics);
+        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics);
+
+        // TODO - sort out telemetry for this ......
+        m_thisChassisForward = 0.0;
+        m_thisChassisStrafe = 0.0;
+
+    }
+    public boolean isAbsoluteTranslateDone() {
+        return m_rf.moveByDistanceReached() &&
+                m_lf.moveByDistanceReached() &&
+                m_lr.moveByDistanceReached() &&
+                m_rr.moveByDistanceReached();
     }
 
     @Override

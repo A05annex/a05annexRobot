@@ -146,17 +146,34 @@ public interface ISwerveDrive {
     /**
      * Set the drive mode.
      *
-     * @param driveMode {@link DriveMode#FIELD_RELATIVE} to set the drive mode is field relative,
+     * @param driveMode {@link DriveMode#FIELD_RELATIVE} to set the drive mode to field relative,
      *                  {@link DriveMode#ROBOT_RELATIVE} to set the drive mode to driver (robot
      *                  camera) relative.
      */
     void setDriveMode(DriveMode driveMode);
+
     /**
-     * Rotate the chassis to the specified heading with no field translation. This controls the module using distance
+     * Rotate the chassis to the specified heading with no field translation. This controls the modules using distance
      * (i.e. moving a specified number of ticks) rather than speed because this adjustment of heading is faster
      * and more reliable.
      *
      * @param targetHeading (AngleConstantD) The desired chassis heading on the field.
      */
     void setHeading(AngleConstantD targetHeading);
+
+    /**
+     * Translates the robot (moves the robot without changing heading) the specified forward and strafe
+     * distance. This controls the modules using distance (i.e. moving a specified number of ticks) rather than
+     * speed because this specification of moving distance is most reliably achieved by specifying the distance,
+     * rather than speed, that the modules should move. Because this is normally called every command-cycle while
+     * during a targeting maneuver, the actual distance that is requested per cycle is
+     * clipped to an achievable distance inside the method.
+     *
+     * @param distanceForward The distance to move forward (negative is backwards) in meters.
+     * @param distanceStrafe The distance to move right (negative is left) in meters.
+     */
+    void translate(double distanceForward, double distanceStrafe);
+
+    void startAbsoluteTranslate(double distanceForward, double distanceStrafe);
+    boolean isAbsoluteTranslateDone();
 }

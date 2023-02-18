@@ -120,9 +120,14 @@ public class Mk4NeoModule {
     private double lastSpeed = 0.0;
 
     /**
-     * Whether the last command was drive by speed, <code>true</code>, or drive by distance, <code>false</code>.
+     * Whether the last command was drive by speed, {@code true}, or drive by distance, {@code false}.
      */
     private boolean driveBySpeed = true;
+
+    /**
+     * The target position if {@link #driveBySpeed} {@code = false}
+     */
+    private double targetPosition;
 
     /**
      * * The factory that creates the DriveModule given the
@@ -422,6 +427,15 @@ public class Mk4NeoModule {
             setDrivePosPID();
             driveBySpeed = false;
         }
+        targetPosition = targetTics;
         drivePID.setReference(targetTics, CANSparkMax.ControlType.kPosition);
+    }
+
+    public boolean moveByDistanceReached() {
+        double currentPosition = getDriveEncoderPosition();
+        // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
+        // of 0.2 -> which converts to roughly +-0.25"
+        return driveBySpeed ||
+                ((currentPosition > targetPosition - 0.2) && (currentPosition < targetPosition + 0.2));
     }
 }
