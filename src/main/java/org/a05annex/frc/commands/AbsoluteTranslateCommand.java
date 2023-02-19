@@ -4,14 +4,17 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.a05annex.frc.subsystems.DriveSubsystem;
 
 /**
- *
+ * This is a command that does an absolute translate with respect to the robot, no change in heading. It can
+ * be used to position the robot relative to its final position after centering on a target like an
+ * <i>april tag</i>. The absolute translation is expressed as meters forward and left strafe of the and
+ * is set in the constructor.
  */
 public class AbsoluteTranslateCommand extends CommandBase {
     private final DriveSubsystem driveSubsystem = DriveSubsystem.getInstance();
-
     private final double distanceForward;
     private final double distanceStrafe;
     /**
+     * Construct a command to move the robot the specified forward and strafe distances.
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
@@ -29,6 +32,7 @@ public class AbsoluteTranslateCommand extends CommandBase {
      */
     @Override
     public void initialize() {
+        // This command sets the heading and target end position of all the modules.
         driveSubsystem.startAbsoluteTranslate(distanceForward,distanceStrafe);
     }
 
@@ -39,39 +43,30 @@ public class AbsoluteTranslateCommand extends CommandBase {
     @Override
     public void execute() {
         // nothing to do here, just waiting for the drive to get to the requested
-        // position
+        // position in the isFinished() command.
     }
 
     /**
      * <p>
-     * Returns whether this command has finished. Once a command finishes -- indicated by
-     * this method returning true -- the scheduler will call its {@link #end(boolean)} method.
-     * </p><p>
-     * Returning false will result in the command never ending automatically. It may still be
-     * cancelled manually or interrupted by another command. Hard coding this command to always
-     * return true will result in the command executing once and finishing immediately. It is
-     * recommended to use * {@link edu.wpi.first.wpilibj2.command.InstantCommand InstantCommand}
-     * for such an operation.
+     * Test whether the robot has reached to specified end location, which finishes this command.
      * </p>
      *
-     * @return whether this command has finished.
+     * @return {@code true} when the robot reaches the specified position, {@code false} otherwise.
      */
     @Override
     public boolean isFinished() {
-        // TODO: Make this return true when this Command no longer needs to run execute()
+        // test whether we have reached the final position
         return driveSubsystem.isAbsoluteTranslateDone();
     }
 
     /**
-     * The action to take when the command ends. Called when either the command
-     * finishes normally -- that is it is called when {@link #isFinished()} returns
-     * true -- or when  it is interrupted/canceled. This is where you may want to
-     * wrap up loose ends, like shutting off a motor that was being used in the command.
+     * Called to end the command.
      *
      * @param interrupted whether the command was interrupted/canceled
      */
     @Override
     public void end(boolean interrupted) {
-        // nothing to do here
+        // nothing to do here - the command is ending, it will release control of the
+        // drive subsystem, and the default drive command will probably take over.
     }
 }

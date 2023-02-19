@@ -59,6 +59,13 @@ public class Mk4NeoModule {
      */
     static final double RADIANS_TO_SPIN_ENCODER = 12.7999 / AngleD.TWO_PI.getRadians();
 
+    /**
+     * A tolerance used for determining when the final position has been reached. This
+     * tolerance corresponds to {@code TARGET_POSITION_TOLERANCE} / {@link #TICS_PER_METER}, or
+     * .007m (0.27in)
+     */
+    static final double TARGET_POSITION_TOLERANCE = 0.2;
+
     // PID values for the spin spark motor encoder position controller PID loop
     static double SPIN_kP = 0.5;
     static double SPIN_kI = 0.0;
@@ -125,7 +132,7 @@ public class Mk4NeoModule {
     private boolean driveBySpeed = true;
 
     /**
-     * The target position if {@link #driveBySpeed} {@code = false}
+     * The target position if {@link #driveBySpeed} {@code == false}.
      */
     private double targetPosition;
 
@@ -409,10 +416,18 @@ public class Mk4NeoModule {
     }
 
     /**
+     * <p>
      * Set the direction and distance in encoder tics that the module should move. We use this for targeting when
-     * the robot is stopped, and we are trying to get very fast rotation response and a very solid lock on the
-     * target. This is far more reliable that trying to use a PID to control rotation speed to lock on a
-     * target heading.
+     * we are trying to get very fast response and a very solid lock on the target either
+     * by robot rotation (aiming) or translation (positioning). The key here is that we have
+     * a targeting error that we can approximately convert to heading or position correction,
+     * and we are using this approximation to specify they next move that gets us to target.
+     * target.
+     * </p><p>
+     * This starts a move that may take multiple command cycles to achieve. Calling
+     * this method again before the move is complete resets the target position. Calling
+     * {@link #setDirectionAndSpeed(AngleConstantD, double)} cancels a move to position.
+     * </p>
      *
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                        front of the robot, and positive is clockwise.
@@ -431,11 +446,18 @@ public class Mk4NeoModule {
         drivePID.setReference(targetTics, CANSparkMax.ControlType.kPosition);
     }
 
-    public boolean moveByDistanceReached() {
+    /**
+     * Test whether a move to a specified position (a target distance) has completed.
+     *
+     * @return {@code true} if the target distance has been reached or the module is no longer
+     * being controlled by position, {@code false} otherwise.
+     */
+    public boolean isAtTargetDistance() {
         double currentPosition = getDriveEncoderPosition();
         // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
         return driveBySpeed ||
-                ((currentPosition > targetPosition - 0.2) && (currentPosition < targetPosition + 0.2));
+                ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE) &&
+                        (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE));
     }
 }

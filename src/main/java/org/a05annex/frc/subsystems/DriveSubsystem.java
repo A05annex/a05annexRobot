@@ -515,10 +515,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
     }
     public boolean isAbsoluteTranslateDone() {
-        return m_rf.moveByDistanceReached() &&
-                m_lf.moveByDistanceReached() &&
-                m_lr.moveByDistanceReached() &&
-                m_rr.moveByDistanceReached();
+        return m_rf.isAtTargetDistance() &&
+                m_lf.isAtTargetDistance() &&
+                m_lr.isAtTargetDistance() &&
+                m_rr.isAtTargetDistance();
     }
 
     @Override

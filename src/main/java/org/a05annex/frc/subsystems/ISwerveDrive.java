@@ -164,9 +164,9 @@ public interface ISwerveDrive {
     /**
      * Translates the robot (moves the robot without changing heading) the specified forward and strafe
      * distance. This controls the modules using distance (i.e. moving a specified number of ticks) rather than
-     * speed because this specification of moving distance is most reliably achieved by specifying the distance,
-     * rather than speed, that the modules should move. Because this is normally called every command-cycle while
-     * during a targeting maneuver, the actual distance that is requested per cycle is
+     * speed because the specification of moving distance is more reliably achieved by specifying the distance,
+     * rather trying to control speed for the perfect time to achieve the distance. Because this is normally
+     * called every command-cycle  during a targeting maneuver, the actual distance that is requested per cycle is
      * clipped to an achievable distance inside the method.
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
@@ -174,6 +174,23 @@ public interface ISwerveDrive {
      */
     void translate(double distanceForward, double distanceStrafe);
 
+    /**
+     * This method starts a move-by-distance that translates (moves the robot without changing heading) the
+     * specified forward and strafe distance. This method should only be used in a
+     * {@link edu.wpi.first.wpilibj2.command.Command}.
+     *
+     * @param distanceForward The distance to move forward (negative is backwards) in meters.
+     * @param distanceStrafe The distance to move right (negative is left) in meters.
+     */
     void startAbsoluteTranslate(double distanceForward, double distanceStrafe);
+
+    /**
+     * This method tests whether the absolute translate is done, and should be
+     * used in an absolute move command to determine that the robot
+     * has completed the move and the command is finished.
+     *
+     * @return {@code true} if the absolute move is complete, {@code false} if it is
+     * still in progress.
+     */
     boolean isAbsoluteTranslateDone();
 }
