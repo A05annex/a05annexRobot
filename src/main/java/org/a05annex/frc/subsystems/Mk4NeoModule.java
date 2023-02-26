@@ -64,7 +64,7 @@ public class Mk4NeoModule {
      * tolerance corresponds to {@code TARGET_POSITION_TOLERANCE} / {@link #TICS_PER_METER}, or
      * .007m (0.27in)
      */
-    static final double TARGET_POSITION_TOLERANCE = 0.2;
+    static final double TARGET_POSITION_TOLERANCE = 1.5;
 
     // PID values for the spin spark motor encoder position controller PID loop
     static double SPIN_kP = 0.5;
