@@ -51,7 +51,7 @@ public class NavX {
     private int m_headingRevs = 0;
 
     /**
-     * The actual heading of the robot from -infinity to infinity, so the spins are included in this
+     * The actual heading of the robot from -&infin; to &infin;, so the spins are included in this
      * heading.
      */
     private final AngleD m_heading = new AngleD(AngleD.ZERO);
@@ -267,7 +267,9 @@ public class NavX {
     public static class HeadingInfo {
         /**
          * The current heading in radians of the robot as computed in the last call
-         * to {@link NavX#initializeHeadingAndNav()}.
+         * to {@link NavX#initializeHeadingAndNav()}. The current heading ranges from -&infin; to &infin; as the
+         * heading reflects the spins made by the robot and is a continuous function, as opposed to yaw readings
+         * which have a discontinuity at &plusmn;&pi;(&plusmn;180&deg;).
          */
         public final AngleConstantD heading;
 
@@ -296,6 +298,49 @@ public class NavX {
             this.heading = heading;
             this.expectedHeading = expectedHeading;
             this.isExpectedTrackingCurrent = isExpectedTrackingCurrent;
+        }
+
+        /**
+         * Get the down-field heading that is closest to the current heading. This is useful if you have
+         * a driving or targeting operation that requires the robot heading to stay
+         * down-field.
+         *
+         * @return The closest down-field heading.
+         */
+        @NotNull
+        AngleD getClosestDownField() {
+            return new AngleD(AngleUnit.DEGREES,360.0 * Math.round(heading.getDegrees() / 360.0));
+        }
+
+        /**
+         * Get the up-field heading that is closest to the current heading. This is useful if you have
+         * a driving or targeting operation that requires the robot heading to stay
+         * up-field.
+         *
+         * @return The closest up-field heading.
+         */
+        @NotNull
+        AngleD getClosestUpField() {
+            return new AngleD(AngleUnit.DEGREES,180.0 + (360.0 * Math.round((heading.getDegrees() - 180.0) / 360.0)));
+        }
+
+        /**
+         * Get the down-field or up-field heading that is closest to the current heading. This is useful if you have
+         * a driving mode allowing the driver to get the robot into a somewhat down-field or
+         * up-field heading and then lock opn to a directly down-field or up-field heading to
+         * thwart defense attempts to the robot while traversing the field.
+         *
+         * @return The closest down-field or up-field heading.
+         */
+        @NotNull
+        AngleD getClosestDownOrUpField() {
+            double currentHeadingDeg = heading.getDegrees();
+            int mod = (int)currentHeadingDeg % 360;
+            if ((mod > -90 && mod < 90) || (mod > 270) || (mod < -270)) {
+                // The closest direction is down-field.
+                return getClosestDownField();
+            }
+            return getClosestUpField();
         }
     }
 
