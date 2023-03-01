@@ -297,7 +297,7 @@ public class TestMk4NeoModule {
                                             double actualRadians) {
         double driveEncStartPosition = Math.random() * 1000.0; //generate an arbitrary start position
         when(dm.driveEncoder.getPosition()).thenReturn(driveEncStartPosition);
-        dm.driveModule.setDirectionAndDistance(new AngleD(AngleUnit.RADIANS, radians), deltaTics);
+        dm.driveModule.setDirectionAndDistance(new AngleD(AngleUnit.RADIANS, radians), deltaTics, 1.0);
         // Test the angle set
         verify(dm.spinPID, times(1)).setReference(
                 AdditionalMatchers.eq(actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER, .00001),

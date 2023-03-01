@@ -234,7 +234,7 @@ public class Mk4NeoModule {
      * constants for best control.
      */
     public void setSpinPID() {
-        initPID(this.directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0);
+        initPID(directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0, 1.0);
     }
 
     /**
@@ -243,25 +243,27 @@ public class Mk4NeoModule {
      * velocity control.
      */
     public void setDrivePID() {
-        initPID(this.drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE);
+        initPID(drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE, 1.0);
     }
 
     /**
      * Updates the drive CANPIDController object using the position PID values in constants file. Used when
      * tuning the PID constants for best control, or when switching from drive velocity control to drive
      * position control.
+     *
+     * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
      */
-    public void setDrivePosPID() {
-        initPID(this.drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, 0.0);
+    public void setDrivePosPID(double maxSpeed) {
+        initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, 0.0, maxSpeed);
     }
 
-    private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone) {
+    private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone, double maxSpeed) {
         pid.setFF(kFF);
         pid.setP(kP);
         pid.setI(kI);
         pid.setD(0.0);
         pid.setIZone(kIZone);
-        pid.setOutputRange(-1.0, 1.0);
+        pid.setOutputRange(-maxSpeed,maxSpeed);
     }
 
     /**
@@ -401,17 +403,17 @@ public class Mk4NeoModule {
      *                        forward velocity.
      */
     public void setDirectionAndSpeed(AngleConstantD targetDirection, double speed) {
+        if (!driveBySpeed) {
+            // going out of distance control to speed control
+            setDrivePID();
+            // now driving by speed
+            driveBySpeed = true;
+        }
 
         setDirection(targetDirection);
-
         // Compute and set the speed value
         lastSpeed = speed;
         speed *= MAX_DRIVE_RPM * speedMultiplier;
-
-        if (!driveBySpeed) {
-            setDrivePID();
-            driveBySpeed = true;
-        }
         drivePID.setReference(speed, CANSparkMax.ControlType.kVelocity);
     }
 
@@ -432,16 +434,21 @@ public class Mk4NeoModule {
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                        front of the robot, and positive is clockwise.
      * @param deltaTics       (double) The number of tics the drive motor should move.
+     * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
      */
-    public void setDirectionAndDistance(AngleD targetDirection, double deltaTics) {
-        setDirection(targetDirection);
-        double targetTics = getDriveEncoderPosition() + deltaTics * speedMultiplier;
-
+    public void setDirectionAndDistance(AngleD targetDirection, double deltaTics, double maxSpeed) {
         if (driveBySpeed) {
+            // going out of speed control to distance control
+            // reset speed to zero
             drivePID.setReference(0, CANSparkMax.ControlType.kVelocity);
-            setDrivePosPID();
+            // setup the position PID
+            setDrivePosPID(maxSpeed);
+            // now driving by distance
             driveBySpeed = false;
         }
+
+        setDirection(targetDirection);
+        double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
         drivePID.setReference(targetTics, CANSparkMax.ControlType.kPosition);
     }

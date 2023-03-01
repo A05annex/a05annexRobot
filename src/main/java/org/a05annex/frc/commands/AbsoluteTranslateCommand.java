@@ -1,7 +1,9 @@
 package org.a05annex.frc.commands;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.DriveSubsystem;
+import org.a05annex.util.AngleConstantD;
 
 /**
  * This is a command that does an absolute translate with respect to the robot, no change in heading. It can
@@ -13,6 +15,9 @@ public class AbsoluteTranslateCommand extends CommandBase {
     private final DriveSubsystem driveSubsystem = DriveSubsystem.getInstance();
     private final double distanceForward;
     private final double distanceStrafe;
+    private final double maxSpeed;
+    private final AngleConstantD expectedHeading;
+
     /**
      * Construct a command to move the robot the specified forward and strafe distances.
      *
@@ -25,6 +30,25 @@ public class AbsoluteTranslateCommand extends CommandBase {
         addRequirements(this.driveSubsystem);
         this.distanceForward = distanceForward;
         this.distanceStrafe = distanceStrafe;
+        this.maxSpeed = 1.0;
+        this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
+    }
+
+    /**
+     * Construct a command to move the robot the specified forward and strafe distances.
+     *
+     * @param distanceForward The distance to move forward (negative is backwards) in meters.
+     * @param distanceStrafe The distance to move right (negative is left) in meters.
+     * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
+     */
+    public AbsoluteTranslateCommand(double distanceForward, double distanceStrafe, double maxSpeed) {
+        // each subsystem used by the command must be passed into the
+        // addRequirements() method (which takes a vararg of Subsystem)
+        addRequirements(this.driveSubsystem);
+        this.distanceForward = distanceForward;
+        this.distanceStrafe = distanceStrafe;
+        this.maxSpeed = maxSpeed;
+        this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
     }
 
     /**
@@ -33,7 +57,7 @@ public class AbsoluteTranslateCommand extends CommandBase {
     @Override
     public void initialize() {
         // This command sets the heading and target end position of all the modules.
-        driveSubsystem.startAbsoluteTranslate(distanceForward,distanceStrafe);
+        driveSubsystem.startAbsoluteTranslate(distanceForward,distanceStrafe,maxSpeed);
     }
 
     /**
@@ -66,7 +90,7 @@ public class AbsoluteTranslateCommand extends CommandBase {
      */
     @Override
     public void end(boolean interrupted) {
-        // nothing to do here - the command is ending, it will release control of the
-        // drive subsystem, and the default drive command will probably take over.
+        // Fix the heading if there was skidding that turned the robot.
+        driveSubsystem.setHeading(expectedHeading);
     }
 }

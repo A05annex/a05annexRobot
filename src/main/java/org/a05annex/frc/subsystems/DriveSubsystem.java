@@ -474,10 +474,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         double deltaTics = new AngleD(targetHeading).subtract(m_navx.getHeading()).getRadians()
                 * DRIVE_TICS_PER_RADIAN;
 
-        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics);
-        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics);
-        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics);
-        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics);
+        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics, 1.0);
+        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics, 1.0);
+        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics, 1.0);
+        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics, 1.0);
 
         m_thisChassisForward = 0.0;
         m_thisChassisStrafe = 0.0;
@@ -492,9 +492,9 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
             distanceForward *= scale;
             distanceStrafe *= scale;
         }
-        startAbsoluteTranslate(distanceForward,distanceStrafe);
+        startAbsoluteTranslate(distanceForward,distanceStrafe, 1.0);
     }
-    public void startAbsoluteTranslate(double distanceForward, double distanceStrafe) {
+    public void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed) {
         testGeometryIsSet();
 
         m_RF_lastRadians.atan2(distanceStrafe, distanceForward);
@@ -504,10 +504,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
         double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
 
-        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics);
-        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics);
-        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics);
-        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics);
+        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics, 1.0);
+        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics, 1.0);
+        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics, 1.0);
+        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics, 1.0);
 
         // TODO - sort out telemetry for this ......
         m_thisChassisForward = 0.0;

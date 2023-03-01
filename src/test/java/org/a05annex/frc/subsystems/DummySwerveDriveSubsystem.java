@@ -162,10 +162,10 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
-    public void startAbsoluteTranslate(double distanceForward, double distanceStrafe) {
+    public void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed) {
         testGeometryIsSet();
-        System.out.printf("translate:   forward=%7.3f; strafe=%7.3f%n", distanceForward,
-                distanceStrafe);
+        System.out.printf("translate:   forward=%7.3f; strafe=%7.3f; speed=%7f%n", distanceForward,
+                distanceStrafe, maxSpeed);
 
     }
 

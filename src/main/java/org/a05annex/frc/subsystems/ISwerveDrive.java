@@ -181,8 +181,9 @@ public interface ISwerveDrive {
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
+     * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
      */
-    void startAbsoluteTranslate(double distanceForward, double distanceStrafe);
+    void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed);
 
     /**
      * This method tests whether the absolute translate is done, and should be
