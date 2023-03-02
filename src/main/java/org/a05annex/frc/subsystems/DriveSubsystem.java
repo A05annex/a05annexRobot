@@ -504,10 +504,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
         double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
 
-        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics, 1.0);
-        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics, 1.0);
-        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics, 1.0);
-        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics, 1.0);
+        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics, maxSpeed);
+        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics, maxSpeed);
+        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics, maxSpeed);
+        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics, maxSpeed);
 
         // TODO - sort out telemetry for this ......
         m_thisChassisForward = 0.0;
