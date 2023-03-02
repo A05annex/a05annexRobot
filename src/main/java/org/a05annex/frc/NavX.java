@@ -228,11 +228,11 @@ public class NavX {
             return null;
         }
         double updateCt = m_ahrs.getUpdateCount();
-        if (updateCt <= m_updateCt) {
-            // there is a problem communication with the NavX - the results we would get from NavX queries
-            // are unreliable.
-            return null;
-        }
+//        if (updateCt <= m_updateCt) {
+//            // there is a problem communication with the NavX - the results we would get from NavX queries
+//            // are unreliable.
+//            return null;
+//        }
         m_updateCt = updateCt;
         return new HeadingInfo(m_heading, m_expectedHeading, m_setExpectedToCurrent);
     }
@@ -308,7 +308,7 @@ public class NavX {
          * @return The closest down-field heading.
          */
         @NotNull
-        AngleD getClosestDownField() {
+         public AngleD getClosestDownField() {
             return new AngleD(AngleUnit.DEGREES,360.0 * Math.round(heading.getDegrees() / 360.0));
         }
 
@@ -320,7 +320,7 @@ public class NavX {
          * @return The closest up-field heading.
          */
         @NotNull
-        AngleD getClosestUpField() {
+        public AngleD getClosestUpField() {
             return new AngleD(AngleUnit.DEGREES,180.0 + (360.0 * Math.round((heading.getDegrees() - 180.0) / 360.0)));
         }
 
@@ -333,7 +333,7 @@ public class NavX {
          * @return The closest down-field or up-field heading.
          */
         @NotNull
-        AngleD getClosestDownOrUpField() {
+        public AngleD getClosestDownOrUpField() {
             double currentHeadingDeg = heading.getDegrees();
             int mod = (int)currentHeadingDeg % 360;
             if ((mod > -90 && mod < 90) || (mod > 270) || (mod < -270)) {
