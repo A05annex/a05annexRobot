@@ -276,6 +276,7 @@ public class TestMk4NeoModule {
         verify(dm.spinPID, times(2)).setReference(0.0, CANSparkMax.ControlType.kPosition);
         verify(dm.drivePID, times(2)).setReference(Mk4NeoModule.MAX_DRIVE_RPM,
                 CANSparkMax.ControlType.kVelocity);
+        assertEquals(CANSparkMax.ControlType.kVelocity, dm.driveModule.getSparkControlType());
         // Go backwards (180 degrees) 2 steps - should be no spin and negative speed
         reset(dm.spinPID, dm.drivePID);
         dm.driveModule.setDirectionAndSpeed(new AngleD(AngleUnit.RADIANS, Math.PI), 1.0);
@@ -297,14 +298,16 @@ public class TestMk4NeoModule {
                                             double actualRadians) {
         double driveEncStartPosition = Math.random() * 1000.0; //generate an arbitrary start position
         when(dm.driveEncoder.getPosition()).thenReturn(driveEncStartPosition);
+        // call the method being tested
         dm.driveModule.setDirectionAndDistance(new AngleD(AngleUnit.RADIANS, radians), deltaTics, 1.0);
-        // Test the angle set
+        // Verify the direction of the wheel was correctly set (set to the spin PID)
         verify(dm.spinPID, times(1)).setReference(
                 AdditionalMatchers.eq(actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER, .00001),
                 ArgumentMatchers.eq(CANSparkMax.ControlType.kPosition));
-        // test the last call to setReference is for the correct target position, and is asking for position
+        // test the last call to drive PID setReference is for the correct target position, and is asking for position
         // (not speed).
         verify(dm.drivePID).setReference(driveEncStartPosition + deltaTics, CANSparkMax.ControlType.kPosition);
+        assertEquals(CANSparkMax.ControlType.kPosition, dm.driveModule.getSparkControlType());
         // make encoder readings slightly different from what was actually set so that when we get these
         // things we know we are really getting them from the encoder.
         double spinEncPosition = (actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER) + .001;
@@ -313,17 +316,52 @@ public class TestMk4NeoModule {
 
         assertEquals(spinEncPosition, dm.driveModule.getDirectionPosition());
         assertEquals(driveEncStartPosition + deltaTics, dm.driveModule.getDriveEncoderPosition());
-        //        assertEquals(driveEncVelocity, dm.driveModule.getDriveEncoderVelocity());
     }
 
     /**
-     * Test a basic targeting spin.
+     * Test the setDirectionAndDistance(AngleD targetDirection, double deltaTics, double maxSpeed) method
      */
     @Test
-    @DisplayName("Test setDirectionAndDistance(Math.toRadians(10.0),10.0)")
+    @DisplayName("Test setDirectionAndDistance(Math.toRadians(10.0),20.0)")
     void test_set_direction_distance_10_20() {
         // Should spin positively
         InitializedMk4NeoModule dm = new InitializedMk4NeoModule();
-        verifyDirectionAndDistance(dm, Math.toRadians(10.0), 10.0, Math.toRadians(10.0));
+        verifyDirectionAndDistance(dm, Math.toRadians(10.0), 20.0, Math.toRadians(10.0));
+    }
+    private void verifyDirectionAndSmartMotionDistance(InitializedMk4NeoModule dm, double radians, double deltaTics,
+                                                       double maxSpeed, double maxAccel,
+                                                       double actualRadians) {
+        double driveEncStartPosition = Math.random() * 1000.0; //generate an arbitrary start position
+        when(dm.driveEncoder.getPosition()).thenReturn(driveEncStartPosition);
+        // call the method being tested
+        dm.driveModule.setDirectionAndSmartMotionDistance(new AngleD(AngleUnit.RADIANS, radians), deltaTics,
+                maxSpeed, maxAccel);
+        // Verify the direction of the wheel was correctly set (set to the spin PID)
+        verify(dm.spinPID, times(1)).setReference(
+                AdditionalMatchers.eq(actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER, .00001),
+                ArgumentMatchers.eq(CANSparkMax.ControlType.kPosition));
+        // test the last call to drive PID setReference is for the correct target position, and is asking for position
+        // (not speed).
+        verify(dm.drivePID).setReference(driveEncStartPosition + deltaTics, CANSparkMax.ControlType.kSmartMotion);
+        assertEquals(CANSparkMax.ControlType.kSmartMotion, dm.driveModule.getSparkControlType());
+        // make encoder readings slightly different from what was actually set so that when we get these
+        // things we know we are really getting them from the encoder.
+        double spinEncPosition = (actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER) + .001;
+        when(dm.spinEncoder.getPosition()).thenReturn(spinEncPosition);
+        when(dm.driveEncoder.getPosition()).thenReturn(driveEncStartPosition + deltaTics);
+
+        assertEquals(spinEncPosition, dm.driveModule.getDirectionPosition());
+        assertEquals(driveEncStartPosition + deltaTics, dm.driveModule.getDriveEncoderPosition());
+    }
+    /**
+     * Test the setDirectionAndDistance(AngleD targetDirection, double deltaTics, double maxSpeed) method
+     */
+    @Test
+    @DisplayName("Test setDirectionAndSmartMotionDistance(Math.toRadians(10.0),20.0,5000.0,600000.0)")
+    void test_set_direction_smart_motion_distance_10_20() {
+        // Should spin positively
+        InitializedMk4NeoModule dm = new InitializedMk4NeoModule();
+        verifyDirectionAndSmartMotionDistance(dm, Math.toRadians(10.0), 20.0,
+                5000.0, 600000.0, Math.toRadians(10.0));
     }
 }

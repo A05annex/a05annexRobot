@@ -186,6 +186,26 @@ public interface ISwerveDrive {
     void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed);
 
     /**
+     * This method starts a REV Spark smart move-by-distance that translates (moves the robot without changing
+     * heading) the specified forward and strafe distance. This method should only be used in a
+     * {@link edu.wpi.first.wpilibj2.command.Command}.
+     *
+     * @param distanceForward The distance to move forward (negative is backwards) in meters.
+     * @param distanceStrafe The distance to move right (negative is left) in meters.
+     * @param maxSpeed        (double) This is a REV Spark smart motion max RPM (which we have previously set with
+     *                        {@link Mk4NeoModule#MAX_DRIVE_RPM}, so if you specify 0.0, we will use
+     *                        {@link Mk4NeoModule#MAX_DRIVE_RPM}. TODO: let this be specified 0.0 to 1.0 where
+     *                        0.0 is stopped and 1.0 is the maximum robot speed.
+     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM^2 which seems like an odd choice of
+     *                        units. If we use the default max acceleration limit for driver control the robot gets
+     *                        to maximum speed in about .25sec (0 to 5000 RPM in .25sec) which works out to
+     *                        1,200,000RPM^2. TODO: Let this be specified in something more meaningful like
+     *                        seconds to max speed
+     */
+    void startAbsoluteSmartTranslate(double distanceForward, double distanceStrafe,
+                                     double maxSpeed, double maxAcceleration);
+
+    /**
      * This method tests whether the absolute translate is done, and should be
      * used in an absolute move command to determine that the robot
      * has completed the move and the command is finished.

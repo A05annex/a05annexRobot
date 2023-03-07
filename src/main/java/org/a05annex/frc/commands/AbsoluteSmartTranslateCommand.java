@@ -11,11 +11,12 @@ import org.a05annex.util.AngleConstantD;
  * <i>april tag</i>. The absolute translation is expressed as meters forward and left strafe of the and
  * is set in the constructor.
  */
-public class AbsoluteTranslateCommand extends CommandBase {
+public class AbsoluteSmartTranslateCommand extends CommandBase {
     private final DriveSubsystem driveSubsystem = DriveSubsystem.getInstance();
     private final double distanceForward;
     private final double distanceStrafe;
     private final double maxSpeed;
+    private final double maxAcceleration;
     private final AngleConstantD expectedHeading;
 
     /**
@@ -24,13 +25,14 @@ public class AbsoluteTranslateCommand extends CommandBase {
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
      */
-    public AbsoluteTranslateCommand(double distanceForward, double distanceStrafe) {
+    public AbsoluteSmartTranslateCommand(double distanceForward, double distanceStrafe) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements(this.driveSubsystem);
         this.distanceForward = distanceForward;
         this.distanceStrafe = distanceStrafe;
-        this.maxSpeed = 1.0;
+        this.maxSpeed = 5000.0;
+        this.maxAcceleration = 600000.0;
         this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
     }
 
@@ -39,15 +41,18 @@ public class AbsoluteTranslateCommand extends CommandBase {
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
-     * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
+     * @param maxSpeed The maximum rpm 0.0 to 5000.0
+     * @param maxAcceleration The maximum rpm^2 0.0 to 1200000.0
      */
-    public AbsoluteTranslateCommand(double distanceForward, double distanceStrafe, double maxSpeed) {
+    public AbsoluteSmartTranslateCommand(double distanceForward, double distanceStrafe,
+                                         double maxSpeed, double maxAcceleration) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements(this.driveSubsystem);
         this.distanceForward = distanceForward;
         this.distanceStrafe = distanceStrafe;
         this.maxSpeed = maxSpeed;
+        this.maxAcceleration = maxAcceleration;
         this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
     }
 
@@ -57,7 +62,8 @@ public class AbsoluteTranslateCommand extends CommandBase {
     @Override
     public void initialize() {
         // This command sets the heading and target end position of all the modules.
-        driveSubsystem.startAbsoluteTranslate(distanceForward,distanceStrafe,maxSpeed);
+        driveSubsystem.startAbsoluteSmartTranslate(distanceForward,distanceStrafe,
+                maxSpeed, maxAcceleration);
     }
 
     /**
@@ -95,10 +101,10 @@ public class AbsoluteTranslateCommand extends CommandBase {
         System.out.println("***********************************************************************");
         System.out.println("***********************************************************************");
         if (interrupted) {
-            System.out.println("**** AbsoluteTranslateCommand was interrupted                     ****");
+            System.out.println("**** AbsoluteSmartTranslateCommand was interrupted                ****");
         } else {
-            System.out.println("**** AbsoluteTranslateCommand reached target                      ****");
-        }
+            System.out.println("**** AbsoluteSmartTranslateCommand reached target                 ****");
+         }
         System.out.println("***********************************************************************");
         System.out.println("***********************************************************************");
     }

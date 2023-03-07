@@ -47,10 +47,10 @@ public class Mk4NeoModule {
      * However, we will express this using the calculation in the event we change {@link #MAX_DRIVE_RPM}
      *
      */
-    public static final double MAX_METERS_PER_SEC = (MAX_DRIVE_RPM / 5676) * 3.222;
+    public static final double MAX_METERS_PER_SEC = (MAX_DRIVE_RPM / 5676) * 3.6576;
     /**
      * The empirically measured encoder tics per meter of travel. Note that this is probably dependent on wheel wear,
-     * game surface, and other variables - so this is just an approximate value. Emperically measured by Ethan Ready
+     * game surface, and other variables - so this is just an approximate value. Empirically measured by Ethan Ready
      * using the practice robot on a concrete floor 21-jan-2023.
      */
     public static final double TICS_PER_METER = 28.3;
@@ -127,17 +127,19 @@ public class Mk4NeoModule {
     private double lastSpeed = 0.0;
 
     /**
-     * Whether the last command was drive by speed, {@code true}, or drive by distance, {@code false}.
+     * The control mode that is currently active.
      */
-    private boolean driveBySpeed = true;
+    private CANSparkMax.ControlType driveMode = CANSparkMax.ControlType.kVelocity;
 
     /**
-     * The target position if {@link #driveBySpeed} {@code == false}.
+     * The target position if {@link #driveMode}{@code  != }{@link CANSparkMax.ControlType#kVelocity}.
      */
     private double targetPosition;
 
     /**
-     * * The factory that creates the DriveModule given the
+     * The factory that creates the DriveModule given the physical component software objects. This factory exists
+     * so that we can pass in mock object for testing code without the presence of physical hardware to run the
+     * tests on.
      *
      * @param swerveDrivePosition (string, not null) The named position of this module in the swerve drive for error
      *                            messaging.
@@ -244,6 +246,7 @@ public class Mk4NeoModule {
      */
     public void setDrivePID() {
         initPID(drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE, 1.0);
+        driveMode = CANSparkMax.ControlType.kVelocity;
     }
 
     /**
@@ -255,6 +258,7 @@ public class Mk4NeoModule {
      */
     public void setDrivePosPID(double maxSpeed) {
         initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, 0.0, maxSpeed);
+        driveMode = CANSparkMax.ControlType.kPosition;
     }
 
     private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone, double maxSpeed) {
@@ -266,6 +270,9 @@ public class Mk4NeoModule {
         pid.setOutputRange(-maxSpeed,maxSpeed);
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // Methods to question the module about its state and what its doing.
+    // -----------------------------------------------------------------------------------------------------------------
     /**
      * Returns the drive motor velocity (RPM) as read from the encoder
      *
@@ -282,6 +289,15 @@ public class Mk4NeoModule {
      */
     public double getDriveEncoderPosition() {
         return driveEncoder.getPosition();
+    }
+
+    /**
+     * Returns the drive motor control mode that is currently active.
+     *
+     * @return The drive motor control mode that is currently active.
+     */
+    public CANSparkMax.ControlType getSparkControlType() {
+        return driveMode;
     }
 
     /**
@@ -331,6 +347,9 @@ public class Mk4NeoModule {
         return lastDirection;
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // Methods to tell the module to do something
+    // -----------------------------------------------------------------------------------------------------------------
     /**
      * Set the NEO direction encoder value using the absolute direction encoder, so that forward is an encoder
      * reading of 0 tics.
@@ -403,27 +422,24 @@ public class Mk4NeoModule {
      *                        forward velocity.
      */
     public void setDirectionAndSpeed(AngleConstantD targetDirection, double speed) {
-        if (!driveBySpeed) {
-            // going out of distance control to speed control
+        if (driveMode != CANSparkMax.ControlType.kVelocity) {
+            // going out of something other than speed control to speed control
             setDrivePID();
-            // now driving by speed
-            driveBySpeed = true;
         }
-
         setDirection(targetDirection);
         // Compute and set the speed value
         lastSpeed = speed;
         speed *= MAX_DRIVE_RPM * speedMultiplier;
-        drivePID.setReference(speed, CANSparkMax.ControlType.kVelocity);
+        drivePID.setReference(speed, driveMode);
     }
 
     /**
      * <p>
-     * Set the direction and distance in encoder tics that the module should move. We use this for targeting when
-     * we are trying to get very fast response and a very solid lock on the target either
+     * Set the direction and distance in encoder tics that the module should move. We use this for
+     * targeting when we are trying to get very fast response and a very solid lock on the target either
      * by robot rotation (aiming) or translation (positioning). The key here is that we have
      * a targeting error that we can approximately convert to heading or position correction,
-     * and we are using this approximation to specify they next move that gets us to target.
+     * and we are using this approximation to specify the next move that gets us to target.
      * target.
      * </p><p>
      * This starts a move that may take multiple command cycles to achieve. Calling
@@ -437,20 +453,66 @@ public class Mk4NeoModule {
      * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
      */
     public void setDirectionAndDistance(AngleD targetDirection, double deltaTics, double maxSpeed) {
-        if (driveBySpeed) {
-            // going out of speed control to distance control
+        if (driveMode != CANSparkMax.ControlType.kPosition) {
+            // going out of something other than distance control to distance control
             // reset speed to zero
-            drivePID.setReference(0, CANSparkMax.ControlType.kVelocity);
+            drivePID.setReference(0.0, CANSparkMax.ControlType.kVelocity);
             // setup the position PID
             setDrivePosPID(maxSpeed);
-            // now driving by distance
-            driveBySpeed = false;
         }
-
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
-        drivePID.setReference(targetTics, CANSparkMax.ControlType.kPosition);
+        drivePID.setReference(targetTics, driveMode);
+    }
+
+    /**
+     * <p>
+     * Set the direction and distance in encoder tics that the module should move. We use this for
+     * targeting when we are trying to get very fast response and a very solid lock on the target either
+     * by robot rotation (aiming) or translation (positioning). The key here is that we have
+     * a targeting error that we can approximately convert to heading or position correction,
+     * and we are using this approximation to specify the next move that gets us to target.
+     * target.
+     * </p><p>
+     * This starts a move that may take multiple command cycles to achieve. Calling
+     * this method again before the move is complete resets the target position. Calling
+     * {@link #setDirectionAndSpeed(AngleConstantD, double)} cancels a move to position.
+     * </p>
+     *
+     * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
+     *                        front of the robot, and positive is clockwise.
+     * @param deltaTics       (double) The number of tics the drive motor should move.
+     * @param maxSpeed        (double) This is a REV Spark smart motion max RPM (which we have previously set with
+     *                        {@link #MAX_DRIVE_RPM}, so if you specify 0.0, we will use {@link #MAX_DRIVE_RPM}
+     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM^2 which seems like an odd choice of
+     *                        units. If we use the default max acceleration limit for driver control the robot gets
+     *                        to maximum speed in about .25sec (0 to 5000 RPM in .25sec) which works out to
+     *                        1,200,000RPM^2.
+     */
+    public void setDirectionAndSmartMotionDistance(AngleD targetDirection, double deltaTics,
+                                                   double maxSpeed, double maxAcceleration) {
+        if (driveMode != CANSparkMax.ControlType.kSmartMotion) {
+            // going out of something other than smart motion control to smart motion control
+            // reset speed to zero
+            drivePID.setReference(0.0, CANSparkMax.ControlType.kVelocity);
+            // And as far as I can tell from the documentation, this mode uses a max acceleration/deceleration
+            // and max speed to control the motion until close to the target, then uses a position PID to lock
+            // the position. So we are using the position PID, and a bunch of smart motion constraints.
+            // Set up the position PID
+            setDrivePosPID(1.0);
+            // now set up the smart motion constraints:
+            drivePID.setSmartMotionAccelStrategy(SparkMaxPIDController.AccelStrategy.kTrapezoidal, 0);
+            drivePID.setSmartMotionMaxVelocity(0.0 == maxSpeed ? MAX_DRIVE_RPM : maxSpeed, 0);
+            drivePID.setSmartMotionMaxAccel(maxAcceleration, 0);
+            drivePID.setSmartMotionMinOutputVelocity(0.0, 0);
+            drivePID.setSmartMotionAllowedClosedLoopError(TARGET_POSITION_TOLERANCE, 0);
+            driveMode = CANSparkMax.ControlType.kSmartMotion;
+        }
+        setDirection(targetDirection);
+        double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
+        targetPosition = targetTics;
+        drivePID.setReference(targetTics, driveMode);
     }
 
     /**
@@ -463,7 +525,7 @@ public class Mk4NeoModule {
         double currentPosition = getDriveEncoderPosition();
         // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
-        return driveBySpeed ||
+        return (driveMode != CANSparkMax.ControlType.kVelocity) ||
                 ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE) &&
                         (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE));
     }

@@ -492,8 +492,9 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
             distanceForward *= scale;
             distanceStrafe *= scale;
         }
-        startAbsoluteTranslate(distanceForward,distanceStrafe, 1.0);
+        startAbsoluteTranslate(distanceForward, distanceStrafe, 1.0);
     }
+    @Override
     public void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed) {
         testGeometryIsSet();
 
@@ -514,6 +515,30 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         m_thisChassisStrafe = 0.0;
 
     }
+    @Override
+    public void startAbsoluteSmartTranslate(double distanceForward, double distanceStrafe,
+                                            double maxSpeed, double maxAcceleration) {
+        testGeometryIsSet();
+
+        m_RF_lastRadians.atan2(distanceStrafe, distanceForward);
+        m_LF_lastRadians.atan2(distanceStrafe, distanceForward);
+        m_LR_lastRadians.atan2(distanceStrafe, distanceForward);
+        m_RR_lastRadians.atan2(distanceStrafe, distanceForward);
+
+        double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
+
+        m_rf.setDirectionAndSmartMotionDistance(m_RF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        m_lf.setDirectionAndSmartMotionDistance(m_LF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        m_lr.setDirectionAndSmartMotionDistance(m_LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        m_rr.setDirectionAndSmartMotionDistance(m_RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+
+        // TODO - sort out telemetry for this ......
+        m_thisChassisForward = 0.0;
+        m_thisChassisStrafe = 0.0;
+
+    }
+
+    @Override
     public boolean isAbsoluteTranslateDone() {
         return m_rf.isAtTargetDistance() &&
                 m_lf.isAtTargetDistance() &&
