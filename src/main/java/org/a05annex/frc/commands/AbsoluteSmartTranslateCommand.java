@@ -31,8 +31,8 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
         addRequirements(this.driveSubsystem);
         this.distanceForward = distanceForward;
         this.distanceStrafe = distanceStrafe;
-        this.maxSpeed = 5000.0;
-        this.maxAcceleration = 600000.0;
+        this.maxSpeed = 1.0;
+        this.maxAcceleration = 10000.0;
         this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
     }
 
@@ -41,8 +41,9 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
-     * @param maxSpeed The maximum rpm 0.0 to 5000.0
-     * @param maxAcceleration The maximum rpm^2 0.0 to 1200000.0
+     * @param maxSpeed        (double) This is the speed mapped to the range 0.0 to 1.0.
+     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM/sec -- so, 10000 gets the
+     *                        robot to max speed in about .5 seconds.
      */
     public AbsoluteSmartTranslateCommand(double distanceForward, double distanceStrafe,
                                          double maxSpeed, double maxAcceleration) {

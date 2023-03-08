@@ -192,15 +192,9 @@ public interface ISwerveDrive {
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
-     * @param maxSpeed        (double) This is a REV Spark smart motion max RPM (which we have previously set with
-     *                        {@link Mk4NeoModule#MAX_DRIVE_RPM}, so if you specify 0.0, we will use
-     *                        {@link Mk4NeoModule#MAX_DRIVE_RPM}. TODO: let this be specified 0.0 to 1.0 where
-     *                        0.0 is stopped and 1.0 is the maximum robot speed.
-     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM^2 which seems like an odd choice of
-     *                        units. If we use the default max acceleration limit for driver control the robot gets
-     *                        to maximum speed in about .25sec (0 to 5000 RPM in .25sec) which works out to
-     *                        1,200,000RPM^2. TODO: Let this be specified in something more meaningful like
-     *                        seconds to max speed
+     * @param maxSpeed        (double) This is the speed mapped to the range 0.0 to 1.0.
+     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM/sec -- so, 10000 gets the
+     *                        robot to max speed in about .5 seconds.
      */
     void startAbsoluteSmartTranslate(double distanceForward, double distanceStrafe,
                                      double maxSpeed, double maxAcceleration);

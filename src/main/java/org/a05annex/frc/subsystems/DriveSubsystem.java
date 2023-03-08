@@ -236,17 +236,6 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     /**
-     *
-     */
-    @SuppressWarnings("unused")
-    public void resetDrivePID() {
-        m_rf.setDrivePID();
-        m_rr.setDrivePID();
-        m_lf.setDrivePID();
-        m_lr.setDrivePID();
-    }
-
-    /**
      * Print all module angles to SmartDashboard. Should be called in DriveSubsystem periodic if used.
      */
     public void printAllAngles() {

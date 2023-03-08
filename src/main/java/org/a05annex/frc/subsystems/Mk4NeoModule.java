@@ -64,7 +64,7 @@ public class Mk4NeoModule {
      * tolerance corresponds to {@code TARGET_POSITION_TOLERANCE} / {@link #TICS_PER_METER}, or
      * .007m (0.27in)
      */
-    static final double TARGET_POSITION_TOLERANCE = 1.5;
+    static final double TARGET_POSITION_TOLERANCE = 0.2;
 
     // PID values for the spin spark motor encoder position controller PID loop
     static double SPIN_kP = 0.5;
@@ -80,6 +80,11 @@ public class Mk4NeoModule {
     static double DRIVE_POS_kP = 0.13;
     static double DRIVE_POS_kI = 0.0;
 
+    // PID values for the drive spark motor controller smart motion PID loop
+    static double SMART_MOTION_kP = 0.00005;
+    static double SMART_MOTION_kI = 0.000002;
+    static double SMART_MOTION_kFF = 0.000174;
+    static double SMART_MOTION_IZONE = 0.0;
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical hardware
     // -----------------------------------------------------------------------------------------------------------------
@@ -235,7 +240,7 @@ public class Mk4NeoModule {
      * Updates the spin CANPIDController object using values in constants file. Used only when tuning the PID
      * constants for best control.
      */
-    public void setSpinPID() {
+    void setSpinPID() {
         initPID(directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0, 1.0);
     }
 
@@ -244,7 +249,7 @@ public class Mk4NeoModule {
      * tuning the PID constants for best control, or when switching from drive position control to drive
      * velocity control.
      */
-    public void setDrivePID() {
+    void setDrivePID() {
         initPID(drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE, 1.0);
         driveMode = CANSparkMax.ControlType.kVelocity;
     }
@@ -256,9 +261,16 @@ public class Mk4NeoModule {
      *
      * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
      */
-    public void setDrivePosPID(double maxSpeed) {
+    void setDrivePosPID(double maxSpeed) {
         initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, 0.0, maxSpeed);
         driveMode = CANSparkMax.ControlType.kPosition;
+    }
+
+    void setSmartMotionPID() {
+        initPID(drivePID, SMART_MOTION_kFF, SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE, 1.0);
+        drivePID.setSmartMotionMinOutputVelocity(0.0, 0);
+        drivePID.setSmartMotionAllowedClosedLoopError(TARGET_POSITION_TOLERANCE, 0);
+        driveMode = CANSparkMax.ControlType.kSmartMotion;
     }
 
     private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone, double maxSpeed) {
@@ -483,12 +495,9 @@ public class Mk4NeoModule {
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                        front of the robot, and positive is clockwise.
      * @param deltaTics       (double) The number of tics the drive motor should move.
-     * @param maxSpeed        (double) This is a REV Spark smart motion max RPM (which we have previously set with
-     *                        {@link #MAX_DRIVE_RPM}, so if you specify 0.0, we will use {@link #MAX_DRIVE_RPM}
-     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM^2 which seems like an odd choice of
-     *                        units. If we use the default max acceleration limit for driver control the robot gets
-     *                        to maximum speed in about .25sec (0 to 5000 RPM in .25sec) which works out to
-     *                        1,200,000RPM^2.
+     * @param maxSpeed        (double) This is the speed mapped to the range 0.0 to 1.0.
+     * @param maxAcceleration (double) This is a REV Spark smart motion max RPM/sec -- so, 10000 gets the
+     *                        robot to max speed in about .5 seconds.
      */
     public void setDirectionAndSmartMotionDistance(AngleD targetDirection, double deltaTics,
                                                    double maxSpeed, double maxAcceleration) {
@@ -499,15 +508,11 @@ public class Mk4NeoModule {
             // And as far as I can tell from the documentation, this mode uses a max acceleration/deceleration
             // and max speed to control the motion until close to the target, then uses a position PID to lock
             // the position. So we are using the position PID, and a bunch of smart motion constraints.
-            // Set up the position PID
-            setDrivePosPID(1.0);
-            // now set up the smart motion constraints:
-            drivePID.setSmartMotionAccelStrategy(SparkMaxPIDController.AccelStrategy.kTrapezoidal, 0);
-            drivePID.setSmartMotionMaxVelocity(0.0 == maxSpeed ? MAX_DRIVE_RPM : maxSpeed, 0);
+            // Set up the position PID.
+            setSmartMotionPID();
+            // now set up the smart motion speed and acceleration constaints
+            drivePID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, 0);
             drivePID.setSmartMotionMaxAccel(maxAcceleration, 0);
-            drivePID.setSmartMotionMinOutputVelocity(0.0, 0);
-            drivePID.setSmartMotionAllowedClosedLoopError(TARGET_POSITION_TOLERANCE, 0);
-            driveMode = CANSparkMax.ControlType.kSmartMotion;
         }
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
