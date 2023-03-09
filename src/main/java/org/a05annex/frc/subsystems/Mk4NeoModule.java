@@ -78,11 +78,12 @@ public class Mk4NeoModule {
 
     // PID values for the drive spark motor controller position PID loop
     static double DRIVE_POS_kP = 0.13;
-    static double DRIVE_POS_kI = 0.0;
+    static double DRIVE_POS_kI = 0.0002;
+    static double DRIVE_POS_IZONE = 2.0;
 
     // PID values for the drive spark motor controller smart motion PID loop
     static double SMART_MOTION_kP = 0.00005;
-    static double SMART_MOTION_kI = 0.000002;
+    static double SMART_MOTION_kI = 0.00000;
     static double SMART_MOTION_kFF = 0.000174;
     static double SMART_MOTION_IZONE = 0.0;
     // -----------------------------------------------------------------------------------------------------------------
@@ -262,7 +263,7 @@ public class Mk4NeoModule {
      * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
      */
     void setDrivePosPID(double maxSpeed) {
-        initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, 0.0, maxSpeed);
+        initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, DRIVE_POS_IZONE, maxSpeed);
         driveMode = CANSparkMax.ControlType.kPosition;
     }
 
@@ -510,7 +511,7 @@ public class Mk4NeoModule {
             // the position. So we are using the position PID, and a bunch of smart motion constraints.
             // Set up the position PID.
             setSmartMotionPID();
-            // now set up the smart motion speed and acceleration constaints
+            // now set up the smart motion speed and acceleration constants
             drivePID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, 0);
             drivePID.setSmartMotionMaxAccel(maxAcceleration, 0);
         }
@@ -530,7 +531,7 @@ public class Mk4NeoModule {
         double currentPosition = getDriveEncoderPosition();
         // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
-        return (driveMode != CANSparkMax.ControlType.kVelocity) ||
+        return (driveMode == CANSparkMax.ControlType.kVelocity) ||
                 ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE) &&
                         (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE));
     }
