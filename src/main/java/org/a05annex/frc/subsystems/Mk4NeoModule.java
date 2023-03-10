@@ -49,9 +49,14 @@ public class Mk4NeoModule {
      */
     public static final double MAX_METERS_PER_SEC = (MAX_DRIVE_RPM / 5676) * 3.6576;
     /**
-     * The empirically measured encoder tics per meter of travel. Note that this is probably dependent on wheel wear,
-     * game surface, and other variables - so this is just an approximate value. Empirically measured by Ethan Ready
-     * using the practice robot on a concrete floor 21-jan-2023.
+     * The empirically measured drive motor position change per meter of travel. The constant name
+     * {@code TICS_PER_METER} is in reference to motor position encoder tics, however in the REV Neo motors on
+     * the REV Spark controller with the current REV drivers, the encoder tics are converted to revolutions, so
+     * this is actually drive motor revolutions per meter of travel.
+     * <p>
+     * This value is probably changes with wheel wear, game surface, and other variables - so this is just
+     * an approximate value. Empirically measured by Ethan Ready using the practice robot on a concrete
+     * floor 21-jan-2023.
      */
     public static final double TICS_PER_METER = 28.3;
     /**

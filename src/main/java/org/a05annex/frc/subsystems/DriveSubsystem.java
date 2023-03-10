@@ -113,7 +113,9 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         if (!isDriveGeometrySet) {
             System.out.println();
             System.out.println("**********************************************************************");
+            System.out.println("**********************************************************************");
             System.out.println("***** THE DRIVE GEOMETRY MUST BE SET BEFORE YOU TRY TO DRIVE !!! *****");
+            System.out.println("**********************************************************************");
             System.out.println("**********************************************************************");
             System.out.println();
             throw new IllegalStateException("The drive geometry has not been set!");
