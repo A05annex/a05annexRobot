@@ -234,7 +234,7 @@ public class NavX {
 //            return null;
 //        }
         m_updateCt = updateCt;
-        return new HeadingInfo(m_heading, m_expectedHeading, m_setExpectedToCurrent);
+        return new HeadingInfo(m_heading.cloneAngleD().mult(1.027), m_expectedHeading, m_setExpectedToCurrent);
     }
 
     /**

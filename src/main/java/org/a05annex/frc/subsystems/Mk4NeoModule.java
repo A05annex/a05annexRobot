@@ -58,7 +58,7 @@ public class Mk4NeoModule {
      * an approximate value. Empirically measured by Ethan Ready using the practice robot on a concrete
      * floor 21-jan-2023.
      */
-    public static final double TICS_PER_METER = 28.3;
+    public static final double TICS_PER_METER = 26.571;
     /**
      * Based on telemetry feedback, 1 wheel direction revolution maps to 12.7999 spin encoder revolutions
      */
@@ -88,9 +88,9 @@ public class Mk4NeoModule {
 
     // PID values for the drive spark motor controller smart motion PID loop
     static double SMART_MOTION_kP = 0.00005;
-    static double SMART_MOTION_kI = 0.00000;
+    static double SMART_MOTION_kI = 0.0000001;
     static double SMART_MOTION_kFF = 0.000174;
-    static double SMART_MOTION_IZONE = 0.0;
+    static double SMART_MOTION_IZONE = 0.75;
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical hardware
     // -----------------------------------------------------------------------------------------------------------------
@@ -478,6 +478,8 @@ public class Mk4NeoModule {
             // setup the position PID
             setDrivePosPID(maxSpeed);
         }
+        drivePID.setOutputRange(-maxSpeed, maxSpeed);
+
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
@@ -516,10 +518,11 @@ public class Mk4NeoModule {
             // the position. So we are using the position PID, and a bunch of smart motion constraints.
             // Set up the position PID.
             setSmartMotionPID();
-            // now set up the smart motion speed and acceleration constants
-            drivePID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, 0);
-            drivePID.setSmartMotionMaxAccel(maxAcceleration, 0);
         }
+
+        // now set up the smart motion speed and acceleration constants
+        drivePID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, 0);
+        drivePID.setSmartMotionMaxAccel(maxAcceleration, 0);
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
@@ -537,7 +540,7 @@ public class Mk4NeoModule {
         // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
         return (driveMode == CANSparkMax.ControlType.kVelocity) ||
-                ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE) &&
-                        (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE));
+                ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE * 2) &&
+                        (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE * 2));
     }
 }

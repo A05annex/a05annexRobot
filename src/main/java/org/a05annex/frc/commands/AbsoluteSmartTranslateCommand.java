@@ -18,6 +18,7 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
     private final double maxSpeed;
     private final double maxAcceleration;
     private final AngleConstantD expectedHeading;
+    private boolean restoreHeadingAtEnd = true;
 
     /**
      * Construct a command to move the robot the specified forward and strafe distances.
@@ -44,9 +45,10 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
      * @param maxSpeed        (double) This is the speed mapped to the range 0.0 to 1.0.
      * @param maxAcceleration (double) This is a REV Spark smart motion max RPM/sec -- so, 10000 gets the
      *                        robot to max speed in about .5 seconds.
+     * @param restoreHeading  (boolean)
      */
     public AbsoluteSmartTranslateCommand(double distanceForward, double distanceStrafe,
-                                         double maxSpeed, double maxAcceleration) {
+                                         double maxSpeed, double maxAcceleration, boolean restoreHeading) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements(this.driveSubsystem);
@@ -55,6 +57,7 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
         this.maxSpeed = maxSpeed;
         this.maxAcceleration = maxAcceleration;
         this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
+        this.restoreHeadingAtEnd = restoreHeading;
     }
 
     /**
@@ -98,7 +101,9 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
     @Override
     public void end(boolean interrupted) {
         // Fix the heading if there was skidding that turned the robot.
-        driveSubsystem.setHeading(expectedHeading);
+        if(restoreHeadingAtEnd) {
+            driveSubsystem.setHeading(expectedHeading);
+        }
         System.out.println("***********************************************************************");
         System.out.println("***********************************************************************");
         if (interrupted) {
