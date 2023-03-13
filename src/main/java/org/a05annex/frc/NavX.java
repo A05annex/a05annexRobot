@@ -83,6 +83,11 @@ public class NavX {
      */
     private final AngleD m_refHeading = new AngleD(AngleD.ZERO);
 
+    /** A multiplier for the heading that offsets the drift nof the NavX in
+     *  each rotation of the robot.
+     */
+    private double m_yawCalibrationFactor = 1.0;
+
     /**
      * Instantiate the NavX. We have had problems here where the NavX does not respond because it is somehow
      * unreachable (disconnected) - which means this instantiation never finishes, and the robot sits on the
@@ -132,6 +137,19 @@ public class NavX {
         m_headingRawLast.setValue(AngleD.ZERO);
         m_expectedHeading.setValue(m_refHeading);
         m_headingRevs = 0;
+    }
+
+    /**
+     * A calibration factor that the heading is multiplied by before being returned as the robot heading. We noted
+     * that there was a repeatable drift per rotation of yaw, and that reversing the direction of rotation undid
+     * that drift. So we measured that for the competition robot and added a calibration factor.
+     *
+     * @param yawCalibrationFactor (double) A calibration factor for the yaw reported by the NavX. We noted
+     *                               a repeatable drift per rotation, and measured a correction factor for that.
+     */
+    public void setYawCalibrationFactor(double yawCalibrationFactor)
+    {
+        m_yawCalibrationFactor = yawCalibrationFactor;
     }
 
     /**
@@ -234,7 +252,8 @@ public class NavX {
 //            return null;
 //        }
         m_updateCt = updateCt;
-        return new HeadingInfo(m_heading.cloneAngleD().mult(1.027), m_expectedHeading, m_setExpectedToCurrent);
+        return new HeadingInfo(m_heading.cloneAngleD().mult(m_yawCalibrationFactor),
+                m_expectedHeading, m_setExpectedToCurrent);
     }
 
     /**

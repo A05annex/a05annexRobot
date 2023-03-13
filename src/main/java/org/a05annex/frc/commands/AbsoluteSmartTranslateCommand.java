@@ -41,11 +41,13 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
      * Construct a command to move the robot the specified forward and strafe distances.
      *
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
-     * @param distanceStrafe The distance to move right (negative is left) in meters.
+     * @param distanceStrafe  The distance to move right (negative is left) in meters.
      * @param maxSpeed        (double) This is the speed mapped to the range 0.0 to 1.0.
      * @param maxAcceleration (double) This is a REV Spark smart motion max RPM/sec -- so, 10000 gets the
      *                        robot to max speed in about .5 seconds.
-     * @param restoreHeading  (boolean)
+     * @param restoreHeading  (boolean) {@code true} if the heading should be restored after the translation,
+     *                        {@code false} if not. Note, if heading is restored, the wheels will be in
+     *                        position to spin the robot when the command ends; otherwise the wheels will be positioned
      */
     public AbsoluteSmartTranslateCommand(double distanceForward, double distanceStrafe,
                                          double maxSpeed, double maxAcceleration, boolean restoreHeading) {

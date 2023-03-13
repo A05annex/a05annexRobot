@@ -38,7 +38,7 @@ public abstract class A05Constants {
     /**
      * Sets the cameras for the robot.
      *
-     * @param hasUSB {@code true} if the robot has a USB camera, {@code false} otherwise.
+     * @param hasUSB       {@code true} if the robot has a USB camera, {@code false} otherwise.
      * @param hasLimelight {@code true} if the robot has a limelight camera, {@code false} otherwise.
      */
     @SuppressWarnings("unused")
@@ -49,6 +49,7 @@ public abstract class A05Constants {
 
     /**
      * Query whether this robot has a USB camera
+     *
      * @return {@code true} if the robot has a USB camera, {@code false} otherwise.
      */
     @SuppressWarnings("unused")
@@ -58,6 +59,7 @@ public abstract class A05Constants {
 
     /**
      * Query whether this robot has a limelight
+     *
      * @return {@code true} if the robot has a limelight camera, {@code false} otherwise.
      */
     @SuppressWarnings("unused")
@@ -136,6 +138,7 @@ public abstract class A05Constants {
 
     /**
      * Read and return the driver Id from the switch panel.
+     *
      * @return The driver Id, {@code 0} if the switch panel is not connected.
      */
     public static int readDriverID() {
@@ -144,6 +147,7 @@ public abstract class A05Constants {
 
     /**
      * Read and return the autonomous path Id from the switch panel.
+     *
      * @return The autonomous path Id, {@code 0} if the switch panel is not connected.
      */
     public static int readAutoID() {
@@ -153,6 +157,7 @@ public abstract class A05Constants {
     /**
      * Read and return the robot Id from digital IO 5. Install a jumper on the practice robot
      * so the input reads {@code 1}. On the  competition robot without a jumper, the value will default to {@code 0}
+     *
      * @return The robot Id, {@code 1} is the practice robot, and {@code 0} is the competition robot.
      */
     public static int readRobotID() {
@@ -172,6 +177,7 @@ public abstract class A05Constants {
     // -----------------------------------------------------------------------------------------------------------------
     // This is the auto path stuff
     // -----------------------------------------------------------------------------------------------------------------
+
     /**
      * This class is an autonomous path description for the robot. A list of autonomous path descriptions is loaded
      * into {@link #AUTONOMOUS_PATH_LIST}. The autonomous path switches select the path that will be loaded into
@@ -192,7 +198,7 @@ public abstract class A05Constants {
         protected final int m_id;
         /**
          * The filename. This file is expected to be in the /deploy/paths
-         *  subdirectory of ./src/main in your development project.
+         * subdirectory of ./src/main in your development project.
          */
         protected final String m_filename;
         /**
@@ -288,7 +294,7 @@ public abstract class A05Constants {
      * JSON file that will be loaded into the {@link org.a05annex.frc.commands.A05DriveCommand} by
      * the {@link A05RobotContainer} constructor.
      */
-    public static class DriverSettings{
+    public static class DriverSettings {
         /**
          * The JSON key for the {@link #m_driveDeadband}.
          */
@@ -346,7 +352,7 @@ public abstract class A05Constants {
          * The JSON value specifying the left trigger for either {@link #BOOST_TRIGGER}
          * or {@link #SLOW_TRIGGER}.
          */
-         protected static final String RIGHT_TRIGGER = "RIGHT";
+        protected static final String RIGHT_TRIGGER = "RIGHT";
 
         /**
          * The driver name, usually a first name like "Nolan", "Ethan", "Calvin", etc. Mostly used
@@ -436,8 +442,9 @@ public abstract class A05Constants {
 
         /**
          * Construct a driver settings description.
+         *
          * @param driverName The driver name (no spaces please).
-         * @param id The driver index in the {@link #DRIVER_SETTINGS_LIST}.
+         * @param id         The driver index in the {@link #DRIVER_SETTINGS_LIST}.
          */
         public DriverSettings(@NotNull String driverName, int id) {
             m_driverName = driverName;
@@ -454,31 +461,32 @@ public abstract class A05Constants {
 
         /**
          * Load the driver settings from the specified path.
+         *
          * @param filePath The path to the settings file.
          */
         protected void loadFilePath(String filePath) {
             try {
                 JSONObject dict = readJsonFileAsJSONObject(filePath);
                 // Read in the driver data
-                m_driveDeadband = (double)dict.get(DRIVE_DEADBAND);
-                m_driveSpeedSensitivity = (double)dict.get(DRIVE_SPEED_SENSITIVITY);
-                m_driveSpeedGain = (double)dict.get(DRIVE_SPEED_GAIN);
-                m_driveSpeedMaxInc = (double)dict.get(DRIVE_SPEED_MAX_INC);
-                m_rotateDeadband = (double)dict.get(ROTATE_DEADBAND);
-                m_rotateSensitivity = (double)dict.get(ROTATE_SENSITIVITY);
-                m_rotateGain = (double)dict.get(ROTATE_GAIN);
-                m_rotateMaxInc = (double)dict.get(ROTATE_MAX_INC);
-                String boostTrigger = (String)dict.get(BOOST_TRIGGER);
+                m_driveDeadband = (double) dict.get(DRIVE_DEADBAND);
+                m_driveSpeedSensitivity = (double) dict.get(DRIVE_SPEED_SENSITIVITY);
+                m_driveSpeedGain = (double) dict.get(DRIVE_SPEED_GAIN);
+                m_driveSpeedMaxInc = (double) dict.get(DRIVE_SPEED_MAX_INC);
+                m_rotateDeadband = (double) dict.get(ROTATE_DEADBAND);
+                m_rotateSensitivity = (double) dict.get(ROTATE_SENSITIVITY);
+                m_rotateGain = (double) dict.get(ROTATE_GAIN);
+                m_rotateMaxInc = (double) dict.get(ROTATE_MAX_INC);
+                String boostTrigger = (String) dict.get(BOOST_TRIGGER);
                 if (null != boostTrigger) {
                     m_boostTrigger = boostTrigger.equals(LEFT_TRIGGER) ?
                             XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
-                    m_boostGain = (double)dict.get(BOOST_GAIN);
+                    m_boostGain = (double) dict.get(BOOST_GAIN);
                 }
-                String slowTrigger = (String)dict.get(SLOW_TRIGGER);
+                String slowTrigger = (String) dict.get(SLOW_TRIGGER);
                 if (null != slowTrigger) {
-                        m_slowTrigger = slowTrigger.equals(LEFT_TRIGGER) ?
-                                XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
-                        m_slowGain = (double) dict.get(SLOW_GAIN);
+                    m_slowTrigger = slowTrigger.equals(LEFT_TRIGGER) ?
+                            XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
+                    m_slowGain = (double) dict.get(SLOW_GAIN);
                 }
 
             } catch (IOException | ParseException e) {
@@ -499,6 +507,7 @@ public abstract class A05Constants {
 
         /**
          * Save the driver settings to the specified path.
+         *
          * @param filePath The path to the settings file.
          */
         @SuppressWarnings("unchecked")
@@ -548,6 +557,7 @@ public abstract class A05Constants {
         public int getId() {
             return m_id;
         }
+
         /**
          * Get the deadband for the direction/speed stick, see {@link #m_driveDeadband}.
          *
@@ -556,6 +566,7 @@ public abstract class A05Constants {
         public double getDriveDeadband() {
             return m_driveDeadband;
         }
+
         /**
          * Get the sensitivity exponent for the direction/speed stick, see {@link #m_driveSpeedSensitivity}.
          *
@@ -564,6 +575,7 @@ public abstract class A05Constants {
         public double getDriveSpeedSensitivity() {
             return m_driveSpeedSensitivity;
         }
+
         /**
          * Get the maximum directional speed, see {@link #m_driveSpeedGain}.
          *
@@ -671,7 +683,7 @@ public abstract class A05Constants {
      * This class is the description of swerve drive base geometry and calibration. It is used to allow the same
      * code to be used across multiple bases with different geometry and unique calibration values.
      */
-    public static class RobotSettings{
+    public static class RobotSettings {
         /**
          * The robot Id. This is the expected index of the robot description in the {@link #ROBOT_SETTINGS_LIST}. If
          * the Id does not match the expected position, then there is a problem in the declaration of the
@@ -714,6 +726,10 @@ public abstract class A05Constants {
          */
         public final double m_lr;
         /**
+         *
+         */
+        public final double m_navxYawCalibration;
+        /**
          * The speed calibration factor that corrects from the theoretic maximum speed to
          * the empirically measured maximum speed. This depends on many factors such as wheel
          * surface, field surface, wheel wear, module friction, motor/controller variation,
@@ -726,24 +742,28 @@ public abstract class A05Constants {
          * Instantiate a robot description of a swerve drive base with a specified drive geometry and
          * calibration constants.
          *
-         * @param id The robot index in the {@link #ROBOT_SETTINGS_LIST}.
-         * @param robotName The robot name.
-         * @param length   (double) The length of the drive in meters.
-         * @param width    (double) The width of the drive in meters.
-         * @param rf (double) The reading of the right front spin absolute position encoder when the wheel is facing
-         *                      directly forward.
-         * @param rr (double) The reading of the right rear spin absolute position encoder when the wheel is facing
-         *                      directly forward.
-         * @param lf (double) The reading of the left front spin absolute position encoder when the wheel is facing
-         *                      directly forward.
-         * @param lr (double) The reading of the left rear spin absolute position encoder when the wheel is facing
-         *                      directly forward.
+         * @param id                  The robot index in the {@link #ROBOT_SETTINGS_LIST}.
+         * @param robotName           The robot name.
+         * @param length              (double) The length of the drive in meters.
+         * @param width               (double) The width of the drive in meters.
+         * @param rf                  (double) The reading of the right front spin absolute position encoder when
+         *                            the wheel is facing directly forward.
+         * @param rr                  (double) The reading of the right rear spin absolute position encoder when
+         *                            the wheel is facing
+         *                            directly forward.
+         * @param lf                  (double) The reading of the left front spin absolute position encoder when
+         *                            the wheel is facing directly forward.
+         * @param lr                  (double) The reading of the left rear spin absolute position encoder when
+         *                            the wheel is facing directly forward.
+         * @param navxYawCalibration  (double) A calibration factor for the yaw reported by the NavX. We noted
+         *                            a repeatable drift per rotation, and measured a correction factor for that.
          * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
          *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
          *                            the empirically measured max m/sec.
          */
         public RobotSettings(int id, String robotName, double length, double width,
-                             double rf, double rr, double lf, double lr, double maxSpeedCalibration) {
+                             double rf, double rr, double lf, double lr,
+                             double navxYawCalibration, double maxSpeedCalibration) {
             m_id = id;
             m_robotName = robotName;
             m_length = length;
@@ -752,6 +772,7 @@ public abstract class A05Constants {
             m_rr = rr;
             m_lf = lf;
             m_lr = lr;
+            m_navxYawCalibration = navxYawCalibration;
             m_maxSpeedCalibration = maxSpeedCalibration;
         }
     }
