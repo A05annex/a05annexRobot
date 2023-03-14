@@ -17,6 +17,7 @@ public class AbsoluteTranslateCommand extends CommandBase {
     private final double distanceStrafe;
     private final double maxSpeed;
     private final AngleConstantD expectedHeading;
+    private boolean restoreHeadingAtEnd = true;
 
     /**
      * Construct a command to move the robot the specified forward and strafe distances.
@@ -40,8 +41,12 @@ public class AbsoluteTranslateCommand extends CommandBase {
      * @param distanceForward The distance to move forward (negative is backwards) in meters.
      * @param distanceStrafe The distance to move right (negative is left) in meters.
      * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
+     * @param restoreHeading  (boolean) {@code true} if the heading should be restored after the translation,
+     *                        {@code false} if not. Note, if heading is restored, the wheels will be in
+     *                        position to spin the robot when the command ends; otherwise the wheels will be positioned
      */
-    public AbsoluteTranslateCommand(double distanceForward, double distanceStrafe, double maxSpeed) {
+    public AbsoluteTranslateCommand(double distanceForward, double distanceStrafe,
+                                    double maxSpeed, boolean restoreHeading) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements(this.driveSubsystem);
@@ -49,6 +54,7 @@ public class AbsoluteTranslateCommand extends CommandBase {
         this.distanceStrafe = distanceStrafe;
         this.maxSpeed = maxSpeed;
         this.expectedHeading = NavX.getInstance().getHeadingInfo().expectedHeading;
+        this.restoreHeadingAtEnd = restoreHeading;
     }
 
     /**
@@ -91,7 +97,9 @@ public class AbsoluteTranslateCommand extends CommandBase {
     @Override
     public void end(boolean interrupted) {
         // Fix the heading if there was skidding that turned the robot.
-        driveSubsystem.setHeading(expectedHeading);
+        if (restoreHeadingAtEnd) {
+            driveSubsystem.setHeading(expectedHeading);
+        }
         System.out.println("***********************************************************************");
         System.out.println("***********************************************************************");
         if (interrupted) {

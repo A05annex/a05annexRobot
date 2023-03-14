@@ -1,9 +1,31 @@
+* **version:** 0.0.13
+* **status:** first used for FRC **2023 Charged Up**
+* **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
+  base to jump start future years.
+
 # a05annexRobot
 
 The A05annex base library for a Swerve Drive Base with NavX, autonomous paths with actions, and selection of
 autonomous path (there are generally many possible paths depending on field start position and alliance strategy)
 and driver preferences (drivers are conditioned by the games they play, the driver preference lets the driver natch
 the robot response to their favorite game).
+
+## Change Log
+
+<details>
+  <summary>version 0.0.1 to 0.0.13 (for <b>2023 Charged Up</b>):</summary>
+
+  * 0.0.1 - Initial internal release;
+  * 0.0.2 - Optional mirroring of autonomous for <b>2023 Charged Up</b>;
+  * 0.0.4 - AbsoluteTranslateCommand - move by position;
+  * 0.0.8 - Added getClosestDownField(), getClosestUpField(), getClosestDownOrUpField() to
+            NavX.HeadingInfo;
+  * 0.0.9 - Added max speed and heading correction at end of translate;
+  * 0.0.10 - AbsoluteSmartTranslateCommand - first smart motion implementation;
+  * 0.0.11 - Tuned smart motion coefficients;
+  * 0.0.12 - Made heading correction after translate optional;
+  * 0.0.13 - Added a NavX calibration factor to minimize rotational drift.
+</details>
 
 ## Creating a Robot Project Using this Library
 

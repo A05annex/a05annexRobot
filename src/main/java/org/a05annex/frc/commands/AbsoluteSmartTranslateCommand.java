@@ -103,7 +103,7 @@ public class AbsoluteSmartTranslateCommand extends CommandBase {
     @Override
     public void end(boolean interrupted) {
         // Fix the heading if there was skidding that turned the robot.
-        if(restoreHeadingAtEnd) {
+        if (restoreHeadingAtEnd) {
             driveSubsystem.setHeading(expectedHeading);
         }
         System.out.println("***********************************************************************");
