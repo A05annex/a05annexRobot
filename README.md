@@ -25,6 +25,7 @@ the robot response to their favorite game).
   * 0.0.11 - Tuned smart motion coefficients;
   * 0.0.12 - Made heading correction after translate optional;
   * 0.0.13 - Added a NavX calibration factor to minimize rotational drift.
+  * 0.0.15 - Current limited swerve
 </details>
 
 ## Creating a Robot Project Using this Library

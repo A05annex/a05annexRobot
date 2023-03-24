@@ -218,6 +218,10 @@ public class Mk4NeoModule {
         // invert the spin so positive is a clockwise spin
         this.directionMotor.setInverted(true);
 
+        // current limit the motor to prevent popping breakers
+        this.driveMotor.setSmartCurrentLimit(60,20, 2000);
+        this.directionMotor.setSmartCurrentLimit(45, 20, 3000);
+
         // update PID controllers for spin and drive motors and initialize them
         setDrivePID();
         setSpinPID();
