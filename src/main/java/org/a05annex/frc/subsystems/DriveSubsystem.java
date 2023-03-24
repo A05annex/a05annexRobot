@@ -12,7 +12,7 @@ import org.a05annex.util.Utl;
  * This is the code that controls the A05annex default swerve base with MK4 drive modules. In your
  * {@code RobotContainer} constructor, please call the
  * {@link #setDriveGeometry(double, double, double, double, double, double, double)}
- * method to setup drive module calibration and geometry before any attempts are made to send
+ * method to set up drive module calibration and geometry before any attempts are made to send
  * drive commands.
  */
 public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
@@ -138,7 +138,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * @param lrCalibration (double) The reading of the left rear spin encoder when the wheel is facing
      *                      directly forward.
      * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
-     *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
+     *                            mxx m/sec computed from the spec sheets and mox module motor RPM to
      *                            the empirically measured max m/sec.
      */
     @Override
@@ -322,7 +322,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * Run the swerve drive with the specified {@code  forward}, {@code strafe}, and {@code rotation} chassis
      * relative components.
      *
-     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards.
+     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards).
      * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
      * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      */
@@ -336,11 +336,11 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     /**
      * Prepare the swerve drive to run with the swerve drive with the specified {@code  forward}, {@code strafe},
      * and {@code rotation} chassis relative components. 'Prepare', in this context, means orient all the modules
-     * so they are ready to perform this command but set the module speeds to 0.0; In this way movement can start
+     * so that they are ready to perform this command but set the module speeds to 0.0; In this way movement can start
      * smoothly without additional module reorientation. This method is used to initialize the robot before the
      * start of an autonomous path.
      *
-     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards.
+     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards).
      * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
      * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      */
@@ -519,9 +519,14 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
 
         m_rf.setDirectionAndSmartMotionDistance(m_RF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
-        m_lf.setDirectionAndSmartMotionDistance(m_LF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
-        m_lr.setDirectionAndSmartMotionDistance(m_LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
-        m_rr.setDirectionAndSmartMotionDistance(m_RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        m_lr.setDirectionAndSmartMotionDistance(m_LF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        if (Math.abs(distanceForward) > Math.abs(distanceStrafe)) {
+            m_lf.setDirectionAndSmartMotionDistance(m_LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+            m_rr.setDirectionAndSmartMotionDistance(m_RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        } else {
+            m_rr.setDirectionAndSmartMotionDistance(m_LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+            m_lf.setDirectionAndSmartMotionDistance(m_RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        }
 
         // TODO - sort out telemetry for this ......
         m_thisChassisForward = 0.0;
