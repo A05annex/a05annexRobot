@@ -69,7 +69,7 @@ public class Mk4NeoModule {
      * tolerance corresponds to {@code TARGET_POSITION_TOLERANCE} / {@link #TICS_PER_METER}, or
      * .007m (0.27in)
      */
-    static final double TARGET_POSITION_TOLERANCE = 0.2;
+    static final double TARGET_POSITION_TOLERANCE = 0.4;
 
     // PID values for the spin spark motor encoder position controller PID loop
     static double SPIN_kP = 0.5;
@@ -544,7 +544,7 @@ public class Mk4NeoModule {
         // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
         return (driveMode == CANSparkMax.ControlType.kVelocity) ||
-                ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE * 2) &&
-                        (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE * 2));
+                ((currentPosition > targetPosition - TARGET_POSITION_TOLERANCE * 3) &&
+                        (currentPosition < targetPosition + TARGET_POSITION_TOLERANCE * 3));
     }
 }
