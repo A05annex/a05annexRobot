@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.DriveSubsystem;
+import org.a05annex.frc.subsystems.ISwerveDrive;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
@@ -106,6 +107,8 @@ public class A05DriveCommand extends CommandBase {
      */
     public static final double TRIGGER_THRESHOLD = 0.5;
 
+    private ISwerveDrive iSwerveDrive = m_driveSubsystem;
+
     /**
      * The constructor for the drive command.
      * @param xbox The driver xbox controller.
@@ -130,7 +133,7 @@ public class A05DriveCommand extends CommandBase {
         conditionStick();
 
         // now ask the drive subsystem to do that.
-        m_driveSubsystem.swerveDrive(m_conditionedDirection, m_conditionedSpeed, m_conditionedRotate);
+        iSwerveDrive.swerveDrive(m_conditionedDirection, m_conditionedSpeed, m_conditionedRotate);
     }
 
     @Override
@@ -253,6 +256,10 @@ public class A05DriveCommand extends CommandBase {
         m_lastConditionedDirection = m_conditionedDirection;
         m_lastConditionedSpeed = m_conditionedSpeed;
         m_lastConditionedRotate = m_conditionedRotate;
+    }
+
+    protected void setISwerveDrive(ISwerveDrive iSwerveDrive) {
+        this.iSwerveDrive = iSwerveDrive;
     }
 
 }
