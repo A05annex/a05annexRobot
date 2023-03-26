@@ -13,7 +13,7 @@ the robot response to their favorite game).
 ## Change Log
 
 <details>
-  <summary>version 0.0.1 to 0.0.13 (for <b>2023 Charged Up</b>):</summary>
+  <summary>version 0.0.1 to 0.0.15 (for <b>2023 Charged Up</b>):</summary>
 
   * 0.0.1 - Initial internal release;
   * 0.0.2 - Optional mirroring of autonomous for <b>2023 Charged Up</b>;
@@ -24,8 +24,8 @@ the robot response to their favorite game).
   * 0.0.10 - AbsoluteSmartTranslateCommand - first smart motion implementation;
   * 0.0.11 - Tuned smart motion coefficients;
   * 0.0.12 - Made heading correction after translate optional;
-  * 0.0.13 - Added a NavX calibration factor to minimize rotational drift.
-  * 0.0.15 - Current limited swerve
+  * 0.0.13 - Added a NavX calibration factor to minimize rotational drift;
+  * 0.0.15 - Current limited swerve drive and spin motors.
 </details>
 
 ## Creating a Robot Project Using this Library

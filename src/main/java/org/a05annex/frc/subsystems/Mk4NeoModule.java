@@ -55,8 +55,8 @@ public class Mk4NeoModule {
      * this is actually drive motor revolutions per meter of travel.
      * <p>
      * This value is probably changes with wheel wear, game surface, and other variables - so this is just
-     * an approximate value. Empirically measured by Ethan Ready using the practice robot on a concrete
-     * floor 21-jan-2023.
+     * an approximate value. Empirically measured by Ethan Ready using the practice robot The practice carpet
+     * on 10-mar-2023. At 5000prm, this is 3.136m/sec as a max speed.
      */
     public static final double TICS_PER_METER = 26.571;
     /**
@@ -389,6 +389,8 @@ public class Mk4NeoModule {
         // motor controller to reflect the actual position of the wheel.
         directionEncoder.setPosition(
                 (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
+        lastDirection.setValue(AngleUnit.RADIANS, absolutePosition);
+        lastDirectionEncoder = directionEncoder.getPosition();
     }
 
     /**
@@ -398,7 +400,8 @@ public class Mk4NeoModule {
      * @param targetDirection (AngleD) The direction from -pi to pi radians where 0.0 is towards the
      *                        front of the robot, and positive is clockwise.
      */
-    public void setDirection(AngleConstantD targetDirection) {
+    public void
+    setDirection(AngleConstantD targetDirection) {
         // The real angle of the front of the wheel is 180 degrees away from the current angle if the wheel
         // is going backwards (i.e. the lastDirection was the last target angle for the module
         AngleD realLastDirection = (speedMultiplier > 0.0) ? lastDirection :

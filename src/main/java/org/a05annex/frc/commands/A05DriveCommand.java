@@ -258,6 +258,11 @@ public class A05DriveCommand extends CommandBase {
         m_lastConditionedRotate = m_conditionedRotate;
     }
 
+    /**
+     * Set an alternate IServe drive than the {@link DriveSubsystem}. This is useful if you have added
+     * some functionality in a layer above implementing {@link ISwerveDrive} that you want the drive to be using.
+     * @param iSwerveDrive The swerve drive this command should be using.
+     */
     protected void setISwerveDrive(ISwerveDrive iSwerveDrive) {
         this.iSwerveDrive = iSwerveDrive;
     }
