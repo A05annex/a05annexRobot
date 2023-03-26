@@ -376,7 +376,7 @@ public class Mk4NeoModule {
      * Set the NEO direction encoder value using the absolute direction encoder, so that forward is an encoder
      * reading of 0 tics.
      */
-    private void calibrate() {
+    void calibrate() {
         double absolutePosition;
         // get the absolute position of the calibration CANcoder. The difference between this and the
         // calibration offset is the change indirection required to set the direction to 0. Note, this loop

@@ -170,6 +170,13 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     @Override
+    public void recalibrate() {
+        m_rf.calibrate();
+        m_rr.calibrate();
+        m_lf.calibrate();
+        m_lr.calibrate();
+   }
+    @Override
     public double getDriveLength() {
         testGeometryIsSet();
         return DRIVE_LENGTH;

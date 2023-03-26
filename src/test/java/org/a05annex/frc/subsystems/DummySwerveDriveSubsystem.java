@@ -81,6 +81,11 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
+    public void recalibrate() {
+
+    }
+
+    @Override
     public double getDriveLength() {
         testGeometryIsSet();
         return DRIVE_LENGTH;

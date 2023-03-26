@@ -54,6 +54,11 @@ public interface ISwerveDrive {
                                  double lfCalibration, double lrCalibration, double maxSpeedCalibration);
 
     /**
+     * Cause calibration to be re-run on the swerve drive modules.
+     */
+    void recalibrate();
+
+    /**
      * Get the wheel center to center distance between the front wheels and the rear wheels - the length of
      * the swerve drive.
      *
