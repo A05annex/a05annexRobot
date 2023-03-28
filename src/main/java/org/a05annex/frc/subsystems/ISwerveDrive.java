@@ -1,11 +1,15 @@
 package org.a05annex.frc.subsystems;
 
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Our interface specific to controlling the swerve drive. This is abstracted into an interface, so we can build
- * mock implementations of the drive subsystem for testing and so that we can build swerve drive commands
+ * mock implementations of the drive subsystem for testing and so that we can build swerve drive commands na test
+ * them against a mock drive implementation.
  */
 @SuppressWarnings("unused")
 public interface ISwerveDrive {
@@ -46,8 +50,8 @@ public interface ISwerveDrive {
      * @param lrCalibration (double) The reading of the left rear spin encoder when the wheel is facing
      *                      directly forward.
      * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
-     *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
-     *                            the empirically measured max m/sec.
+     *                            msx m/sec computed from all the motor and module spec sheets and mox module
+     *                            motor RPM to the empirically measured max m/sec.
      */
     void setDriveGeometry(double driveLength, double driveWidth,
                                  double rfCalibration, double rrCalibration,
@@ -57,6 +61,15 @@ public interface ISwerveDrive {
      * Cause calibration to be re-run on the swerve drive modules.
      */
     void recalibrate();
+
+    /**
+     * Get the subsystem that implements ths swerve drive control.
+     *
+     * @return The drive subsystem. This may be {@code null} in test scenarios, but
+     *         will never be {@code null} on a running robot.
+     */
+    @Nullable
+    Subsystem getDriveSubsystem();
 
     /**
      * Get the wheel center to center distance between the front wheels and the rear wheels - the length of
@@ -105,7 +118,7 @@ public interface ISwerveDrive {
      * Run the swerve drive with the specified {@code  forward}, {@code strafe}, and {@code rotation} chassis
      * relative components.
      *
-     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards.
+     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards).
      * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
      * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      */
@@ -118,7 +131,7 @@ public interface ISwerveDrive {
      * smoothly without additional module reorientation. This method is used to initialize the robot before the
      * start of an autonomous path.
      *
-     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards.
+     * @param forward  Drive forward. From -1 (full backwards) to 1 (full forwards).
      * @param strafe   Strafe right. From -1 (full left)  to 1 (full right).
      * @param rotation Clockwise rotation. From -1 (full counter-clockwise) to 1 (full clockwise).
      */
@@ -132,7 +145,7 @@ public interface ISwerveDrive {
      * @param speed            (double) Speed from 0.0 to 1.0.
      * @param rotation         (double) Clockwise rotation speed from -1.0 to 1.0.
      */
-    void swerveDrive(AngleConstantD direction, double speed, double rotation);
+    void swerveDrive(@NotNull AngleConstantD direction, double speed, double rotation);
 
     /**
      * Toggle between {@link DriveMode#FIELD_RELATIVE} and {@link DriveMode#ROBOT_RELATIVE} (robot camera
@@ -146,6 +159,7 @@ public interface ISwerveDrive {
      * @return {@link DriveMode#FIELD_RELATIVE} if the drive mode is field relative, {@link DriveMode#ROBOT_RELATIVE}
      * if the drive mode is driver (robot camera) relative.
      */
+    @NotNull
     DriveMode getDriveMode();
 
     /**
@@ -155,7 +169,7 @@ public interface ISwerveDrive {
      *                  {@link DriveMode#ROBOT_RELATIVE} to set the drive mode to driver (robot
      *                  camera) relative.
      */
-    void setDriveMode(DriveMode driveMode);
+    void setDriveMode(@NotNull DriveMode driveMode);
 
     /**
      * Rotate the chassis to the specified heading with no field translation. This controls the modules using distance
@@ -164,7 +178,7 @@ public interface ISwerveDrive {
      *
      * @param targetHeading (AngleConstantD) The desired chassis heading on the field.
      */
-    void setHeading(AngleConstantD targetHeading);
+    void setHeading(@NotNull AngleConstantD targetHeading);
 
     /**
      * Translates the robot (moves the robot without changing heading) the specified forward and strafe

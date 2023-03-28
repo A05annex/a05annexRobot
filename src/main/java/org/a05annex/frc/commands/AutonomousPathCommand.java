@@ -126,16 +126,14 @@ public class AutonomousPathCommand extends CommandBase {
     /**
      * Constructor for the {@code AutonomousPathCommand}.
      * @param path The path description.
-     * @param driveSubsystem The swerve drive subsystem.
+     * @param swerveDrive The swerve drive subsystem.
      * @param additionalRequirements Additional required subsystems.
      */
-    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, @NotNull Subsystem driveSubsystem,
+    public AutonomousPathCommand(@NotNull A05Constants.AutonomousPath path, @NotNull ISwerveDrive swerveDrive,
                                  Subsystem... additionalRequirements) {
-        // each subsystem used by the command must be passed into the
-        // addRequirements() method (which takes a vararg of Subsystem)
-        addRequirements(driveSubsystem);
+        addRequirements(swerveDrive.getDriveSubsystem());
         addRequirements(additionalRequirements);
-        swerveDrive = (ISwerveDrive)driveSubsystem;
+        this.swerveDrive = swerveDrive;
         this.path = path;
         spline = this.path.getSpline();
         if (A05Constants.getPrintDebug()) {

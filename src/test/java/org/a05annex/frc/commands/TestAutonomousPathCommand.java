@@ -7,6 +7,7 @@ import frc.robot.commands.DummyScheduledCommand;
 import frc.robot.commands.DummyStopAndRunCommand;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.subsystems.DummySwerveDriveSubsystem;
+import org.a05annex.frc.subsystems.ISwerveDrive;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +25,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * with both scheduled commands and stop-and-run commands. The test path is a 5 control point path. Stop-and-run
  * commands happen at the 1st, 3rd, and 5th (last) control points, scheduled commands happens at 2
  * locations on the path.
+ * <p>
+ * The results of this test are a report of what happens during the command cycles of this test - which
+ * requires visual inspection by the person running the test for conformance with expected behaviour. This is
+ * obviously not a valid test in the sense that it confirms the code runs as expected - we will work to
+ * improve this in the future.
  */
 @Suite
 public class TestAutonomousPathCommand {
@@ -64,7 +70,7 @@ public class TestAutonomousPathCommand {
     }
 
     /**
-     * An override to say this command runs when disabled ,so we can use the {@link CommandScheduler} for testing
+     * An override to say this command runs when disabled, so we can use the {@link CommandScheduler} for testing
      * so things are running as on the robot (without a real driver station to connect to, the scheduler decides
      * the robot is disabled, and will not schedule anything.
      */
@@ -77,13 +83,14 @@ public class TestAutonomousPathCommand {
          * @param driveSubsystem         The swerve drive subsystem.
          * @param additionalRequirements Additional required subsystems.
          */
-        public ExtendedAutonomousPathCommand(A05Constants.@NotNull AutonomousPath path,
-                                             @NotNull Subsystem driveSubsystem, Subsystem... additionalRequirements) {
+        public ExtendedAutonomousPathCommand(@NotNull A05Constants.AutonomousPath path,
+                                             @NotNull ISwerveDrive driveSubsystem,
+                                             Subsystem... additionalRequirements) {
             super(path, driveSubsystem, additionalRequirements);
         }
 
         /**
-         * return true so we can test this thing.
+         * return {@code true} so we can test this thing.
          * @return {@code true}
          */
         @Override

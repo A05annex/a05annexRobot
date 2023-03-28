@@ -70,7 +70,7 @@ public abstract class A05RobotContainer {
         try {
             m_driver = A05Constants.DRIVER_SETTINGS_LIST.get(driverId);
             m_driver.load();
-            m_driveCommand = new A05DriveCommand(m_driveXbox, m_driver);
+            m_driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), m_driveXbox, m_driver);
             SmartDashboard.putString("Driver", m_driver.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Driver", String.format("Driver ID %d does not exist", driverId));

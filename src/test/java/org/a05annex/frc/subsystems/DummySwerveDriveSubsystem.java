@@ -1,9 +1,12 @@
 package org.a05annex.frc.subsystems;
 
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
@@ -12,7 +15,7 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     // before the constructor is called when the "INSTANCE" variable initializes.
 
     /**
-     * is the drive geometry set? Initially {@code false}, but sell be set to {@code true} when the
+     * is the drive geometry set? Initially {@code false}, but should be set to {@code true} when the
      * drive geometry and calibration has been initialized.
      */
     private boolean isDriveGeometrySet = false;
@@ -86,6 +89,11 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
+    public @Nullable Subsystem getDriveSubsystem() {
+        return this;
+    }
+
+    @Override
     public double getDriveLength() {
         testGeometryIsSet();
         return DRIVE_LENGTH;
@@ -131,7 +139,7 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
-    public void swerveDrive(AngleConstantD chassisDirection, double speed, double rotation) {
+    public void swerveDrive(@NotNull AngleConstantD chassisDirection, double speed, double rotation) {
         testGeometryIsSet();
         System.out.printf("swerveDrive:  %d %10.3f %10.3f %10.3f%n", System.currentTimeMillis(),
                 chassisDirection.getRadians(), speed, rotation);
@@ -149,12 +157,12 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
-    public void setDriveMode(DriveMode driveMode) {
+    public void setDriveMode(@NotNull DriveMode driveMode) {
         this.driveMode = driveMode;
     }
 
     @Override
-    public void setHeading(AngleConstantD targetHeading) {
+    public void setHeading(@NotNull AngleConstantD targetHeading) {
         testGeometryIsSet();
         System.out.printf("setFieldHeading:        %10.3f%n", targetHeading.getRadians());
     }

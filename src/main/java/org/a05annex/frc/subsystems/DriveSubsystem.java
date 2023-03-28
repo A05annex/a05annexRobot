@@ -1,12 +1,15 @@
 package org.a05annex.frc.subsystems;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This is the code that controls the A05annex default swerve base with MK4 drive modules. In your
@@ -176,6 +179,12 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         m_lf.calibrate();
         m_lr.calibrate();
    }
+
+    @Override
+    public @Nullable Subsystem getDriveSubsystem() {
+        return this;
+    }
+
     @Override
     public double getDriveLength() {
         testGeometryIsSet();
@@ -373,7 +382,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * @param rotation  (double) Clockwise rotation speed from -1.0 to 1.0.
      */
     @Override
-    public void swerveDrive(AngleConstantD direction, double speed, double rotation) {
+    public void swerveDrive(@NotNull AngleConstantD direction, double speed, double rotation) {
         if (driveMode == DriveMode.FIELD_RELATIVE) {
             AngleD chassisDirection = new AngleD(direction).subtract(m_navx.getHeading());
             swerveDriveComponents(chassisDirection.cos() * speed,
@@ -396,7 +405,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     @Override
-    public void setDriveMode(DriveMode driveMode) {
+    public void setDriveMode(@NotNull DriveMode driveMode) {
         this.driveMode = driveMode;
     }
 
@@ -461,7 +470,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * @param targetHeading (AngleConstantD) The desired chassis heading on the field.
      */
     @Override
-    public void setHeading(AngleConstantD targetHeading) {
+    public void setHeading(@NotNull AngleConstantD targetHeading) {
         testGeometryIsSet();
 
         m_RF_lastRadians.atan2(DRIVE_LENGTH, -DRIVE_WIDTH);

@@ -9,6 +9,7 @@ import org.a05annex.frc.subsystems.ISwerveDrive;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * <p>The basic drive command for controlling the swerve base from an Xbox controller. The actual robot project
@@ -39,9 +40,9 @@ import org.a05annex.util.Utl;
 public class A05DriveCommand extends CommandBase {
 
     /**
-     * The swerve drive subsystem.
+     * The swerve drive implementation this command is driving to.
      */
-    protected final DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
+    protected ISwerveDrive iSwerveDrive;
 
     /**
      * The NavX that provides (and maintains the expected) inertial navigation heading for the robot
@@ -107,15 +108,18 @@ public class A05DriveCommand extends CommandBase {
      */
     public static final double TRIGGER_THRESHOLD = 0.5;
 
-    private ISwerveDrive iSwerveDrive = m_driveSubsystem;
-
     /**
      * The constructor for the drive command.
+     * @param swerveDrive The swerve drive. Note, this is passed into the drive command so that projects using
+     *                    the a05annexRobot library can add functional layers implementing {@link ISwerveDrive}
+     *                    for additional functionality.
      * @param xbox The driver xbox controller.
      * @param driver The custom driver settings for the current driver.
      */
-    public A05DriveCommand(XboxController xbox, A05Constants.DriverSettings driver) {
-        addRequirements(m_driveSubsystem);
+    public A05DriveCommand(@NotNull ISwerveDrive swerveDrive, @NotNull XboxController xbox,
+                           @NotNull A05Constants.DriverSettings driver) {
+        iSwerveDrive = swerveDrive;
+        addRequirements(iSwerveDrive.getDriveSubsystem());
         m_driveXbox = xbox;
         m_driver = driver;
     }
@@ -258,13 +262,5 @@ public class A05DriveCommand extends CommandBase {
         m_lastConditionedRotate = m_conditionedRotate;
     }
 
-    /**
-     * Set an alternate IServe drive than the {@link DriveSubsystem}. This is useful if you have added
-     * some functionality in a layer above implementing {@link ISwerveDrive} that you want the drive to be using.
-     * @param iSwerveDrive The swerve drive this command should be using.
-     */
-    protected void setISwerveDrive(ISwerveDrive iSwerveDrive) {
-        this.iSwerveDrive = iSwerveDrive;
-    }
 
 }
