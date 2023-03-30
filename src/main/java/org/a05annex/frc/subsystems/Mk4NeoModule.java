@@ -1,11 +1,14 @@
 package org.a05annex.frc.subsystems;
 
+import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
+import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import com.ctre.phoenix.sensors.CANCoder;
+import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
@@ -159,7 +162,7 @@ public class Mk4NeoModule {
      * @param calibrationCAN    (int) CAN address for the CANcoder.
      * @return (not null) Returns the initialized drive module.
      */
-    public static Mk4NeoModule factory(@NotNull String swerveDrivePosition,int driveCAN,
+    public static Mk4NeoModule factory(@NotNull String swerveDrivePosition, int driveCAN,
                                        int spinCAN, int calibrationCAN) {
         // basic code representations for physical hardware
         CANSparkMax driveMotor = new CANSparkMax(driveCAN, MotorType.kBrushless);
@@ -209,11 +212,36 @@ public class Mk4NeoModule {
         config.sensorCoefficient = 2 * Math.PI / 4096.0;
         config.unitString = "rad";
         config.sensorDirection = true;
-        calibrationEncoder.configAllSettings(config);
+        while (true) {
+            ErrorCode errorCode = calibrationEncoder.configAllSettings(config);
+            if (ErrorCode.OK == errorCode || null == errorCode) {
+                break;
+            }
+            DriverStation.reportWarning(
+                    String.format("Swerve (%s) CANCoder config error: CAN id = %d; error =  %d", swerveDrivePosition,
+                            calibrationEncoder.getDeviceID(), errorCode.value), false);
+        }
+
 
         // reset motor controllers to factory default
-        this.driveMotor.restoreFactoryDefaults();
-        this.directionMotor.restoreFactoryDefaults();
+        while (true) {
+            REVLibError errorCode = this.driveMotor.restoreFactoryDefaults();
+            if (REVLibError.kOk == errorCode || null == errorCode) {
+                break;
+            }
+            DriverStation.reportWarning(
+                    String.format("Swerve (%s) drive motor config error: CAN id = %d; error =  %d", swerveDrivePosition,
+                            this.driveMotor.getDeviceId(), errorCode.value), false);
+        }
+        while (true) {
+            REVLibError errorCode = this.directionMotor.restoreFactoryDefaults();
+            if (REVLibError.kOk == errorCode || null == errorCode) {
+                break;
+            }
+            DriverStation.reportWarning(
+                    String.format("Swerve (%s) spin motor config error: CAN id = %d; error =  %d", swerveDrivePosition,
+                            this.directionMotor.getDeviceId(), errorCode.value), false);
+        }
 
         // invert the spin so positive is a clockwise spin
         this.directionMotor.setInverted(true);

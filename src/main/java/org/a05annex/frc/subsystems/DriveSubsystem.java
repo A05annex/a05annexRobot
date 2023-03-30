@@ -34,7 +34,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      * @return Returns this {@link DriveSubsystem}
      */
     @SuppressWarnings("WeakerAccess")
-    public static DriveSubsystem getInstance() {
+    synchronized public static DriveSubsystem getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new DriveSubsystem();
         }
