@@ -5,7 +5,7 @@ plugins {
     id 'maven-publish'
     //id 'maven'
     id 'signing'
-    id 'edu.wpi.first.GradleRIO' version '2023.4.2'
+    id 'edu.wpi.first.GradleRIO' version '2023.4.3'
 }
 
 def javaVersion = JavaVersion.VERSION_11
