@@ -389,7 +389,7 @@ public class Mk4NeoModule {
         // motor controller to reflect the actual position of the wheel.
         directionEncoder.setPosition(
                 (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
-        lastDirection.setValue(AngleUnit.RADIANS, absolutePosition);
+        lastDirection.setValue(AngleUnit.RADIANS, absolutePosition - calibrationOffset);
         lastDirectionEncoder = directionEncoder.getPosition();
     }
 
