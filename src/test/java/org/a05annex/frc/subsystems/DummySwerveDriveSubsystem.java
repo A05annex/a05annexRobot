@@ -84,7 +84,7 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     }
 
     @Override
-    public void recalibrate() {
+    public void calibrate() {
 
     }
 

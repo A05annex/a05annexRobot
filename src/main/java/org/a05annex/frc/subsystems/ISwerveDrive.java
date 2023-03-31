@@ -58,9 +58,9 @@ public interface ISwerveDrive {
                                  double lfCalibration, double lrCalibration, double maxSpeedCalibration);
 
     /**
-     * Cause calibration to be re-run on the swerve drive modules.
+     * Cause calibration to be run on the swerve drive modules. This should be called each time the robot is enabled.
      */
-    void recalibrate();
+    void calibrate();
 
     /**
      * Get the subsystem that implements ths swerve drive control.

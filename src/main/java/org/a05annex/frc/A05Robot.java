@@ -48,7 +48,7 @@ public abstract class A05Robot extends TimedRobot {
     @Override
     public void teleopInit()
     {
-
+        DriveSubsystem.getInstance().calibrate();
         // This makes sure that the autonomous stops running when
         // teleop starts running. If you want the autonomous to
         // continue until interrupted by another command, remove
@@ -66,9 +66,7 @@ public abstract class A05Robot extends TimedRobot {
     @Override
     public void autonomousInit()
     {
-        if (A05Constants.getPrintDebug()) {
-            System.out.println("A05Robot.autonomousInit called");
-        }
+        DriveSubsystem.getInstance().calibrate();
 
         autonomousCommand = a05RobotContainer.getAutonomousCommand();
         // if there is an autonomous command, schedule it.

@@ -2,13 +2,11 @@ package org.a05annex.frc.subsystems;
 
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
-import com.revrobotics.REVLibError;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkMax;
+import com.revrobotics.*;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.SparkMaxPIDController;
 import com.ctre.phoenix.sensors.CANCoder;
 import edu.wpi.first.wpilibj.DriverStation;
+import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
@@ -143,7 +141,18 @@ public class Mk4NeoModule {
     /**
      * The control mode that is currently active.
      */
-    private CANSparkMax.ControlType driveMode = CANSparkMax.ControlType.kVelocity;
+    CANSparkMax.ControlType driveMode = CANSparkMax.ControlType.kVelocity;
+    enum DriveSlotId {
+        VELOCITY(0),
+        SMART_MOTION(1),
+        POSITION(2);
+
+        final int value;
+        DriveSlotId(int value) {
+            this.value = value;
+        }
+    }
+
 
     /**
      * The target position if {@link #driveMode}{@code  != }{@link CANSparkMax.ControlType#kVelocity}.
@@ -214,7 +223,7 @@ public class Mk4NeoModule {
         config.sensorDirection = true;
         while (true) {
             ErrorCode errorCode = calibrationEncoder.configAllSettings(config);
-            if (ErrorCode.OK == errorCode || null == errorCode) {
+            if ((ErrorCode.OK == errorCode) || (/*In Testing*/null == errorCode)) {
                 break;
             }
             DriverStation.reportWarning(
@@ -223,36 +232,32 @@ public class Mk4NeoModule {
         }
 
 
-        // reset motor controllers to factory default
-        while (true) {
-            REVLibError errorCode = this.driveMotor.restoreFactoryDefaults();
-            if (REVLibError.kOk == errorCode || null == errorCode) {
-                break;
+        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
+            // reset motor controllers to factory default
+            while (true) {
+                REVLibError errorCode = this.driveMotor.restoreFactoryDefaults();
+                if (REVLibError.kOk == errorCode) {
+                    break;
+                }
+                DriverStation.reportWarning(
+                        String.format("Swerve (%s) drive motor config error: CAN id = %d; error =  %d", swerveDrivePosition,
+                                this.driveMotor.getDeviceId(), errorCode.value), false);
             }
-            DriverStation.reportWarning(
-                    String.format("Swerve (%s) drive motor config error: CAN id = %d; error =  %d", swerveDrivePosition,
-                            this.driveMotor.getDeviceId(), errorCode.value), false);
-        }
-        while (true) {
-            REVLibError errorCode = this.directionMotor.restoreFactoryDefaults();
-            if (REVLibError.kOk == errorCode || null == errorCode) {
-                break;
+            while (true) {
+                REVLibError errorCode = this.directionMotor.restoreFactoryDefaults();
+                if (REVLibError.kOk == errorCode) {
+                    break;
+                }
+                DriverStation.reportWarning(
+                        String.format("Swerve (%s) spin motor config error: CAN id = %d; error =  %d", swerveDrivePosition,
+                                this.directionMotor.getDeviceId(), errorCode.value), false);
             }
-            DriverStation.reportWarning(
-                    String.format("Swerve (%s) spin motor config error: CAN id = %d; error =  %d", swerveDrivePosition,
-                            this.directionMotor.getDeviceId(), errorCode.value), false);
         }
 
-        // invert the spin so positive is a clockwise spin
-        this.directionMotor.setInverted(true);
-
-        // current limit the motor to prevent popping breakers
-        this.driveMotor.setSmartCurrentLimit(60,20, 2000);
-        this.directionMotor.setSmartCurrentLimit(45, 20, 3000);
-
-        // update PID controllers for spin and drive motors and initialize them
-        setDrivePID();
-        setSpinPID();
+//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,60000);
+//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,60000);
+//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,60000);
+//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,60000);
     }
 
 
@@ -266,58 +271,19 @@ public class Mk4NeoModule {
      */
     public void setCalibrationOffset(double calibrationOffset) {
         this.calibrationOffset = calibrationOffset;
-        calibrate(); // reset direction encoder position
-        // set the wheel direction to 0.0 (son the wheel is now facing forward), and setup the remembered
-        // last wheel direction and last direction encoder  position.
-        this.directionPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
-        lastDirection.setValue(AngleUnit.RADIANS, 0.0);
-        lastDirectionEncoder = 0.0;
     }
 
-    /**
-     * Updates the spin CANPIDController object using values in constants file. Used only when tuning the PID
-     * constants for best control.
-     */
-    void setSpinPID() {
-        initPID(directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0, 1.0);
+     private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone) {
+        initPID(pid, kFF, kP, kI, kIZone, 0);
     }
 
-    /**
-     * Updates the drive CANPIDController object using the velocity PID values in constants file. Used when
-     * tuning the PID constants for best control, or when switching from drive position control to drive
-     * velocity control.
-     */
-    void setDrivePID() {
-        initPID(drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE, 1.0);
-        driveMode = CANSparkMax.ControlType.kVelocity;
-    }
-
-    /**
-     * Updates the drive CANPIDController object using the position PID values in constants file. Used when
-     * tuning the PID constants for best control, or when switching from drive velocity control to drive
-     * position control.
-     *
-     * @param maxSpeed The maximum speed, in the range 0.0 to 1.0.
-     */
-    void setDrivePosPID(double maxSpeed) {
-        initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, DRIVE_POS_IZONE, maxSpeed);
-        driveMode = CANSparkMax.ControlType.kPosition;
-    }
-
-    void setSmartMotionPID() {
-        initPID(drivePID, SMART_MOTION_kFF, SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE, 1.0);
-        drivePID.setSmartMotionMinOutputVelocity(0.0, 0);
-        drivePID.setSmartMotionAllowedClosedLoopError(TARGET_POSITION_TOLERANCE, 0);
-        driveMode = CANSparkMax.ControlType.kSmartMotion;
-    }
-
-    private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone, double maxSpeed) {
-        pid.setFF(kFF);
-        pid.setP(kP);
-        pid.setI(kI);
-        pid.setD(0.0);
-        pid.setIZone(kIZone);
-        pid.setOutputRange(-maxSpeed,maxSpeed);
+    private void initPID(SparkMaxPIDController pid, double kFF, double kP, double kI, double kIZone, int slotId) {
+        pid.setFF(kFF, slotId);
+        pid.setP(kP, slotId);
+        pid.setI(kI, slotId);
+        pid.setD(0.0, slotId);
+        pid.setIZone(kIZone, slotId);
+        pid.setOutputRange(-1.0, 1.0, slotId);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -401,10 +367,39 @@ public class Mk4NeoModule {
     // Methods to tell the module to do something
     // -----------------------------------------------------------------------------------------------------------------
     /**
-     * Set the NEO direction encoder value using the absolute direction encoder, so that forward is an encoder
-     * reading of 0 tics.
+     * This should be calledSet the NEO direction encoder value using the absolute direction encoder, so that
+     * forward is an encoder reading of 0 tics.
      */
     void calibrate() {
+        // --------------------------------------------------------
+        // make, sure the motor setup is correct
+        // --------------------------------------------------------
+        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
+            // invert the spin so positive is a clockwise spin
+            directionMotor.setInverted(true);
+            // current limit the motor to prevent popping breakers
+            directionMotor.setSmartCurrentLimit(45, 20, 3000);
+            // initialize the PIDs for the direction controller
+            initPID(directionPID, 0.0, SPIN_kP, SPIN_kI, 0.0);
+
+            // current limit the motor to prevent popping breakers
+            driveMotor.setSmartCurrentLimit(60, 20, 2000);
+            // initialize the PIDs for the drive controller
+            initPID(drivePID, DRIVE_kFF, DRIVE_kP, DRIVE_kI, DRIVE_IZONE, DriveSlotId.VELOCITY.value);
+            initPID(drivePID, SMART_MOTION_kFF, SMART_MOTION_kP, SMART_MOTION_kI,
+                    SMART_MOTION_IZONE, DriveSlotId.SMART_MOTION.value);
+            drivePID.setSmartMotionMinOutputVelocity(-0.0, DriveSlotId.SMART_MOTION.value);
+            drivePID.setSmartMotionAllowedClosedLoopError(TARGET_POSITION_TOLERANCE, DriveSlotId.SMART_MOTION.value);
+            initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, DRIVE_POS_IZONE, DriveSlotId.POSITION.value);
+            driveMode = CANSparkMax.ControlType.kVelocity;
+
+            if (A05Constants.getSparkBurnConfig()) {
+                directionMotor.burnFlash();
+                driveMotor.burnFlash();
+            }
+        }
+
+
         double absolutePosition;
         // get the absolute position of the calibration CANcoder. The difference between this and the
         // calibration offset is the change indirection required to set the direction to 0. Note, this loop
@@ -417,8 +412,11 @@ public class Mk4NeoModule {
         // motor controller to reflect the actual position of the wheel.
         directionEncoder.setPosition(
                 (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
-        lastDirection.setValue(AngleUnit.RADIANS, absolutePosition - calibrationOffset);
-        lastDirectionEncoder = directionEncoder.getPosition();
+        // set the wheel direction to 0.0 (son the wheel is now facing forward), and setup the remembered
+        // last wheel direction and last direction encoder  position.
+        directionPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
+        lastDirection.setValue(AngleUnit.RADIANS, 0.0);
+        lastDirectionEncoder = 0.0;
     }
 
     /**
@@ -477,13 +475,13 @@ public class Mk4NeoModule {
     public void setDirectionAndSpeed(AngleConstantD targetDirection, double speed) {
         if (driveMode != CANSparkMax.ControlType.kVelocity) {
             // going out of something other than speed control to speed control
-            setDrivePID();
+            driveMode = CANSparkMax.ControlType.kVelocity;
         }
         setDirection(targetDirection);
         // Compute and set the speed value
         lastSpeed = speed;
         speed *= MAX_DRIVE_RPM * speedMultiplier;
-        drivePID.setReference(speed, driveMode);
+        drivePID.setReference(speed, driveMode, DriveSlotId.VELOCITY.value);
     }
 
     /**
@@ -509,16 +507,16 @@ public class Mk4NeoModule {
         if (driveMode != CANSparkMax.ControlType.kPosition) {
             // going out of something other than distance control to distance control
             // reset speed to zero
-            drivePID.setReference(0.0, CANSparkMax.ControlType.kVelocity);
+            drivePID.setReference(0.0, CANSparkMax.ControlType.kVelocity, DriveSlotId.VELOCITY.value);
             // setup the position PID
-            setDrivePosPID(maxSpeed);
+            driveMode = CANSparkMax.ControlType.kPosition;
         }
-        drivePID.setOutputRange(-maxSpeed, maxSpeed);
+        drivePID.setOutputRange(-maxSpeed, maxSpeed, DriveSlotId.POSITION.value);
 
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
-        drivePID.setReference(targetTics, driveMode);
+        drivePID.setReference(targetTics, driveMode, DriveSlotId.POSITION.value);
     }
 
     /**
@@ -547,21 +545,20 @@ public class Mk4NeoModule {
         if (driveMode != CANSparkMax.ControlType.kSmartMotion) {
             // going out of something other than smart motion control to smart motion control
             // reset speed to zero
-            drivePID.setReference(0.0, CANSparkMax.ControlType.kVelocity);
+            drivePID.setReference(0.0, CANSparkMax.ControlType.kVelocity, DriveSlotId.VELOCITY.value);
             // And as far as I can tell from the documentation, this mode uses a max acceleration/deceleration
-            // and max speed to control the motion until close to the target, then uses a position PID to lock
-            // the position. So we are using the position PID, and a bunch of smart motion constraints.
-            // Set up the position PID.
-            setSmartMotionPID();
+            // and max speed to control the motion until close to the target and then waffles around the target
+            // until it gets in tolerance.
+            driveMode = CANSparkMax.ControlType.kSmartMotion;
         }
 
         // now set up the smart motion speed and acceleration constants
-        drivePID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, 0);
-        drivePID.setSmartMotionMaxAccel(maxAcceleration, 0);
+        drivePID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, DriveSlotId.SMART_MOTION.value);
+        drivePID.setSmartMotionMaxAccel(maxAcceleration, DriveSlotId.SMART_MOTION.value);
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
-        drivePID.setReference(targetTics, driveMode);
+        drivePID.setReference(targetTics, driveMode, DriveSlotId.SMART_MOTION.value);
     }
 
     /**

@@ -67,9 +67,22 @@ public abstract class A05Constants {
         return HAS_LIMELIGHT;
     }
     // ---------------------
+    private static boolean SPARK_CONFIG_FROM_FACTORY_DEFAULTS = true;
+    private static boolean SPARK_BURN_CONFIG = false;
 
+    public static void setSparkConfig(boolean fromFactoryDefaults, boolean burnConfig) {
+        SPARK_CONFIG_FROM_FACTORY_DEFAULTS = fromFactoryDefaults;
+        SPARK_BURN_CONFIG = burnConfig;
+    }
+    public static boolean getSparkConfigFromFactoryDefaults() {
+        return SPARK_CONFIG_FROM_FACTORY_DEFAULTS;
+    }
+    public static boolean getSparkBurnConfig() {
+        return SPARK_BURN_CONFIG;
+    }
+    // ---------------------
     /**
-     * The default USB driver station port for the xbox drive controller.
+     *
      */
     public static final int DRIVE_XBOX_PORT = 0;
 

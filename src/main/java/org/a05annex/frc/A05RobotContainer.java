@@ -18,7 +18,7 @@ import java.io.FileNotFoundException;
 public abstract class A05RobotContainer {
 
     /**
-     * Theis is the {@link NavX} that provides inertial navigation for the robot.
+     * This is the {@link NavX} that provides inertial navigation for the robot.
      */
     protected NavX m_navx = NavX.getInstance();
 

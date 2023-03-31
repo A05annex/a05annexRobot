@@ -33,7 +33,6 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      *
      * @return Returns this {@link DriveSubsystem}
      */
-    @SuppressWarnings("WeakerAccess")
     synchronized public static DriveSubsystem getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new DriveSubsystem();
@@ -173,7 +172,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     @Override
-    public void recalibrate() {
+    public void calibrate() {
         m_rf.calibrate();
         m_rr.calibrate();
         m_lf.calibrate();
