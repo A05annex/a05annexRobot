@@ -216,23 +216,23 @@ public class Mk4NeoModule {
         this.directionPID = directionPID;
         this.calibrationEncoder = calibrationEncoder;
 
-        // Initialize the calibration CANcoder
-        CANCoderConfiguration config = new CANCoderConfiguration();
-        config.sensorCoefficient = 2 * Math.PI / 4096.0;
-        config.unitString = "rad";
-        config.sensorDirection = true;
-        while (true) {
-            ErrorCode errorCode = calibrationEncoder.configAllSettings(config);
-            if ((ErrorCode.OK == errorCode) || (/*In Testing*/null == errorCode)) {
-                break;
-            }
-            DriverStation.reportWarning(
-                    String.format("Swerve (%s) CANCoder config error: CAN id = %d; error =  %d", swerveDrivePosition,
-                            calibrationEncoder.getDeviceID(), errorCode.value), false);
-        }
-
-
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
+            // Initialize the calibration CANcoder
+            CANCoderConfiguration config = new CANCoderConfiguration();
+            config.sensorCoefficient = 2 * Math.PI / 4096.0;
+            config.unitString = "rad";
+            config.sensorDirection = true;
+            while (true) {
+                ErrorCode errorCode = calibrationEncoder.configAllSettings(config);
+                if ((ErrorCode.OK == errorCode) || (/*In Testing*/null == errorCode)) {
+                    break;
+                }
+                DriverStation.reportWarning(
+                        String.format("Swerve (%s) CANCoder config error: CAN id = %d; error =  %d", swerveDrivePosition,
+                                calibrationEncoder.getDeviceID(), errorCode.value), false);
+            }
+
+
             // reset motor controllers to factory default
             while (true) {
                 REVLibError errorCode = this.driveMotor.restoreFactoryDefaults();
@@ -254,10 +254,10 @@ public class Mk4NeoModule {
             }
         }
 
-//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,60000);
-//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,60000);
-//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,60000);
-//        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,60000);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,60000);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,60000);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,60000);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,60000);
     }
 
 
@@ -391,7 +391,6 @@ public class Mk4NeoModule {
             drivePID.setSmartMotionMinOutputVelocity(-0.0, DriveSlotId.SMART_MOTION.value);
             drivePID.setSmartMotionAllowedClosedLoopError(TARGET_POSITION_TOLERANCE, DriveSlotId.SMART_MOTION.value);
             initPID(drivePID, 0.0, DRIVE_POS_kP, DRIVE_POS_kI, DRIVE_POS_IZONE, DriveSlotId.POSITION.value);
-            driveMode = CANSparkMax.ControlType.kVelocity;
 
             if (A05Constants.getSparkBurnConfig()) {
                 directionMotor.burnFlash();
@@ -411,12 +410,15 @@ public class Mk4NeoModule {
         // Now we know where the wheel actually is pointing, initialize the direction encoder on direction
         // motor controller to reflect the actual position of the wheel.
         directionEncoder.setPosition(
-                (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
+                (calibrationEncoder.getAbsolutePosition() - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
         // set the wheel direction to 0.0 (son the wheel is now facing forward), and setup the remembered
         // last wheel direction and last direction encoder  position.
         directionPID.setReference(0.0, CANSparkMax.ControlType.kPosition);
         lastDirection.setValue(AngleUnit.RADIANS, 0.0);
+        driveMode = CANSparkMax.ControlType.kVelocity;
         lastDirectionEncoder = 0.0;
+        lastSpeed = 0.0;
+        speedMultiplier = 1.0;
     }
 
     /**
