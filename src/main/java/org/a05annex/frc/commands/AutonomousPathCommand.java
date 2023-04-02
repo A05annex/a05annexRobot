@@ -293,7 +293,8 @@ public class AutonomousPathCommand extends CommandBase {
                 double headingError = (pathPoint.fieldHeading().getRadians() -
                         NavX.getInstance().getHeading().getRadians());
                 NavX.getInstance().setExpectedHeading(pathPoint.fieldHeading());
-                double headingCorrection = headingError / (12.0 * 0.02);
+//                double headingCorrection = headingError / (12.0 * 0.02);
+                double headingCorrection = headingError * A05Constants.getDriveOrientationkp();
                 double rotation = (pathPoint.speedRotation() + headingCorrection) / swerveDrive.getMaxRadiansPerSec();
                 swerveDrive.swerveDriveComponents(forward, strafe, rotation);
 
