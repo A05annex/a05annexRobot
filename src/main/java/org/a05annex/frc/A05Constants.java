@@ -67,16 +67,57 @@ public abstract class A05Constants {
         return HAS_LIMELIGHT;
     }
     // ---------------------
+    /**
+     * {@code true} if CAN devices should be set to factory defaults and fully configured from
+     * there, {@code false} if it should be assumed configuration is burned into the CAN devices
+     * and should be skipped. Defaults to {@code true}.
+     */
     private static boolean SPARK_CONFIG_FROM_FACTORY_DEFAULTS = true;
+    /**
+     * {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise. Defaults
+     * to {@code false}.
+     */
     private static boolean SPARK_BURN_CONFIG = false;
 
+    /**
+     *
+     *
+     * @param fromFactoryDefaults Set to {@code true} during pre-competition programming when you are tuning stuff
+     *                            and motor configuration may be different with every restart. Once configurations
+     *                            have been burned, this should be {@code false} unless you need to tune something.
+     * @param burnConfig          Normally {@code false}. Set to {@code true} once you have things tuned, and you
+     *                            want to burn settings into the CAN devices as the power-on settings. After you
+     *                            have set this to {@code true} and enabled:
+     *                            <ul>
+     *                            <li>Please verify CAN devices are set as expected;</li>
+     *                            <li>Change the robot initialization code to set this to {@code false} and
+     *                            {@code fromFactoryDefaults} to {@code false}, and redeploy;</li>
+     *                            <li>Power down the robot, then repower the robot;</li>
+     *                            <li>Verify the CAN devices are set as expected at power up</li>
+     *                            </ul>
+     */
     public static void setSparkConfig(boolean fromFactoryDefaults, boolean burnConfig) {
         SPARK_CONFIG_FROM_FACTORY_DEFAULTS = fromFactoryDefaults;
         SPARK_BURN_CONFIG = burnConfig;
     }
+
+    /**
+     * Query whether SparkMax configuration should be from factory defaults, or if it should be assumed
+     * configuration is burned into the CAN devices and should be skipped.
+     *
+     * @return {@code true} if CAN devices should be set to factory defaults and fully configured from
+     * there, {@code false} if it should be assumed configuration is burned into the CAN devices
+     * and should be skipped.
+     */
     public static boolean getSparkConfigFromFactoryDefaults() {
         return SPARK_CONFIG_FROM_FACTORY_DEFAULTS;
     }
+
+    /**
+     * Query whether SparkMax configuration should be burned after configuration.
+     *
+     * @return {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise.
+     */
     public static boolean getSparkBurnConfig() {
         return SPARK_BURN_CONFIG;
     }

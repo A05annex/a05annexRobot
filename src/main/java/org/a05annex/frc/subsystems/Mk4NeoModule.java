@@ -77,8 +77,8 @@ public class Mk4NeoModule {
     static double SPIN_kI = 0.0;
 
     // PID values for the drive spark motor controller speed PID loop
-    static double DRIVE_kP = 0.00003;
-    static double DRIVE_kI = 0.000002;
+    static double DRIVE_kP = 0.00005;
+    static double DRIVE_kI = 0.000001;
     static double DRIVE_kFF = 0.000174;
     static double DRIVE_IZONE = 200.0;
 
@@ -89,9 +89,9 @@ public class Mk4NeoModule {
 
     // PID values for the drive spark motor controller smart motion PID loop
     static double SMART_MOTION_kP = 0.00005;
-    static double SMART_MOTION_kI = 0.0000001;
+    static double SMART_MOTION_kI = 0.000001;
     static double SMART_MOTION_kFF = 0.000174;
-    static double SMART_MOTION_IZONE = 0.75;
+    static double SMART_MOTION_IZONE = 200.0;
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical hardware
     // -----------------------------------------------------------------------------------------------------------------
@@ -254,14 +254,14 @@ public class Mk4NeoModule {
             }
         }
 
-        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,60000);
-        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,60000);
-        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,60000);
-        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,60000);
-        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,60000);
-        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,60000);
-        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,60000);
-        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,60000);
+        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,500);
+        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,500);
+        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,500);
+        this.directionMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,500);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3,500);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4,500);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5,500);
+        this.driveMotor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6,500);
     }
 
 
