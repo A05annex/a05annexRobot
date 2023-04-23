@@ -1,9 +1,7 @@
 package org.a05annex.frc.subsystems;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.*;
+import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.A05Constants;
 import org.jetbrains.annotations.NotNull;
 
@@ -138,7 +136,7 @@ import org.jetbrains.annotations.NotNull;
  *         Current limiting uses the SparkMAX to control the current to the motor. This can protect both the motor
  *         from currents that would cause damage, and the breaker to prevent conditions that would cause the breaker
  *         to trip and disable the motor.
- *         <p>
+ * <p>
  *         </li>
  *         <li>Unnecessary CAN activity</li>
  *     </ul>
@@ -166,9 +164,10 @@ import org.jetbrains.annotations.NotNull;
 public class SparkNeo {
 
     /**
-     * The factory for {@link SparkNeo} objects for the physical robot. When the robopt is powered up and this
+     * The factory for {@link SparkNeo} objects for the physical robot. When the robot is powered up and this
      * object is first created, it will represent in its powered up configuration
-     * @param canId
+     *
+     * @param canId The CAN id of this Spark MAX
      * @return
      */
     @NotNull
@@ -186,7 +185,6 @@ public class SparkNeo {
         POSITION(2);
 
         final int slotId;
-
         PIDtype(int slotId) {
             this.slotId = slotId;
         }
@@ -197,7 +195,8 @@ public class SparkNeo {
         RPM_OCCASIONAL_STALL(1),
         RPM_PROLONGED_STALL(2),
         POSITION(3);
-        int index;
+
+        final int index;
         UseType(int index) {
             this.index = index;
         }
@@ -206,7 +205,8 @@ public class SparkNeo {
     enum BreakerSupplier {
         REV(0),
         ANDY_MARK(1);
-        int index;
+
+        final int index;
         BreakerSupplier(int index) {
             this.index = index;
         }
@@ -217,40 +217,50 @@ public class SparkNeo {
         Amps20(1),
         Amps30(2),
         Amps40(3);
-        int index;
+
+        final int index;
         BreakerAmps(int index) {
             this.index = index;
         }
     }
 
-    static public final double[][][] maxCurrentMatrix = {
+    enum Direction {
+        FORWARD(false),
+        REVERSE(true);
+
+        final boolean reversed;
+        Direction(boolean reversed ){
+            this.reversed = reversed;
+        }
+    }
+    static final int[][][] maxCurrentMatrix = {
             // UseType.FREE_SPINNING - a think that is essentially free-spinning. Like a pickup roller which is
             // essentially free spinning except for the momentary power blip during pick up. Current is expected
             // to be low, and since stall is completely unexpected, should be limited to a value the motor and
             // breaker can sustain forever.
             {
-                    {10.0, 20.0, 30.0, 30.0},// REV 10, 20, 30, 40 Amp
-                    {10.0, 20.0, 30.0, 30.0} // AndyMark 10, 20, 30, 40 Amp
+                    {10, 20, 30, 30},// REV 10, 20, 30, 40 Amp
+                    {10, 20, 30, 30} // AndyMark 10, 20, 30, 40 Amp
             },
             // UseType.RPM_OCCASIONAL_STALL - you occasionally might do a thing that stalls the motor - like
             // hitting a physical stop.
             {
-                    {10.0, 20.0, 30.0, 30.0},// REV 10, 20, 30, 40 Amp
-                    {10.0, 20.0, 30.0, 30.0} // AndyMark 10, 20, 30, 40 Amp
+                    {10, 20, 30, 30},// REV 10, 20, 30, 40 Amp
+                    {10, 20, 30, 30} // AndyMark 10, 20, 30, 40 Amp
             },
             // UseType.RPM_PROLONGED_STALL - speed control (like, of the drive) where you may be stalled (like,
             // playing defense), and you don't want to fry the motor or trow the breaker. The key here is the
             // prolonged stall is intentional and the driver will choose to continue rather than trying to recover
             // from the conditions causing the stall.
             {
-                    {15.0, 30.0, 45.0, 60.0},// REV 10, 20, 30, 40 Amp
-                    {12.0, 27.0, 40.0, 50.0} // AndyMark 10, 20, 30, 40 Amp
+                    {15, 30, 43, 55},// REV 10, 20, 30, 40 Amp
+                    {12, 27, 40, 50} // AndyMark 10, 20, 30, 40 Amp
             },
             // UseType.POSITION - position control is essentially always holding the motor at a stall that
             // maintains the position.
             {
-                    {10.0, 20.0, 30.0, 40.0},// REV 10, 20, 30, 40 Amp
-                    {10.0, 20.0, 30.0, 40.0} // AndyMark 10, 20, 30, 40 Amp
+                    {10, 20, 30, 40},// REV 10, 20, 30, 40 Amp
+                    {10, 20, 30, 40} // AndyMark 10, 20, 30, 40 Amp
             }
     };
 
@@ -285,6 +295,7 @@ public class SparkNeo {
     /**
      * Get the maximum free RPM. This is published in the
      * <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> summary as 5676RPM
+     *
      * @return Returns the maximum free RPM
      */
     public double getMaxFreeRPM() {
@@ -302,41 +313,87 @@ public class SparkNeo {
     }
 
     /**
-     *
+     * Call this to start your configuration of the SparkMAX, call {@link #endConfig()} to end the
+     * configuration and optionally burn the configuration to the flash memory so it will be the
+     * power-up configuration. Only methods specified as configuration methods may be called between
+     * {@code startConfig()} and {@link #endConfig()}.
      */
     public void startConfig() {
         verifyInConfig(false, "startConfig");
         inConfig = true;
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            sparkMax.restoreFactoryDefaults();
+            while (true) {
+                REVLibError errorCode = sparkMax.restoreFactoryDefaults();
+                if (REVLibError.kOk == errorCode) {
+                    break;
+                }
+                DriverStation.reportWarning(
+                        String.format("SparkMAX config error: CAN id = %d; error =  %d",
+                                sparkMax.getDeviceId(), errorCode.value),false);
+            }
         }
 
     }
 
     /**
-     * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
-     * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
-     * @param kIZone  The PID loop will not include the integral component until the current position or speed is
-     *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
-     *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
-     * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
+     * Set the current limit. This is a configuration methos and can only be called between {@link #startConfig()}
+     * and {@link #endConfig()}.
+     *
+     * @param useType
+     * @param breakerSupplier
+     * @param breakertAmps
+     */
+    public void setCurrentLimit(@NotNull UseType useType, @NotNull BreakerSupplier breakerSupplier,
+                         @NotNull BreakerAmps breakertAmps) {
+        verifyInConfig(true, "setCurrentLimit");
+        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
+            int maxAmps = maxCurrentMatrix[useType.index][breakerSupplier.index][breakertAmps.index];
+            sparkMax.setSmartCurrentLimit(maxAmps, maxAmps, 10000);
+        }
+    }
+
+    /**
+     *
+     * @param direction
+     */
+    public void setDirection(Direction direction) {
+        verifyInConfig(true, "setReversed");
+        sparkMax.setInverted(direction.reversed);
+    }
+
+    /**
+     *
+     * @param idleMode
+     */
+    public void setIdleMode(CANSparkMax.IdleMode idleMode){
+        sparkMax.setIdleMode(idleMode);
+    }
+
+
+    /**
+     * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
+     * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kIZone         The PID loop will not include the integral component until the current position or speed is
+     *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
+     *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
+     * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
      * @param maxRPM
      * @param maxRPMs
      * @param minRPMs
      * @param allowableError
      */
-    private void setSmartMotion(double kP, double kI, double kIZone, double kFF,
+    public void setSmartMotion(double kP, double kI, double kIZone, double kFF,
                                 double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
         setSmartMotion(kP, kI, kIZone, kFF, 0.0, -1.0, 1.0, maxRPM, maxRPMs, minRPMs, allowableError);
     }
 
     /**
-     * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
-     * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
-     * @param kIZone  The PID loop will not include the integral component until the current position or speed is
-     *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
-     *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
-     * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
+     * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
+     * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kIZone         The PID loop will not include the integral component until the current position or speed is
+     *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
+     *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
+     * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
      * @param kD
      * @param min
      * @param max
@@ -345,7 +402,7 @@ public class SparkNeo {
      * @param minRPMs
      * @param allowableError
      */
-    private void setSmartMotion(double kP, double kI, double kIZone, double kFF, double kD, double min, double max,
+    public void setSmartMotion(double kP, double kI, double kIZone, double kFF, double kD, double min, double max,
                                 double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
         verifyInConfig(true, "setSmartMotion");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
@@ -370,7 +427,7 @@ public class SparkNeo {
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
      */
-    private void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF) {
+    public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF) {
         setPID(pidType, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
     }
 
@@ -388,7 +445,7 @@ public class SparkNeo {
      * @param min
      * @param max
      */
-    private void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
+    public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
                         double kD, double min, double max) {
         verifyInConfig(true, "setPID");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
@@ -402,14 +459,6 @@ public class SparkNeo {
         }
     }
 
-    void setReversed() {
-        verifyInConfig(true, "setReversed");
-        sparkMax.setInverted(true);
-    }
-
-    void setCurrentLimit(UseType useType, BreakerSupplier breakerSupplier, BreakerAmps breakertAmps) {
-        verifyInConfig(true, "setCurrentLimit");
-    }
 
     /**
      *
