@@ -30,8 +30,7 @@ import org.jetbrains.annotations.NotNull;
      * <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> summary as 11000RPM
      * @return Returns the maximum free RPM
      */
-    @Override
-    public double getMaxFreeRPM() {
+    static public double getMaxFreeRPM() {
         // per REV Neo 550 datasheet
         return 11000.0;
     }

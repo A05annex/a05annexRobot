@@ -125,10 +125,10 @@ import org.jetbrains.annotations.NotNull;
  *             <li><b>Motor Use</b> - How a motor is used affects how we should approach a determining an appropriate
  *             maximum current limit. Typically we see these use scenarios:
  *             <ul>
- *                 <li><b>Free Spinning</b></li>
- *                 <li><b></b></li>
- *                 <li><b></b></li>
- *                 <li><b></b></li>
+ *                 <li><b>Free Spinning</b> -</li>
+ *                 <li><b>Occasional Stall</b> - </li>
+ *                 <li><b>Prolonged Stall</b></li>
+ *                 <li><b>Position (Always Stalled)</b></li>
  *             </ul>
  *             motors that are essentially free spinning motors
  *             </li>
@@ -185,6 +185,7 @@ public class SparkNeo {
         POSITION(2);
 
         final int slotId;
+
         PIDtype(int slotId) {
             this.slotId = slotId;
         }
@@ -197,17 +198,8 @@ public class SparkNeo {
         POSITION(3);
 
         final int index;
+
         UseType(int index) {
-            this.index = index;
-        }
-    }
-
-    enum BreakerSupplier {
-        REV(0),
-        ANDY_MARK(1);
-
-        final int index;
-        BreakerSupplier(int index) {
             this.index = index;
         }
     }
@@ -219,6 +211,7 @@ public class SparkNeo {
         Amps40(3);
 
         final int index;
+
         BreakerAmps(int index) {
             this.index = index;
         }
@@ -229,39 +222,29 @@ public class SparkNeo {
         REVERSE(true);
 
         final boolean reversed;
-        Direction(boolean reversed ){
+
+        Direction(boolean reversed) {
             this.reversed = reversed;
         }
     }
-    static final int[][][] maxCurrentMatrix = {
+
+    static final int[][] maxCurrentMatrix = {
             // UseType.FREE_SPINNING - a think that is essentially free-spinning. Like a pickup roller which is
             // essentially free spinning except for the momentary power blip during pick up. Current is expected
             // to be low, and since stall is completely unexpected, should be limited to a value the motor and
             // breaker can sustain forever.
-            {
-                    {10, 20, 30, 30},// REV 10, 20, 30, 40 Amp
-                    {10, 20, 30, 30} // AndyMark 10, 20, 30, 40 Amp
-            },
+            {10, 20, 30, 30},   // 10, 20, 30, 40 Amp
             // UseType.RPM_OCCASIONAL_STALL - you occasionally might do a thing that stalls the motor - like
             // hitting a physical stop.
-            {
-                    {10, 20, 30, 30},// REV 10, 20, 30, 40 Amp
-                    {10, 20, 30, 30} // AndyMark 10, 20, 30, 40 Amp
-            },
+            {10, 20, 30, 30},   // 10, 20, 30, 40 Amp
             // UseType.RPM_PROLONGED_STALL - speed control (like, of the drive) where you may be stalled (like,
-            // playing defense), and you don't want to fry the motor or trow the breaker. The key here is the
+            // playing defense), and you don't want to fry the motor or throw the breaker. The key here is the
             // prolonged stall is intentional and the driver will choose to continue rather than trying to recover
             // from the conditions causing the stall.
-            {
-                    {15, 30, 43, 55},// REV 10, 20, 30, 40 Amp
-                    {12, 27, 40, 50} // AndyMark 10, 20, 30, 40 Amp
-            },
+            {15, 30, 40, 50},   // 10, 20, 30, 40 Amp
             // UseType.POSITION - position control is essentially always holding the motor at a stall that
             // maintains the position.
-            {
-                    {10, 20, 30, 40},// REV 10, 20, 30, 40 Amp
-                    {10, 20, 30, 40} // AndyMark 10, 20, 30, 40 Amp
-            }
+            {10, 20, 30, 40}    // 10, 20, 30, 40 Amp
     };
 
     boolean inConfig = false;
@@ -298,9 +281,13 @@ public class SparkNeo {
      *
      * @return Returns the maximum free RPM
      */
-    public double getMaxFreeRPM() {
+    static public double getMaxFreeRPM() {
         // per REV Neo datasheet
         return 5676.0;
+    }
+
+    public double getEncoderVelocity() {
+        return encoder.getVelocity();
     }
 
     public double getEncoderPosition() {
@@ -329,31 +316,28 @@ public class SparkNeo {
                 }
                 DriverStation.reportWarning(
                         String.format("SparkMAX config error: CAN id = %d; error =  %d",
-                                sparkMax.getDeviceId(), errorCode.value),false);
+                                sparkMax.getDeviceId(), errorCode.value), false);
             }
         }
 
     }
 
     /**
-     * Set the current limit. This is a configuration methos and can only be called between {@link #startConfig()}
+     * Set the current limit. This is a configuration method and can only be called between {@link #startConfig()}
      * and {@link #endConfig()}.
      *
-     * @param useType
-     * @param breakerSupplier
-     * @param breakertAmps
+     * @param useType         The motor use type, which characterizes likelihood and duration of stall.
+     * @param breakertAmps    The breaker amperage, which allows computing the breaker overload.
      */
-    public void setCurrentLimit(@NotNull UseType useType, @NotNull BreakerSupplier breakerSupplier,
-                         @NotNull BreakerAmps breakertAmps) {
+    public void setCurrentLimit(@NotNull UseType useType,  @NotNull BreakerAmps breakertAmps) {
         verifyInConfig(true, "setCurrentLimit");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            int maxAmps = maxCurrentMatrix[useType.index][breakerSupplier.index][breakertAmps.index];
+            int maxAmps = maxCurrentMatrix[useType.index][breakertAmps.index];
             sparkMax.setSmartCurrentLimit(maxAmps, maxAmps, 10000);
         }
     }
 
     /**
-     *
      * @param direction
      */
     public void setDirection(Direction direction) {
@@ -362,10 +346,9 @@ public class SparkNeo {
     }
 
     /**
-     *
      * @param idleMode
      */
-    public void setIdleMode(CANSparkMax.IdleMode idleMode){
+    public void setIdleMode(CANSparkMax.IdleMode idleMode) {
         sparkMax.setIdleMode(idleMode);
     }
 
@@ -383,7 +366,7 @@ public class SparkNeo {
      * @param allowableError
      */
     public void setSmartMotion(double kP, double kI, double kIZone, double kFF,
-                                double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
+                               double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
         setSmartMotion(kP, kI, kIZone, kFF, 0.0, -1.0, 1.0, maxRPM, maxRPMs, minRPMs, allowableError);
     }
 
@@ -399,11 +382,11 @@ public class SparkNeo {
      * @param max
      * @param maxRPM
      * @param maxRPMs
-     * @param minRPMs
+     * @param minRPM
      * @param allowableError
      */
     public void setSmartMotion(double kP, double kI, double kIZone, double kFF, double kD, double min, double max,
-                                double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
+                               double maxRPM, double maxRPMs, double minRPM, double allowableError) {
         verifyInConfig(true, "setSmartMotion");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
             setPID(PIDtype.SMART_MOTION, kP, kI, kIZone, kFF, kD, min, max);
@@ -411,7 +394,7 @@ public class SparkNeo {
             sparkMaxPID.setSmartMotionAccelStrategy(SparkMaxPIDController.AccelStrategy.kTrapezoidal, slotId);
             sparkMaxPID.setSmartMotionMaxVelocity(maxRPM, slotId);
             sparkMaxPID.setSmartMotionMaxAccel(maxRPMs, slotId);
-            sparkMaxPID.setSmartMotionMinOutputVelocity(minRPMs, slotId);
+            sparkMaxPID.setSmartMotionMinOutputVelocity(minRPM, slotId);
             sparkMaxPID.setSmartMotionAllowedClosedLoopError(allowableError, slotId);
         }
     }
@@ -446,7 +429,7 @@ public class SparkNeo {
      * @param max
      */
     public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
-                        double kD, double min, double max) {
+                       double kD, double min, double max) {
         verifyInConfig(true, "setPID");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
             int slotId = pidType.slotId;

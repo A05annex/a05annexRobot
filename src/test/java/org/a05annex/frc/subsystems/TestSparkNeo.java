@@ -1,9 +1,7 @@
 package org.a05annex.frc.subsystems;
 
-import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.*;
 import org.a05annex.frc.A05Constants;
-import org.a05annex.util.Utl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,38 +28,42 @@ public class TestSparkNeo {
         return new SparkNeo(spark, encoder, pid);
     }
 
-    /** Verify smart motion
-    /** This method verifies that the PID motor controller constants were set as expected.
-     * @param pid (SparkMaxPIDController, not null) The mocked PID motor controller.
-     * @param kP (double, readonly) The expected proportional multiplier.
-     * @param kI (double, readonly) The expected integral multiplier.
-     * @param kIZone (double, readonly) The expected integral zone.
-     * @param kFF (double, readonly) The expected forward multiplier.
-     * @param kFF (double, readonly) The expected forward multiplier.
-     * @param kFF (double, readonly) The expected forward multiplier.
-     * @param kFF (double, readonly) The expected forward multiplier.
+    /**
+     * Verify smart motion
+     * /** This method verifies that the PID motor controller constants were set as expected.
+     *
+     * @param pid       (SparkMaxPIDController, not null) The mocked PID motor controller.
+     * @param kP        (double, readonly) The expected proportional multiplier.
+     * @param kI        (double, readonly) The expected integral multiplier.
+     * @param kIZone    (double, readonly) The expected integral zone.
+     * @param kFF       (double, readonly) The expected forward multiplier.
+     * @param resetMock
      */
-    private void verifyPid(@NotNull SparkMaxPIDController pid, int slotId, final double kP, final double kI,
-                           final double kIZone, final double kFF, double kD, double min, double max) {
+    static void verifyPid(@NotNull SparkMaxPIDController pid, int slotId, final double kP, final double kI,
+                          final double kIZone, final double kFF, double kD, double min, double max, boolean resetMock) {
         verify(pid, times(1)).setP(kP, slotId);
         verify(pid, times(1)).setI(kI, slotId);
         verify(pid, times(1)).setIZone(kIZone, slotId);
         verify(pid, times(1)).setFF(kFF, slotId);
         verify(pid, times(1)).setD(kD, slotId);
         verify(pid, times(1)).setOutputRange(min, max, slotId);
-        reset(pid);
+        if (resetMock) {
+            reset(pid);
+        }
     }
 
-    private void verifySmartMotion(@NotNull SparkMaxPIDController pid, int slotId, double kP, double kI, double kIZone,
+    static void verifySmartMotion(@NotNull SparkMaxPIDController pid, double kP, double kI, double kIZone,
                                   double kFF, double kD, double min, double max,
-                                  double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
+                                  double maxRPM, double maxRPMs, double minRPMs, double allowableError,
+                                  boolean resetMock) {
+        int slotId = SparkNeo.PIDtype.SMART_MOTION.slotId;
         verify(pid, times(1)).
                 setSmartMotionAccelStrategy(SparkMaxPIDController.AccelStrategy.kTrapezoidal, slotId);
         verify(pid, times(1)).setSmartMotionMaxVelocity(maxRPM, slotId);
         verify(pid, times(1)).setSmartMotionMaxAccel(maxRPMs, slotId);
         verify(pid, times(1)).setSmartMotionMinOutputVelocity(minRPMs, slotId);
         verify(pid, times(1)).setSmartMotionAllowedClosedLoopError(allowableError, slotId);
-        verifyPid(pid, slotId, kP, kI, kIZone,kFF, kD, min, max);
+        verifyPid(pid, slotId, kP, kI, kIZone,kFF, kD, min, max, resetMock);
     }
 
     private void verifyUnusedCAN(@NotNull CANSparkMax spark) {
@@ -76,9 +78,8 @@ public class TestSparkNeo {
     }
 
     private void verifySetCurrentLimit(@NotNull CANSparkMax spark, @NotNull SparkNeo.UseType useType,
-                                       @NotNull SparkNeo.BreakerSupplier breakerSupplier,
                                        @NotNull SparkNeo.BreakerAmps breakertAmps) {
-        int maxAmps = maxCurrentMatrix[useType.index][breakerSupplier.index][breakertAmps.index];
+        int maxAmps = maxCurrentMatrix[useType.index][breakertAmps.index];
         verify(spark, times(1)).
                 setSmartCurrentLimit(maxAmps, maxAmps, 10000);
         reset(spark);
@@ -166,37 +167,35 @@ public class TestSparkNeo {
         verifyIdleMode(sparkNeo.sparkMax, CANSparkMax.IdleMode.kBrake);
 
         // setCurrentLimit()
-        sparkNeo.setCurrentLimit(SparkNeo.UseType.RPM_PROLONGED_STALL,
-                SparkNeo.BreakerSupplier.REV, SparkNeo.BreakerAmps.Amps40);
-        verifySetCurrentLimit(sparkNeo.sparkMax, SparkNeo.UseType.RPM_PROLONGED_STALL,
-                SparkNeo.BreakerSupplier.REV, SparkNeo.BreakerAmps.Amps40);
+        sparkNeo.setCurrentLimit(SparkNeo.UseType.RPM_PROLONGED_STALL, SparkNeo.BreakerAmps.Amps40);
+        verifySetCurrentLimit(sparkNeo.sparkMax, SparkNeo.UseType.RPM_PROLONGED_STALL, SparkNeo.BreakerAmps.Amps40);
 
         // test the setSmartMotion() variants.
         sparkNeo.setSmartMotion( 0.01, 0.02, 1.0, 0.03, 0.04, -0.95, 0.95,
                 10000.0,3000.0, 500.0, 0.5);
-        verifySmartMotion(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.SMART_MOTION.slotId, 0.01, 0.02, 1.0,
+        verifySmartMotion(sparkNeo.sparkMaxPID,0.01, 0.02, 1.0,
                 0.03, 0.04, -0.95, 0.95,
-                10000.0,3000.0, 500.0, 0.5);
+                10000.0,3000.0, 500.0, 0.5, true);
         sparkNeo.setSmartMotion( 0.01, 0.02, 1.0, 0.03,
                 10000.0,3000.0, 500.0, 0.5);
-        verifySmartMotion(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.SMART_MOTION.slotId, 0.01, 0.02, 1.0,
+        verifySmartMotion(sparkNeo.sparkMaxPID, 0.01, 0.02, 1.0,
                 0.03, 0.0, -1.0, 1.0,
-                10000.0,3000.0, 500.0, 0.5);
+                10000.0,3000.0, 500.0, 0.5, true);
 
         // test the setPID() variants
         sparkNeo.setPID(SparkNeo.PIDtype.RPM, 0.05, 0.06, 2.0,0.07, 0.08, -0.9, 0.9);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.RPM.slotId, 0.05, 0.06, 2.0,0.07,
-                0.08, -0.9, 0.9);
+                0.08, -0.9, 0.9, true);
         sparkNeo.setPID(SparkNeo.PIDtype.RPM, 0.05, 0.06, 2.0,0.07);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.RPM.slotId, 0.05, 0.06, 2.0,0.07,
-                0.0, -1.0, 1.0);
+                0.0, -1.0, 1.0, true);
 
         sparkNeo.setPID(SparkNeo.PIDtype.POSITION, 0.09, 0.10, 3.0,0.20, 0.30, -0.85, 0.85);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.POSITION.slotId, 0.09, 0.10, 3.0,0.20,
-                0.30, -0.85, 0.85);
+                0.30, -0.85, 0.85, true);
         sparkNeo.setPID(SparkNeo.PIDtype.POSITION, 0.09, 0.10, 3.0,0.20);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.POSITION.slotId, 0.09, 0.10, 3.0,0.20,
-                0.0, -1.0, 1.0);
+                0.0, -1.0, 1.0, true);
 
         sparkNeo.endConfig();
         verifyUnusedCAN(sparkNeo.sparkMax);
@@ -234,7 +233,6 @@ public class TestSparkNeo {
         assertThrows(IllegalStateException.class,
                 () -> sparkNeo.endConfig());
         assertThrows(IllegalStateException.class,
-                () -> sparkNeo.setCurrentLimit(SparkNeo.UseType.FREE_SPINNING, SparkNeo.BreakerSupplier.REV,
-                        SparkNeo.BreakerAmps.Amps40));
+                () -> sparkNeo.setCurrentLimit(SparkNeo.UseType.FREE_SPINNING, SparkNeo.BreakerAmps.Amps40));
     }
 }

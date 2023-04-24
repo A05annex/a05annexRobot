@@ -13,7 +13,7 @@ the robot response to their favorite game).
 ## Change Log
 
 <details>
-  <summary>version 0.0.1 to 0.0.15 (for <b>2023 Charged Up</b>):</summary>
+  <summary>version 0.0.1 to 0.0.17 (for <b>2023 Charged Up</b>):</summary>
 
   * 0.0.1 - Initial internal release;
   * 0.0.2 - Optional mirroring of autonomous for <b>2023 Charged Up</b>;
@@ -26,6 +26,17 @@ the robot response to their favorite game).
   * 0.0.12 - Made heading correction after translate optional;
   * 0.0.13 - Added a NavX calibration factor to minimize rotational drift;
   * 0.0.15 - Current limited swerve drive and spin motors.
+  * 0.0.16 - Changed ordering of swerves in translate commands to try to reduce rotational drift.
+  * 0.0.17 - ISwerveDrive can be set for the A05DriveCommand allowing extension of the DriveSubsystem
+             that add game-specific functionality.
+  * 0.0.18 - Added a recalibrate method for the swerve so it could be recalibrated prior to any enable, this was
+             a band-aid to not burning configuration into the Spark and having occasional configuration
+             issues.
+  * 0.0.19 - Fixed a burning configuration state into the Sparks problem introduced in 0.0.18.
+  * 0.0.20 - Added a methods to IServeDrive to get the actual underlying subsystem.
+  * 0.0.21 - Code to burn default configuration into the Sparks.
+  * 0.0.23 - Post-competition cleanup. Moving common Spark-NEO and Spark-NOE550 combination into
+             a tested wrapper that formalizes our 95% use case into a somple and repeatable pattern.
 </details>
 
 ## Creating a Robot Project Using this Library
@@ -69,5 +80,6 @@ camera heading (relative to the robot) to transform the camera relative directio
 
 ## NavX
 
+## Drive Calibtraion
 
 ## Autonomous Paths

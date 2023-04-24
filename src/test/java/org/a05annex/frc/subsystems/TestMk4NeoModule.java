@@ -33,15 +33,17 @@ public class TestMk4NeoModule {
      */
     private class InitializedMk4NeoModule {
         // mocked representations for physical hardware
-        final CANSparkMax driveMotor = mock(CANSparkMax.class);
-        final CANSparkMax spinMotor = mock(CANSparkMax.class);
         final CANCoder analogEncoder = mock(CANCoder.class);
         // mocked derived representations of components embedded in the physical hardware (i.e. the
         // PID controllers and encoders embedded in the neo motor and spark controller pair)
+        final CANSparkMax driveMotor = mock(CANSparkMax.class);
         final RelativeEncoder driveEncoder = mock(RelativeEncoder.class);
         final SparkMaxPIDController drivePID = mock(SparkMaxPIDController.class);
+        final SparkNeo driveSparkNeo = new SparkNeo(driveMotor, driveEncoder, drivePID);
+        final CANSparkMax spinMotor = mock(CANSparkMax.class);
         final RelativeEncoder spinEncoder = mock(RelativeEncoder.class);
         final SparkMaxPIDController spinPID = mock(SparkMaxPIDController.class);
+        final SparkNeo spinSparkNeo = new SparkNeo(spinMotor, spinEncoder, spinPID);
         final Mk4NeoModule driveModule;
 
         /**
@@ -57,47 +59,49 @@ public class TestMk4NeoModule {
             when(analogEncoder.configAllSettings(config)).thenReturn(ErrorCode.OK);
             when(driveMotor.restoreFactoryDefaults()).thenReturn(REVLibError.kOk);
             when(spinMotor.restoreFactoryDefaults()).thenReturn(REVLibError.kOk);
-            driveModule = new Mk4NeoModule("test-mk4", driveMotor, driveEncoder, drivePID,
-                    spinMotor, spinEncoder, spinPID,
-                    analogEncoder);
+            driveModule = new Mk4NeoModule("test-mk4", driveSparkNeo,
+                    spinSparkNeo, analogEncoder);
             driveModule.setCalibrationOffset(-(Math.PI / 2.0));
             driveModule.calibrate();
             assertEquals(Math.PI / 2.0, driveModule.getCalibrationPosition());
             // In this test example, the wheel is facing directly backwards, so the position should be set to
             // half a direction revolution.
-            verifyPid(drivePID, Mk4NeoModule.DRIVE_kFF, Mk4NeoModule.DRIVE_kP,
-                    Mk4NeoModule.DRIVE_kI, Mk4NeoModule.DRIVE_IZONE,
-                    -1.0, 1.0, Mk4NeoModule.DriveSlotId.VELOCITY.value);
-            verifyPid(drivePID, Mk4NeoModule.SMART_MOTION_kFF, Mk4NeoModule.SMART_MOTION_kP,
-                    Mk4NeoModule.SMART_MOTION_kI, Mk4NeoModule.SMART_MOTION_IZONE,
-                    -1.0, 1.0, Mk4NeoModule.DriveSlotId.SMART_MOTION.value);
-            verifyPid(drivePID, 0.0, Mk4NeoModule.DRIVE_POS_kP,
-                    Mk4NeoModule.DRIVE_POS_kI, Mk4NeoModule.DRIVE_POS_IZONE,
-                    -1.0, 1.0, Mk4NeoModule.DriveSlotId.POSITION.value);
-            verifyPid(spinPID, 0.0, Mk4NeoModule.SPIN_kP, Mk4NeoModule.SPIN_kI,
-                    0.0, -1.0, 1.0, 0);
+            TestSparkNeo.verifyPid(drivePID, SparkNeo.PIDtype.RPM.slotId,Mk4NeoModule.DRIVE_kP,
+                    Mk4NeoModule.DRIVE_kI, Mk4NeoModule.DRIVE_IZONE, Mk4NeoModule.DRIVE_kFF,
+                    0.0, -1.0, 1.0, false);
+            TestSparkNeo.verifySmartMotion(drivePID, Mk4NeoModule.SMART_MOTION_kP,
+                    Mk4NeoModule.SMART_MOTION_kI, Mk4NeoModule.SMART_MOTION_IZONE, Mk4NeoModule.SMART_MOTION_kFF,
+                    0.0, -1.0, 1.0, Mk4NeoModule.SMART_MOTION_MAX_RPM,
+                    Mk4NeoModule.SMART_MOTION_MAX_RPMs, Mk4NeoModule.SMART_MOTION_MIN_RPM,
+                    Mk4NeoModule.SMART_MOTION_TARGET_TOLERANCE, false);
+            TestSparkNeo.verifyPid(drivePID, SparkNeo.PIDtype.POSITION.slotId, Mk4NeoModule.DRIVE_POS_kP,
+                    Mk4NeoModule.DRIVE_POS_kI, Mk4NeoModule.DRIVE_POS_IZONE,Mk4NeoModule.DRIVE_POS_kFF,
+                    0.0, -1.0, 1.0, false);
+            TestSparkNeo.verifyPid(spinPID, SparkNeo.PIDtype.POSITION.slotId, Mk4NeoModule.SPIN_kP, Mk4NeoModule.SPIN_kI,
+                    Mk4NeoModule.SPIN_IZONE, 0.0, 0.0, -1.0, 1.0, false);
             verify(spinEncoder, times(1)).setPosition(Math.PI * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER);
-            verify(spinPID, times(1)).setReference(0.0, CANSparkMax.ControlType.kPosition);
+            verify(spinPID, times(1)).
+                    setReference(0.0, CANSparkMax.ControlType.kPosition, SparkNeo.PIDtype.POSITION.slotId);
             reset(spinEncoder, drivePID, spinPID);
         }
     }
 
-    /** This method verifies that the PID motor controller constants were set as expected.
-     * @param pid (SparkMaxPIDController, not null) The mocked PID motor controller.
-     * @param kFF (double, readonly) The expected forward multiplier.
-     * @param kP (double, readonly) The expected proportional multiplier.
-     * @param kI (double, readonly) The expected integral multiplier.
-     * @param kIZone (double, readonly) The expected integral zone.
-     */
-    private void verifyPid(@NotNull SparkMaxPIDController pid, final double kFF, final double kP,
-                           final double kI, final double kIZone, double min, double max, int slotId) {
-        verify(pid, times(1)).setFF(kFF, slotId);
-        verify(pid, times(1)).setP(kP, slotId);
-        verify(pid, times(1)).setI(kI, slotId);
-        verify(pid, times(1)).setD(0.0, slotId); // we are not using D, this is always 0.0
-        verify(pid, times(1)).setIZone(kIZone, slotId);
-        verify(pid, times(1)).setOutputRange(min, max, slotId);
-    }
+//    /** This method verifies that the PID motor controller constants were set as expected.
+//     * @param pid (SparkMaxPIDController, not null) The mocked PID motor controller.
+//     * @param kFF (double, readonly) The expected forward multiplier.
+//     * @param kP (double, readonly) The expected proportional multiplier.
+//     * @param kI (double, readonly) The expected integral multiplier.
+//     * @param kIZone (double, readonly) The expected integral zone.
+//     */
+//    private void verifyPid(@NotNull SparkMaxPIDController pid, final double kFF, final double kP,
+//                           final double kI, final double kIZone, double min, double max, int slotId) {
+//        verify(pid, times(1)).setFF(kFF, slotId);
+//        verify(pid, times(1)).setP(kP, slotId);
+//        verify(pid, times(1)).setI(kI, slotId);
+//        verify(pid, times(1)).setD(0.0, slotId); // we are not using D, this is always 0.0
+//        verify(pid, times(1)).setIZone(kIZone, slotId);
+//        verify(pid, times(1)).setOutputRange(min, max, slotId);
+//    }
 
     /**
      * This method verifies what we think we programmed a module to do is what it actually does.
@@ -119,9 +123,9 @@ public class TestMk4NeoModule {
         dm.driveModule.setDirectionAndSpeed(new AngleD(AngleUnit.RADIANS, radians), speed);
         verify(dm.spinPID, times(1)).setReference(
                 AdditionalMatchers.eq(actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER, .00001),
-                ArgumentMatchers.eq(CANSparkMax.ControlType.kPosition));
+                ArgumentMatchers.eq(CANSparkMax.ControlType.kPosition), ArgumentMatchers.eq(SparkNeo.PIDtype.POSITION.slotId));
         verify(dm.drivePID, times(1)).setReference(actualSpeed * Mk4NeoModule.MAX_DRIVE_RPM,
-                CANSparkMax.ControlType.kVelocity, Mk4NeoModule.DriveSlotId.VELOCITY.value);
+                CANSparkMax.ControlType.kVelocity, SparkNeo.PIDtype.RPM.slotId);
         // make encoder readings slightly different from what was actually set so that when we get these
         // things we know we are really getting them from the encoder.
         double spinEncPosition = (actualRadians * Mk4NeoModule.RADIANS_TO_SPIN_ENCODER) + .001;
@@ -162,20 +166,16 @@ public class TestMk4NeoModule {
         verifyDirectionAndSpeed(dm, Math.toRadians(10.0), 1.0, Math.toRadians(10.0), 1.0);
     }
 
-//    /**
-//     * Test a basic move specified in degrees - 10 degrees clockwise, full speed forward.
-//     */
-//    @Test
-//    @DisplayName("Test setDegreesAndSpeed(10.0,1.0)")
-//    void test_set_degrees_10_1() {
-//        // Should spin positively
-//        InitializedMk4NeoModule dm = new InitializedMk4NeoModule();
-//        dm.driveModule.setDegreesAndSpeed(10.0, 1.0);
-//        verify(dm.spinPID, times(1)).setReference(Math.toRadians(10.0) * Constants.RADIANS_TO_SPIN_ENCODER,
-//                CANSparkMax.ControlType.kPosition);
-//        verify(dm.drivePID, times(1)).setReference(1.0 * Constants.MAX_DRIVE_VELOCITY,
-//                CANSparkMax.ControlType.kVelocity);
-//    }
+    /**
+     * Test a basic move specified in degrees - 10 degrees clockwise, full speed forward.
+     */
+    @Test
+    @DisplayName("Test setDegreesAndSpeed(10.0,1.0)")
+    void test_set_degrees_10_1() {
+        // Should spin positively
+        InitializedMk4NeoModule dm = new InitializedMk4NeoModule();
+        verifyDirectionAndSpeed(dm, Math.toRadians(10.0), 1.0, Math.toRadians(10.0), 1.0);
+    }
 
     /**
      * Test a close to, but less than, 90 degree clockwise, half speed. Spin should be clockwise and speed forward
@@ -268,7 +268,7 @@ public class TestMk4NeoModule {
         dm.driveModule.setDirectionAndSpeed(new AngleD(AngleUnit.RADIANS, 0.0), 1.0);
         verify(dm.spinPID, times(2)).setReference(0.0, CANSparkMax.ControlType.kPosition);
         verify(dm.drivePID, times(2)).setReference(Mk4NeoModule.MAX_DRIVE_RPM,
-                CANSparkMax.ControlType.kVelocity, Mk4NeoModule.DriveSlotId.VELOCITY.value);
+                CANSparkMax.ControlType.kVelocity, SparkNeo.PIDtype.RPM.slotId);
         assertEquals(CANSparkMax.ControlType.kVelocity, dm.driveModule.getSparkControlType());
         // Go backwards (180 degrees) 2 steps - should be no spin and negative speed
         reset(dm.spinPID, dm.drivePID);
@@ -276,14 +276,14 @@ public class TestMk4NeoModule {
         dm.driveModule.setDirectionAndSpeed(new AngleD(AngleUnit.RADIANS, Math.PI), 1.0);
         verify(dm.spinPID, times(2)).setReference(0.0, CANSparkMax.ControlType.kPosition);
         verify(dm.drivePID, times(2)).setReference(-1.0 * Mk4NeoModule.MAX_DRIVE_RPM,
-                CANSparkMax.ControlType.kVelocity, Mk4NeoModule.DriveSlotId.VELOCITY.value);
+                CANSparkMax.ControlType.kVelocity, SparkNeo.PIDtype.RPM.slotId);
         // Go forwards again steps - should be no spin and positive speed
         reset(dm.spinPID, dm.drivePID);
         dm.driveModule.setDirectionAndSpeed(new AngleD(AngleUnit.RADIANS, 0.0), 1.0);
         dm.driveModule.setDirectionAndSpeed(new AngleD(AngleUnit.RADIANS, 0.0), 1.0);
         verify(dm.spinPID, times(2)).setReference(0.0, CANSparkMax.ControlType.kPosition);
         verify(dm.drivePID, times(2)).setReference(Mk4NeoModule.MAX_DRIVE_RPM,
-                CANSparkMax.ControlType.kVelocity, Mk4NeoModule.DriveSlotId.VELOCITY.value);
+                CANSparkMax.ControlType.kVelocity, SparkNeo.PIDtype.RPM.slotId);
     }
 
 
@@ -300,7 +300,7 @@ public class TestMk4NeoModule {
         // test the last call to drive PID setReference is for the correct target position, and is asking for position
         // (not speed).
         verify(dm.drivePID).setReference(driveEncStartPosition + deltaTics,
-                CANSparkMax.ControlType.kPosition, Mk4NeoModule.DriveSlotId.POSITION.value);
+                CANSparkMax.ControlType.kPosition, SparkNeo.PIDtype.POSITION.slotId);
         assertEquals(CANSparkMax.ControlType.kPosition, dm.driveModule.getSparkControlType());
         // make encoder readings slightly different from what was actually set so that when we get these
         // things we know we are really getting them from the encoder.
@@ -337,7 +337,7 @@ public class TestMk4NeoModule {
         // test the last call to drive PID setReference is for the correct target position, and is asking for position
         // (not speed).
         verify(dm.drivePID).setReference(driveEncStartPosition + deltaTics,
-                CANSparkMax.ControlType.kSmartMotion, Mk4NeoModule.DriveSlotId.SMART_MOTION.value);
+                CANSparkMax.ControlType.kSmartMotion, SparkNeo.PIDtype.SMART_MOTION.slotId);
         assertEquals(CANSparkMax.ControlType.kSmartMotion, dm.driveModule.getSparkControlType());
         // make encoder readings slightly different from what was actually set so that when we get these
         // things we know we are really getting them from the encoder.
