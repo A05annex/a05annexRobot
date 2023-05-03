@@ -42,14 +42,14 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
 
     // create drive modules
     // first letter is right or left, second is front or rear
-    private final Mk4NeoModule m_rf;
-    private final Mk4NeoModule m_rr;
-    private final Mk4NeoModule m_lf;
-    private final Mk4NeoModule m_lr;
+    private final Mk4NeoModule rf;
+    private final Mk4NeoModule rr;
+    private final Mk4NeoModule lf;
+    private final Mk4NeoModule lr;
 
     // create NavX - the drive subsystem owns the NavX and is responsible for the heading update
     // cycle.
-    private final NavX m_navx = NavX.getInstance();
+    private final NavX navX = NavX.getInstance();
 
     // These are the constants for the drive geometry. They will vary with different frames, and they are
     // initially not set - which will result in an error is you call any of the drive commands.
@@ -74,22 +74,22 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     private double MAX_METERS_PER_SEC;
 
     // keep track of last angles
-    private final AngleD m_RF_lastRadians = new AngleD(AngleD.ZERO);
-    private final AngleD m_RR_lastRadians = new AngleD(AngleD.ZERO);
-    private final AngleD m_LF_lastRadians = new AngleD(AngleD.ZERO);
-    private final AngleD m_LR_lastRadians = new AngleD(AngleD.ZERO);
+    private final AngleD RF_lastRadians = new AngleD(AngleD.ZERO);
+    private final AngleD RR_lastRadians = new AngleD(AngleD.ZERO);
+    private final AngleD LF_lastRadians = new AngleD(AngleD.ZERO);
+    private final AngleD LR_lastRadians = new AngleD(AngleD.ZERO);
 
     // keep track of the last chassis speeds for odometry
-    private double m_thisChassisForward = 0.0;
-    private double m_thisChassisStrafe = 0.0;
-    private long m_lastTime = System.currentTimeMillis();
-    private final AngleD m_lastHeading = new AngleD(AngleD.ZERO);
-    private double m_lastChassisForward = 0.0;
-    private double m_lastChassisStrafe = 0.0;
+    private double thisChassisForward = 0.0;
+    private double thisChassisStrafe = 0.0;
+    private long lastTime = System.currentTimeMillis();
+    private final AngleD lastHeading = new AngleD(AngleD.ZERO);
+    private double lastChassisForward = 0.0;
+    private double lastChassisStrafe = 0.0;
 
-    private double m_fieldX = 0.0;
-    private double m_fieldY = 0.0;
-    private final AngleD m_fieldHeading = new AngleD(AngleD.ZERO);
+    private double fieldX = 0.0;
+    private double fieldY = 0.0;
+    private final AngleD fieldHeading = new AngleD(AngleD.ZERO);
 
     private DriveMode driveMode = DriveMode.FIELD_RELATIVE;
 
@@ -101,10 +101,10 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     private DriveSubsystem() {
         // initialize drive modules. The IDs are as described in the README for the project. We could make these
         // constants somewhere, but that does not make it anymore understandable. This is just what it is.
-        m_rf = Mk4NeoModule.factory("right-front", 1, 2, 20);
-        m_rr = Mk4NeoModule.factory("right-rear", 3, 4, 21);
-        m_lf = Mk4NeoModule.factory("left-front", 7, 8, 23);
-        m_lr = Mk4NeoModule.factory("left-rear", 5, 6, 22);
+        rf = Mk4NeoModule.factory("right-front", 1, 2, 20);
+        rr = Mk4NeoModule.factory("right-rear", 3, 4, 21);
+        lf = Mk4NeoModule.factory("left-front", 7, 8, 23);
+        lr = Mk4NeoModule.factory("left-rear", 5, 6, 22);
     }
 
     /**
@@ -165,18 +165,18 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         MAX_RADIANS_PER_SEC = MAX_METERS_PER_SEC / (0.5 * driveDiagonal);
         // tics/m * m/rad = tics/rad
         DRIVE_TICS_PER_RADIAN = Mk4NeoModule.TICS_PER_METER * 0.5 * driveDiagonal;
-        m_rf.setCalibrationOffset(rfCalibration);
-        m_rr.setCalibrationOffset(rrCalibration);
-        m_lf.setCalibrationOffset(lfCalibration);
-        m_lr.setCalibrationOffset(lrCalibration);
+        rf.setCalibrationOffset(rfCalibration);
+        rr.setCalibrationOffset(rrCalibration);
+        lf.setCalibrationOffset(lfCalibration);
+        lr.setCalibrationOffset(lrCalibration);
     }
 
     @Override
     public void calibrate() {
-        m_rf.calibrate();
-        m_rr.calibrate();
-        m_lf.calibrate();
-        m_lr.calibrate();
+        rf.calibrate();
+        rr.calibrate();
+        lf.calibrate();
+        lr.calibrate();
    }
 
     @Override
@@ -216,7 +216,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public Mk4NeoModule getRFModule() {
-        return m_rf;
+        return rf;
     }
 
     /**
@@ -227,7 +227,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public Mk4NeoModule getRRModule() {
-        return m_rr;
+        return rr;
     }
 
     /**
@@ -238,7 +238,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public Mk4NeoModule getLFModule() {
-        return m_lf;
+        return lf;
     }
 
     /**
@@ -249,22 +249,22 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public Mk4NeoModule getLRModule() {
-        return m_lr;
+        return lr;
     }
 
     /**
      * Print all module angles to SmartDashboard. Should be called in DriveSubsystem periodic if used.
      */
     public void printAllAngles() {
-        SmartDashboard.putNumber("RF cal angle", m_rf.getCalibrationPosition());
-        SmartDashboard.putNumber("RR cal angle", m_rr.getCalibrationPosition());
-        SmartDashboard.putNumber("LF cal angle", m_lf.getCalibrationPosition());
-        SmartDashboard.putNumber("LR cal angle", m_lr.getCalibrationPosition());
+        SmartDashboard.putNumber("RF cal angle", rf.getCalibrationPosition());
+        SmartDashboard.putNumber("RR cal angle", rr.getCalibrationPosition());
+        SmartDashboard.putNumber("LF cal angle", lf.getCalibrationPosition());
+        SmartDashboard.putNumber("LR cal angle", lr.getCalibrationPosition());
 
-        SmartDashboard.putNumber("RF angle", m_rf.getDirectionPosition());
-        SmartDashboard.putNumber("RR angle", m_rr.getDirectionPosition());
-        SmartDashboard.putNumber("LF angle", m_lf.getDirectionPosition());
-        SmartDashboard.putNumber("LR angle", m_lr.getDirectionPosition());
+        SmartDashboard.putNumber("RF angle", rf.getDirectionPosition());
+        SmartDashboard.putNumber("RR angle", rr.getDirectionPosition());
+        SmartDashboard.putNumber("LF angle", lf.getDirectionPosition());
+        SmartDashboard.putNumber("LR angle", lr.getDirectionPosition());
     }
 
     // begin swerve methods
@@ -310,27 +310,27 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         // be very close to the last direction.
         double SMALL = 0.000001;
         if (rfSpeed > SMALL) {
-            m_RF_lastRadians.atan2(b, c);
+            RF_lastRadians.atan2(b, c);
         }
         if (lfSpeed > SMALL) {
-            m_LF_lastRadians.atan2(b, d);
+            LF_lastRadians.atan2(b, d);
         }
         if (lrSpeed > SMALL) {
-            m_LR_lastRadians.atan2(a, d);
+            LR_lastRadians.atan2(a, d);
         }
         if (rrSpeed > SMALL) {
-            m_RR_lastRadians.atan2(a, c);
+            RR_lastRadians.atan2(a, c);
         }
 
         // run wheels at speeds and angles
-        m_rf.setDirectionAndSpeed(m_RF_lastRadians, setSpeeds ? rfSpeed : 0.0);
-        m_lf.setDirectionAndSpeed(m_LF_lastRadians, setSpeeds ? lfSpeed : 0.0);
-        m_lr.setDirectionAndSpeed(m_LR_lastRadians, setSpeeds ? lrSpeed : 0.0);
-        m_rr.setDirectionAndSpeed(m_RR_lastRadians, setSpeeds ? rrSpeed : 0.0);
+        rf.setDirectionAndSpeed(RF_lastRadians, setSpeeds ? rfSpeed : 0.0);
+        lf.setDirectionAndSpeed(LF_lastRadians, setSpeeds ? lfSpeed : 0.0);
+        lr.setDirectionAndSpeed(LR_lastRadians, setSpeeds ? lrSpeed : 0.0);
+        rr.setDirectionAndSpeed(RR_lastRadians, setSpeeds ? rrSpeed : 0.0);
 
         // save the values we set for use in odometry calculations
-        m_thisChassisForward = setSpeeds ? forward : 0.0;
-        m_thisChassisStrafe = setSpeeds ? strafe : 0.0;
+        thisChassisForward = setSpeeds ? forward : 0.0;
+        thisChassisStrafe = setSpeeds ? strafe : 0.0;
     }
 
     /**
@@ -383,7 +383,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     @Override
     public void swerveDrive(@NotNull AngleConstantD direction, double speed, double rotation) {
         if (driveMode == DriveMode.FIELD_RELATIVE) {
-            AngleD chassisDirection = new AngleD(direction).subtract(m_navx.getHeading());
+            AngleD chassisDirection = new AngleD(direction).subtract(navX.getHeading());
             swerveDriveComponents(chassisDirection.cos() * speed,
                     chassisDirection.sin() * speed, rotation);
         } else {
@@ -424,11 +424,11 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @Override
     public void setFieldPosition(double fieldX, double fieldY, AngleD heading) {
-        m_fieldX = fieldX;
-        m_fieldY = fieldY;
-        m_fieldHeading.setValue(heading);
-        m_navx.initializeHeadingAndNav(m_fieldHeading);
-        m_lastTime = System.currentTimeMillis();
+        this.fieldX = fieldX;
+        this.fieldY = fieldY;
+        fieldHeading.setValue(heading);
+        navX.initializeHeadingAndNav(fieldHeading);
+        lastTime = System.currentTimeMillis();
     }
 
     /**
@@ -438,7 +438,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public double getFieldX() {
-        return m_fieldX;
+        return fieldX;
     }
 
     /**
@@ -448,7 +448,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public double getFieldY() {
-        return m_fieldY;
+        return fieldY;
     }
 
     /**
@@ -458,7 +458,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
      */
     @SuppressWarnings("unused")
     public AngleD getFieldHeading() {
-        return m_fieldHeading.cloneAngleD();
+        return fieldHeading.cloneAngleD();
     }
 
     /**
@@ -472,21 +472,21 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     public void setHeading(@NotNull AngleConstantD targetHeading) {
         testGeometryIsSet();
 
-        m_RF_lastRadians.atan2(DRIVE_LENGTH, -DRIVE_WIDTH);
-        m_LF_lastRadians.atan2(DRIVE_LENGTH, DRIVE_WIDTH);
-        m_LR_lastRadians.atan2(-DRIVE_LENGTH, DRIVE_WIDTH);
-        m_RR_lastRadians.atan2(-DRIVE_LENGTH, -DRIVE_WIDTH);
+        RF_lastRadians.atan2(DRIVE_LENGTH, -DRIVE_WIDTH);
+        LF_lastRadians.atan2(DRIVE_LENGTH, DRIVE_WIDTH);
+        LR_lastRadians.atan2(-DRIVE_LENGTH, DRIVE_WIDTH);
+        RR_lastRadians.atan2(-DRIVE_LENGTH, -DRIVE_WIDTH);
 
-        double deltaTics = new AngleD(targetHeading).subtract(m_navx.getHeading()).getRadians()
+        double deltaTics = new AngleD(targetHeading).subtract(navX.getHeading()).getRadians()
                 * DRIVE_TICS_PER_RADIAN;
 
-        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics, 1.0);
-        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics, 1.0);
-        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics, 1.0);
-        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics, 1.0);
+        rf.setDirectionAndDistance(RF_lastRadians, deltaTics, 1.0);
+        lf.setDirectionAndDistance(LF_lastRadians, deltaTics, 1.0);
+        lr.setDirectionAndDistance(LR_lastRadians, deltaTics, 1.0);
+        rr.setDirectionAndDistance(RR_lastRadians, deltaTics, 1.0);
 
-        m_thisChassisForward = 0.0;
-        m_thisChassisStrafe = 0.0;
+        thisChassisForward = 0.0;
+        thisChassisStrafe = 0.0;
     }
 
     @Override
@@ -504,21 +504,21 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     public void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed) {
         testGeometryIsSet();
 
-        m_RF_lastRadians.atan2(distanceStrafe, distanceForward);
-        m_LF_lastRadians.atan2(distanceStrafe, distanceForward);
-        m_LR_lastRadians.atan2(distanceStrafe, distanceForward);
-        m_RR_lastRadians.atan2(distanceStrafe, distanceForward);
+        RF_lastRadians.atan2(distanceStrafe, distanceForward);
+        LF_lastRadians.atan2(distanceStrafe, distanceForward);
+        LR_lastRadians.atan2(distanceStrafe, distanceForward);
+        RR_lastRadians.atan2(distanceStrafe, distanceForward);
 
         double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
 
-        m_rf.setDirectionAndDistance(m_RF_lastRadians, deltaTics, maxSpeed);
-        m_lf.setDirectionAndDistance(m_LF_lastRadians, deltaTics, maxSpeed);
-        m_lr.setDirectionAndDistance(m_LR_lastRadians, deltaTics, maxSpeed);
-        m_rr.setDirectionAndDistance(m_RR_lastRadians, deltaTics, maxSpeed);
+        rf.setDirectionAndDistance(RF_lastRadians, deltaTics, maxSpeed);
+        lf.setDirectionAndDistance(LF_lastRadians, deltaTics, maxSpeed);
+        lr.setDirectionAndDistance(LR_lastRadians, deltaTics, maxSpeed);
+        rr.setDirectionAndDistance(RR_lastRadians, deltaTics, maxSpeed);
 
         // TODO - sort out telemetry for this ......
-        m_thisChassisForward = 0.0;
-        m_thisChassisStrafe = 0.0;
+        thisChassisForward = 0.0;
+        thisChassisStrafe = 0.0;
 
     }
     @Override
@@ -526,42 +526,42 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
                                             double maxSpeed, double maxAcceleration) {
         testGeometryIsSet();
 
-        m_RF_lastRadians.atan2(distanceStrafe, distanceForward);
-        m_LF_lastRadians.atan2(distanceStrafe, distanceForward);
-        m_LR_lastRadians.atan2(distanceStrafe, distanceForward);
-        m_RR_lastRadians.atan2(distanceStrafe, distanceForward);
+        RF_lastRadians.atan2(distanceStrafe, distanceForward);
+        LF_lastRadians.atan2(distanceStrafe, distanceForward);
+        LR_lastRadians.atan2(distanceStrafe, distanceForward);
+        RR_lastRadians.atan2(distanceStrafe, distanceForward);
 
         double deltaTics = Utl.length(distanceForward,distanceStrafe) * Mk4NeoModule.TICS_PER_METER;
 
-        m_rf.setDirectionAndSmartMotionDistance(m_RF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
-        m_lr.setDirectionAndSmartMotionDistance(m_LF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        rf.setDirectionAndSmartMotionDistance(RF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+        lr.setDirectionAndSmartMotionDistance(LF_lastRadians, deltaTics, maxSpeed, maxAcceleration);
         if (Math.abs(distanceForward) > Math.abs(distanceStrafe)) {
-            m_lf.setDirectionAndSmartMotionDistance(m_LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
-            m_rr.setDirectionAndSmartMotionDistance(m_RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+            lf.setDirectionAndSmartMotionDistance(LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+            rr.setDirectionAndSmartMotionDistance(RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
         } else {
-            m_rr.setDirectionAndSmartMotionDistance(m_LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
-            m_lf.setDirectionAndSmartMotionDistance(m_RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+            rr.setDirectionAndSmartMotionDistance(LR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
+            lf.setDirectionAndSmartMotionDistance(RR_lastRadians, deltaTics, maxSpeed, maxAcceleration);
         }
 
         // TODO - sort out telemetry for this ......
-        m_thisChassisForward = 0.0;
-        m_thisChassisStrafe = 0.0;
+        thisChassisForward = 0.0;
+        thisChassisStrafe = 0.0;
 
     }
 
     @Override
     public boolean isAbsoluteTranslateDone() {
-        return m_rf.isAtTargetDistance() &&
-                m_lf.isAtTargetDistance() &&
-                m_lr.isAtTargetDistance() &&
-                m_rr.isAtTargetDistance();
+        return rf.isAtTargetDistance() &&
+                lf.isAtTargetDistance() &&
+                lr.isAtTargetDistance() &&
+                rr.isAtTargetDistance();
     }
 
     @Override
     public void periodic() {
         // This method will be called once per scheduler run
         // Update the NavX heading
-        m_navx.recomputeHeading(false);
+        navX.recomputeHeading(false);
         // Update the odometry for the drive. OK, the scam here is that there was a previous heading set
         // in the last command cycle when we were setting the new direction/speed/rotation for the
         // chassis, and the heading we are at now. For odometry, assume the average of the last heading and current
@@ -569,27 +569,27 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         // instantaneously. In that case, we can make a pretty good guess how the robot moved on the field.
 
         // Get the average speed and heading for this interval
-        AngleD currentHeading = m_navx.getHeading();
-        AngleD aveHeading = currentHeading.cloneAngleD().add(m_lastHeading).mult(0.5);
-        double aveForward = (m_lastChassisForward + m_thisChassisForward) * 0.5;
-        double aveStrafe = (m_lastChassisStrafe + m_thisChassisStrafe) * 0.5;
+        AngleD currentHeading = navX.getHeading();
+        AngleD aveHeading = currentHeading.cloneAngleD().add(lastHeading).mult(0.5);
+        double aveForward = (lastChassisForward + thisChassisForward) * 0.5;
+        double aveStrafe = (lastChassisStrafe + thisChassisStrafe) * 0.5;
 
         // the maximum distance we could travel in this interval at max speed
         long now = System.currentTimeMillis();
-        double maxDistanceInInterval = Mk4NeoModule.MAX_METERS_PER_SEC * (double) (now - m_lastTime) / 1000.0;
+        double maxDistanceInInterval = Mk4NeoModule.MAX_METERS_PER_SEC * (double) (now - lastTime) / 1000.0;
 
         // compute the distance in field X and Y and update the field position
         double sinHeading = aveHeading.sin();
         double cosHeading = aveHeading.cos();
-        m_fieldX += ((aveForward * sinHeading) + (aveStrafe * cosHeading)) * maxDistanceInInterval;
-        m_fieldY += ((aveForward * cosHeading) - (aveStrafe * sinHeading)) * maxDistanceInInterval;
+        fieldX += ((aveForward * sinHeading) + (aveStrafe * cosHeading)) * maxDistanceInInterval;
+        fieldY += ((aveForward * cosHeading) - (aveStrafe * sinHeading)) * maxDistanceInInterval;
 
         // save the current state as the last state
-        m_lastHeading.setValue(currentHeading);
-        m_fieldHeading.setValue(currentHeading);
-        m_lastChassisForward = m_thisChassisForward;
-        m_lastChassisStrafe = m_thisChassisStrafe;
-        m_lastTime = now;
+        lastHeading.setValue(currentHeading);
+        fieldHeading.setValue(currentHeading);
+        lastChassisForward = thisChassisForward;
+        lastChassisStrafe = thisChassisStrafe;
+        lastTime = now;
 
         // telemetry
         if(A05Constants.getPrintDebug()) {

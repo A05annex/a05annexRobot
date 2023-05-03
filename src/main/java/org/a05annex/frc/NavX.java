@@ -24,38 +24,38 @@ public class NavX {
     /**
      * This is the NavX inertial navigation board connection.
      */
-    private final AHRS m_ahrs;
+    private final AHRS ahrs;
 
     /**
      * The heading we are trying to track with the robot, i.e. this is the heading the robot is expected to
      * be on given the commands we have sent to the robot.
      */
-    private final AngleD m_expectedHeading = new AngleD(AngleD.ZERO);
+    private final AngleD expectedHeading = new AngleD(AngleD.ZERO);
 
     /**
      * This is the update count from the NavX. This count is incremented whenever the NavX updates its position
      * information. The NavX updates at a faster rate than the WPI command loop rate, so, the update count should
      * always change between command cycles of there is a NavX communication problem.
      */
-    private double m_updateCt;
+    private double updateCt;
 
     /**
      * The raw heading, not corrected for the spins, read directly from the NavX, in the range
      * -180 to +180 degrees. Used for determining whether the boundary between -180 and 180 has been crossed.
      */
-    private final AngleD m_headingRawLast = new AngleD(AngleD.ZERO);
+    private final AngleD headingRawLast = new AngleD(AngleD.ZERO);
 
     /**
      * The number of complete revolutions the robot has made.
      */
-    private int m_headingRevs = 0;
+    private int headingRevs = 0;
 
     /**
      * The actual heading of the robot from -&infin; to &infin;, so the spins are included in this
      * heading.
      */
-    private final AngleD m_heading = new AngleD(AngleD.ZERO);
-    private boolean m_setExpectedToCurrent = false;
+    private final AngleD heading = new AngleD(AngleD.ZERO);
+    private boolean setExpectedToCurrent = false;
 
     // --------------------------------------------------
     // Reference values - these are the values at initialization of the NavX recording the position of the robot
@@ -66,27 +66,27 @@ public class NavX {
     /**
      * The NavX reported pitch at the time the NavX in initialized.
      */
-    private final AngleD m_refPitch = new AngleD(AngleD.ZERO);
+    private final AngleD refPitch = new AngleD(AngleD.ZERO);
 
     /**
      * The NavX reported yaw at the time the NavX in initialized.
      */
-    private final AngleD m_refYaw = new AngleD(AngleD.ZERO);
+    private final AngleD refYaw = new AngleD(AngleD.ZERO);
 
     /**
      * The NavX reported roll at the time the NavX in initialized.
      */
-    private final AngleD m_refRoll = new AngleD(AngleD.ZERO);
+    private final AngleD refRoll = new AngleD(AngleD.ZERO);
 
     /**
      * The actual field heading of the robot at the time the NavX in initialized.
      */
-    private final AngleD m_refHeading = new AngleD(AngleD.ZERO);
+    private final AngleD refHeading = new AngleD(AngleD.ZERO);
 
     /** A multiplier for the heading that offsets the drift nof the NavX in
      *  each rotation of the robot.
      */
-    private double m_yawCalibrationFactor = 1.0;
+    private double yawCalibrationFactor = 1.0;
 
     /**
      * Instantiate the NavX. We have had problems here where the NavX does not respond because it is somehow
@@ -95,12 +95,12 @@ public class NavX {
      * continuing without inertial navigation.
      */
     private NavX() {
-        // So, if there is no navx, there is no error - it just keeps trying to connect forever, so this
+        // So, if there is no navX, there is no error - it just keeps trying to connect forever, so this
         // needs to be on a thread that can be killed if it doesn't connect in time ......
         // TODO: figure out the threading, error handling, and redundancy.
-        m_ahrs = new AHRS(SPI.Port.kMXP);
-        m_ahrs.reset();
-        while (m_ahrs.isCalibrating()) {
+        ahrs = new AHRS(SPI.Port.kMXP);
+        ahrs.reset();
+        while (ahrs.isCalibrating()) {
             try {
                 //noinspection BusyWait
                 Thread.sleep(100);
@@ -108,7 +108,7 @@ public class NavX {
                 break;
             }
         }
-        m_updateCt = m_ahrs.getUpdateCount();
+        updateCt = ahrs.getUpdateCount();
         initializeHeadingAndNav();
     }
 
@@ -130,13 +130,13 @@ public class NavX {
     public void initializeHeadingAndNav(AngleConstantD heading) {
         // In the past we have always initialized with the front of the robot facing down field, so the
         // heading was 0.0 at initialization. In this case we are initializing to some other heading.
-        m_refPitch.setDegrees(m_ahrs.getPitch());
-        m_refYaw.setDegrees(m_ahrs.getYaw());
-        m_refRoll.setDegrees(m_ahrs.getRoll());
-        m_refHeading.setValue(heading);
-        m_headingRawLast.setValue(AngleD.ZERO);
-        m_expectedHeading.setValue(m_refHeading);
-        m_headingRevs = 0;
+        refPitch.setDegrees(ahrs.getPitch());
+        refYaw.setDegrees(ahrs.getYaw());
+        refRoll.setDegrees(ahrs.getRoll());
+        refHeading.setValue(heading);
+        headingRawLast.setValue(AngleD.ZERO);
+        expectedHeading.setValue(refHeading);
+        headingRevs = 0;
     }
 
     /**
@@ -149,7 +149,7 @@ public class NavX {
      */
     public void setYawCalibrationFactor(double yawCalibrationFactor)
     {
-        m_yawCalibrationFactor = yawCalibrationFactor;
+        this.yawCalibrationFactor = yawCalibrationFactor;
     }
 
     /**
@@ -159,7 +159,7 @@ public class NavX {
      */
     @SuppressWarnings("unused")
     public void incrementExpectedHeading(AngleD delta) {
-        m_expectedHeading.add(delta);
+        expectedHeading.add(delta);
     }
 
     /**
@@ -169,14 +169,14 @@ public class NavX {
      */
     @SuppressWarnings("unused")
     public void setExpectedHeading(AngleConstantD expectedHeading) {
-        m_expectedHeading.setValue(expectedHeading);
+        this.expectedHeading.setValue(expectedHeading);
     }
 
     /**
      * Set the expected heading to the current heading.
      */
     public void setExpectedHeadingToCurrent() {
-        m_expectedHeading.setValue(m_heading);
+        expectedHeading.setValue(heading);
     }
 
     /**
@@ -196,29 +196,29 @@ public class NavX {
      *                             expected heading; or when robot-relative driving without any turn.
      */
     public void recomputeHeading(boolean setExpectedToCurrent) {
-        m_setExpectedToCurrent = setExpectedToCurrent;
-        AngleD heading_raw = new AngleD(AngleUnit.DEGREES, m_ahrs.getYaw());
+        this.setExpectedToCurrent = setExpectedToCurrent;
+        AngleD heading_raw = new AngleD(AngleUnit.DEGREES, ahrs.getYaw());
         // This is the logic for detecting and correcting for the IMU discontinuity at +180degrees and -180degrees.
-        if (m_headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && heading_raw.isGreaterThan(AngleD.ZERO)) {
+        if (headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && heading_raw.isGreaterThan(AngleD.ZERO)) {
             // The previous raw IMU heading was negative and close to the discontinuity, and it is now positive. We
             // have gone through the discontinuity, so we decrement the heading revolutions by 1 (we completed a
             // negative revolution). NOTE: the initial check protects from the case that the heading is near 0 and
             // goes continuously through 0, which is not the completion of a revolution.
-            m_headingRevs--;
-        } else if (m_headingRawLast.isGreaterThan(AngleD.PI_OVER_2) && heading_raw.isLessThan(AngleD.ZERO)) {
+            headingRevs--;
+        } else if (headingRawLast.isGreaterThan(AngleD.PI_OVER_2) && heading_raw.isLessThan(AngleD.ZERO)) {
             // The previous raw IMU heading was positive and close to the discontinuity, and it is now negative. We
             // have gone through the discontinuity, so we increment the heading revolutions by 1 (we completed
             // positive revolution). NOTE: the initial check protects from the case that the heading is near 0 and
             // goes continuously through 0, which is not the completion of a revolution.
-            m_headingRevs++;
+            headingRevs++;
         }
-        m_headingRawLast.setValue(heading_raw);
+        headingRawLast.setValue(heading_raw);
 
-        m_heading.setRadians(m_headingRevs * AngleD.TWO_PI.getRadians())
-                .add(heading_raw).subtract(m_refYaw).add(m_refHeading);
+        heading.setRadians(headingRevs * AngleD.TWO_PI.getRadians())
+                .add(heading_raw).subtract(refYaw).add(refHeading);
 
         if (setExpectedToCurrent) {
-            m_expectedHeading.setValue(m_heading);
+            expectedHeading.setValue(heading);
         }
     }
 
@@ -231,7 +231,7 @@ public class NavX {
      */
     @NotNull
     public AngleD getHeading() {
-        return m_heading.cloneAngleD();
+        return heading.cloneAngleD();
     }
 
     /**
@@ -242,18 +242,18 @@ public class NavX {
      * @return Returns the heading info, returns {@code null} if there is a problem with the NavX.
      */
     public HeadingInfo getHeadingInfo() {
-        if (null == m_ahrs) {
+        if (null == ahrs) {
             return null;
         }
-        double updateCt = m_ahrs.getUpdateCount();
-//        if (updateCt <= m_updateCt) {
+        double updateCt = ahrs.getUpdateCount();
+//        if (updateCt <= updateCt) {
 //            // there is a problem communication with the NavX - the results we would get from NavX queries
 //            // are unreliable.
 //            return null;
 //        }
-        m_updateCt = updateCt;
-        return new HeadingInfo(m_heading.cloneAngleD().mult(m_yawCalibrationFactor),
-                m_expectedHeading, m_setExpectedToCurrent);
+        this.updateCt = updateCt;
+        return new HeadingInfo(heading.cloneAngleD().mult(yawCalibrationFactor),
+                expectedHeading, setExpectedToCurrent);
     }
 
     /**
@@ -265,19 +265,19 @@ public class NavX {
      */
     @SuppressWarnings("unused")
     public NavInfo getNavInfo() {
-        if (null == m_ahrs) {
+        if (null == ahrs) {
             return null;
         }
         // The subtraction of the ref values adjusts for the construction bias of not having the NavX perfectly
         // mounted, or there being some bias in the NavX - i.e. the ref represents the value first reported when
         // the reference position is set, see initializeHeadingAndNav().
         return new NavInfo(
-                new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getPitch() - m_refPitch.getDegrees()),
-                new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getYaw() - m_refYaw.getDegrees()),
-                new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getRoll() - m_refRoll.getDegrees()),
-                new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getPitch()),
-                new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getYaw()),
-                new AngleConstantD(AngleUnit.DEGREES, m_ahrs.getRoll()));
+                new AngleConstantD(AngleUnit.DEGREES, ahrs.getPitch() - refPitch.getDegrees()),
+                new AngleConstantD(AngleUnit.DEGREES, ahrs.getYaw() - refYaw.getDegrees()),
+                new AngleConstantD(AngleUnit.DEGREES, ahrs.getRoll() - refRoll.getDegrees()),
+                new AngleConstantD(AngleUnit.DEGREES, ahrs.getPitch()),
+                new AngleConstantD(AngleUnit.DEGREES, ahrs.getYaw()),
+                new AngleConstantD(AngleUnit.DEGREES, ahrs.getRoll()));
     }
 
     /**

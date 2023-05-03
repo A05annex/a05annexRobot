@@ -16,15 +16,15 @@ public class DummyStopAndRunCommand extends CommandBase {
     public static int executeCt = 0;
 
 
-    final private long m_startTime = System.currentTimeMillis();
-    final private long m_endTime = m_startTime + STOP_AND_RUN_DURATION;
+    final private long startTime = System.currentTimeMillis();
+    final private long endTime = startTime + STOP_AND_RUN_DURATION;
 
     public DummyStopAndRunCommand() {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
         System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
-        System.out.printf("          '%s':  ends at %d%n", this.getClass().getName(), m_endTime);
+        System.out.printf("          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
             stopAndRunDuration += STOP_AND_RUN_DURATION;
@@ -49,13 +49,13 @@ public class DummyStopAndRunCommand extends CommandBase {
 
     @Override
     public boolean isFinished() {
-        return (System.currentTimeMillis() > m_endTime);
+        return (System.currentTimeMillis() > endTime);
     }
 
     @Override
     public void end(boolean interrupted) {
         System.out.printf("%n          '%s':  ends after %.3f%n", this.getClass().getName(),
-                (m_endTime - m_startTime)/1000.0);
+                (endTime - startTime)/1000.0);
         synchronized (DummyStopAndRunCommand.class) {
             endCt++;
         }

@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import org.a05annex.frc.commands.A05DriveCommand;
+import org.a05annex.frc.commands.A05DriveCommand;
 import org.a05annex.frc.commands.AutonomousPathCommand;
 import org.a05annex.frc.subsystems.DriveSubsystem;
 
@@ -20,39 +21,39 @@ public abstract class A05RobotContainer {
     /**
      * This is the {@link NavX} that provides inertial navigation for the robot.
      */
-    protected NavX m_navx = NavX.getInstance();
+    protected NavX navx = NavX.getInstance();
 
     /**
      * This is the swerve drive subsystem.
      */
-    protected DriveSubsystem m_driveSubsystem = DriveSubsystem.getInstance();
+    protected DriveSubsystem driveSubsystem = DriveSubsystem.getInstance();
     /**
      * This is the default drive command for this year's competition.
      */
-    protected A05DriveCommand m_driveCommand;
+    protected A05DriveCommand driveCommand;
 
     /**
      * This is the robot driver XBox controller.
      */
-    protected final XboxController m_driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
+    protected final XboxController driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
 
     /**
      * This is the autonomous path following command initialized for the path specified
      * by the autonomous path selection switches.
      */
-    protected AutonomousPathCommand m_autoCommand = null;
+    protected AutonomousPathCommand autoCommand = null;
 
     /**
      * These are the driver-specific controller settings (gain, sensitivity, deadband, etc.) for
      * the driver selected by the driver selection switches.
      */
-    protected A05Constants.DriverSettings m_driver = null;
+    protected A05Constants.DriverSettings driver = null;
 
     /**
      * This is the robot-specific description of this robot geometry, drive  initialization,
      * and speed calibration correction.
      */
-    protected A05Constants.RobotSettings m_robotSettings = null;
+    protected A05Constants.RobotSettings robotSettings = null;
 
     /**
      * The default robot container initialization, which:
@@ -61,28 +62,28 @@ public abstract class A05RobotContainer {
      *     <li>Reads the robot Id switch and sets the robot between the
      *         <i>programming</i> and <i>competition robots</i>;</li>
      *     <li>Reads the autonomous selection switches, loads the specified
-     *         autonomous path and initializes the {@link #m_autoCommand}</li>
+     *         autonomous path and initializes the {@link #autoCommand}</li>
      *     <li>Starts the USB camera if one exists.</li>
      * </ul>
      */
     public A05RobotContainer() {
         int driverId = A05Constants.readDriverID();
         try {
-            m_driver = A05Constants.DRIVER_SETTINGS_LIST.get(driverId);
-            m_driver.load();
-            m_driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), m_driveXbox, m_driver);
-            SmartDashboard.putString("Driver", m_driver.getName());
+            driver = A05Constants.DRIVER_SETTINGS_LIST.get(driverId);
+            driver.load();
+            driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), driveXbox, driver);
+            SmartDashboard.putString("Driver", driver.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Driver", String.format("Driver ID %d does not exist", driverId));
             throw e;
         } catch (RuntimeException e) {
             SmartDashboard.putString("Driver",
-                    String.format("Could not load driver: '%s'", m_driver.getName()));
+                    String.format("Could not load driver: '%s'", driver.getName()));
             throw e;
         }
 
         int robotId = A05Constants.readRobotID();
-        m_robotSettings = A05Constants.ROBOT_SETTINGS_LIST.get(robotId);
+        robotSettings = A05Constants.ROBOT_SETTINGS_LIST.get(robotId);
 
         // autonomous
         int autoId = A05Constants.readAutoID();
@@ -90,7 +91,9 @@ public abstract class A05RobotContainer {
         try {
             autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
             autonomousPath.load();
-            m_autoCommand = new AutonomousPathCommand(autonomousPath, m_driveSubsystem);
+            autoCommand = new AutonomousPathCommand(autonomousPath, driveSubsystem);
+
+
             SmartDashboard.putString("Autonomous", autonomousPath.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Autonomous", String.format("Path ID %d does not exist", autoId));
@@ -113,6 +116,6 @@ public abstract class A05RobotContainer {
     public Command getAutonomousCommand()
     {
         // An ExampleCommand will run in autonomous
-        return m_autoCommand;
+        return autoCommand;
     }
 }

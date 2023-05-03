@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
  *     <li>stops the robot on the path, initiates a command (like aiming and shooting), and continues following
  *     the path when the initiated command completes.</li>
  * </ul>
- * Note that when run in a test environment the navx device is instantiated as a simulation device rather than a
+ * Note that when run in a test environment the navX device is instantiated as a simulation device rather than a
  * real physical devise.
  */
 @SuppressWarnings("unused")
@@ -39,11 +39,11 @@ public class AutonomousPathCommand extends CommandBase {
          * This is the {@link KochanekBartelsSpline.PathPoint} returned by the
          * {@link KochanekBartelsSpline.PathFollower}.
          */
-        final KochanekBartelsSpline.PathPoint m_pathPoint;
+        final KochanekBartelsSpline.PathPoint pathPoint;
         /**
          * {@code true} if the path should be mirrored, {@code false} if the path should be run as specified.
          */
-        final boolean m_mirror;
+        final boolean mirror;
 
         /**
          * Instantiate a {@code PathPoint}.
@@ -53,19 +53,19 @@ public class AutonomousPathCommand extends CommandBase {
          *                           as specified.
          */
         PathPoint(KochanekBartelsSpline.PathPoint pathPoint, boolean mirror) {
-            m_pathPoint = pathPoint;
-            m_mirror = mirror;
+            this.pathPoint = pathPoint;
+            this.mirror = mirror;
         }
-        double speedForward() { return m_pathPoint.speedForward; }
-        double speedStrafe() { return m_mirror ? -m_pathPoint.speedStrafe : m_pathPoint.speedStrafe; }
-        double speedRotation() { return m_mirror ? -m_pathPoint.speedRotation : m_pathPoint.speedRotation; }
+        double speedForward() { return pathPoint.speedForward; }
+        double speedStrafe() { return mirror ? -pathPoint.speedStrafe : pathPoint.speedStrafe; }
+        double speedRotation() { return mirror ? -pathPoint.speedRotation : pathPoint.speedRotation; }
         AngleConstantD fieldHeading() {
-            return m_mirror ?
-                    new AngleConstantD(AngleUnit.RADIANS,-m_pathPoint.fieldHeading.getRadians()) :
-                    m_pathPoint.fieldHeading;
+            return mirror ?
+                    new AngleConstantD(AngleUnit.RADIANS,-pathPoint.fieldHeading.getRadians()) :
+                    pathPoint.fieldHeading;
         }
 
-        KochanekBartelsSpline.RobotAction action() { return m_pathPoint.action; }
+        KochanekBartelsSpline.RobotAction action() { return pathPoint.action; }
     }
     /**
      * The swerve drive
@@ -177,7 +177,7 @@ public class AutonomousPathCommand extends CommandBase {
      */
     public void initializeRobotForPath() {
         pathPoint = getPointAt(0.0);
-        if (pathPoint.m_pathPoint != null) {
+        if (pathPoint.pathPoint != null) {
             NavX.getInstance().initializeHeadingAndNav(pathPoint.fieldHeading());
             double forward = pathPoint.speedForward() / swerveDrive.getMaxMetersPerSec();
             double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
@@ -243,7 +243,7 @@ public class AutonomousPathCommand extends CommandBase {
             if (A05Constants.getPrintDebug()) {
                 System.out.println("AutonomousPathCommand.execute() get point at time: " + pathTime);
             }
-            if (pathPoint.m_pathPoint == null) {
+            if (pathPoint.pathPoint == null) {
                 // We have reached the end of the path, stop the robot and finish this command.
                 isFinished = true;
                 swerveDrive.swerveDriveComponents(0.0, 0.0, 0.0);

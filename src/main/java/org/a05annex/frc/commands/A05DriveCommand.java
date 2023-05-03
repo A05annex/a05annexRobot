@@ -4,7 +4,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
-import org.a05annex.frc.subsystems.DriveSubsystem;
 import org.a05annex.frc.subsystems.ISwerveDrive;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
@@ -47,43 +46,43 @@ public class A05DriveCommand extends CommandBase {
     /**
      * The NavX that provides (and maintains the expected) inertial navigation heading for the robot
      */
-    protected final NavX m_navx = NavX.getInstance();
+    protected final NavX navX = NavX.getInstance();
 
     /**
      * The drive controller for the robot.
      */
-    protected XboxController m_driveXbox;
+    protected XboxController driveXbox;
 
     /**
      * The custom driver settings for the current driver.
      */
-    private final A05Constants.DriverSettings m_driver;
+    private final A05Constants.DriverSettings driver;
 
     /**
      * The raw stick Y read from the controller and corrected for direction
      */
-    protected double m_rawStickY;
+    protected double rawStickY;
     /**
      * The raw stick X read from the controller
      */
-    protected double m_rawStickX;
+    protected double rawStickX;
     /**
      * The raw rotation read from the controller
      */
-    protected double m_rawStickRotate;
+    protected double rawStickRotate;
 
     /**
      * The requested field-relative direction determined after the stick values are conditioned.
      */
-    protected AngleD m_conditionedDirection = new AngleD(AngleUnit.DEGREES,0.0);
+    protected AngleD conditionedDirection = new AngleD(AngleUnit.DEGREES,0.0);
     /**
      * The requested speed in the field-relative direction (from 0 to 1) conditioned from the stick values
      */
-    protected double m_conditionedSpeed;
+    protected double conditionedSpeed;
     /**
      * The requested rotation after the stick values are conditioned.
      */
-    protected double m_conditionedRotate;
+    protected double conditionedRotate;
     // ---------------------------------------------
     // save last conditioned values, which are used to limit rate of change for the next execution of the
     // command. In the 2020 'at-home' competition we noted that really abrupt driver actions skidded the
@@ -93,15 +92,15 @@ public class A05DriveCommand extends CommandBase {
     /**
      * The conditioned direction.
      */
-    protected AngleD m_lastConditionedDirection = new AngleD(AngleUnit.DEGREES,0.0);
+    protected AngleD lastConditionedDirection = new AngleD(AngleUnit.DEGREES,0.0);
     /**
      * The last conditioned speed.
      */
-    protected double m_lastConditionedSpeed = 0.0;
+    protected double lastConditionedSpeed = 0.0;
     /**
      * The last conditioned rotation value.
      */
-    protected double m_lastConditionedRotate = 0.0;
+    protected double lastConditionedRotate = 0.0;
 
     /**
      * How far the trigger needs to be depressed before the boost or slow is activated.
@@ -120,8 +119,8 @@ public class A05DriveCommand extends CommandBase {
                            @NotNull A05Constants.DriverSettings driver) {
         iSwerveDrive = swerveDrive;
         addRequirements(iSwerveDrive.getDriveSubsystem());
-        m_driveXbox = xbox;
-        m_driver = driver;
+        driveXbox = xbox;
+        this.driver = driver;
     }
 
     /**
@@ -129,7 +128,7 @@ public class A05DriveCommand extends CommandBase {
      * of rotation so the robot is always facing a target, override this method and add your targeting code, or
      * special behavior code between conditioning the stick, and sending the conditioned values to the drive
      * subsystem. For example, if targeting were on and the driver could fully control the robot field position, when
-     * targeting was active it would be replacing the {@link #m_conditionedRotate} with a rotation it computed.
+     * targeting was active it would be replacing the {@link #conditionedRotate} with a rotation it computed.
      */
     @Override
     public void execute() {
@@ -137,7 +136,7 @@ public class A05DriveCommand extends CommandBase {
         conditionStick();
 
         // now ask the drive subsystem to do that.
-        iSwerveDrive.swerveDrive(m_conditionedDirection, m_conditionedSpeed, m_conditionedRotate);
+        iSwerveDrive.swerveDrive(conditionedDirection, conditionedSpeed, conditionedRotate);
     }
 
     @Override
@@ -150,9 +149,9 @@ public class A05DriveCommand extends CommandBase {
     }
 
     /**
-     * Read and save the raw stick values {@link #m_rawStickX}, {@link #m_rawStickX},
-     * and {@link #m_rawStickRotate}. Condition the raw stick to set {@link #m_conditionedDirection},
-     * {@link #m_conditionedSpeed}, and {@link #m_conditionedRotate}.
+     * Read and save the raw stick values {@link #rawStickX}, {@link #rawStickX},
+     * and {@link #rawStickRotate}. Condition the raw stick to set {@link #conditionedDirection},
+     * {@link #conditionedSpeed}, and {@link #conditionedRotate}.
      * <p>
      * Conditioning the stick means reading the stick position and applying corrections to go from the physical stick positions
      * to effective values that should be used as the actual drive inputs. These corrections are:
@@ -173,36 +172,36 @@ public class A05DriveCommand extends CommandBase {
      */
     protected void conditionStick() {
         // if pressing boost button, set gain to boost gain
-        double gain = m_driver.getDriveSpeedGain();
-        if ((null != m_driver.getBoostTrigger()) &&
-                (m_driveXbox.getRawAxis(m_driver.getBoostTrigger().value) >= TRIGGER_THRESHOLD)) {
-            gain = m_driver.getBoostGain();
-        } else if ((null != m_driver.getSlowTrigger()) &&
-                (m_driveXbox.getRawAxis(m_driver.getSlowTrigger().value) >= TRIGGER_THRESHOLD)) {
-            gain = m_driver.getSlowGain();
+        double gain = driver.getDriveSpeedGain();
+        if ((null != driver.getBoostTrigger()) &&
+                (driveXbox.getRawAxis(driver.getBoostTrigger().value) >= TRIGGER_THRESHOLD)) {
+            gain = driver.getBoostGain();
+        } else if ((null != driver.getSlowTrigger()) &&
+                (driveXbox.getRawAxis(driver.getSlowTrigger().value) >= TRIGGER_THRESHOLD)) {
+            gain = driver.getSlowGain();
         }
 
         // get the raw stick values - these the values ae read from the controller. The Y value is negated
         // because forward is negative from the stick, but positive for forward motion.
         // * left stick Y for field-relative forward/backward speed
-        m_rawStickY = -m_driveXbox.getLeftY(); // Y is inverted so up is 1 and down is -1
+        rawStickY = -driveXbox.getLeftY(); // Y is inverted so up is 1 and down is -1
         // * left stick X for strafe speed
-        m_rawStickX = m_driveXbox.getLeftX();
+        rawStickX = driveXbox.getLeftX();
         // * right stick X for rotation speed
-        m_rawStickRotate = m_driveXbox.getRightX();
+        rawStickRotate = driveXbox.getRightX();
 
         // But we really want field-relative direction, distance from 0,0 (which corresponds to speed),
         // and rotation, and then we need to condition distance and rotation for deadband and sensitivity.
         // * the distance the stick has moved from 0,0, clipped to a maximum of 1.0 because the speed can
         //   never be greater than 1.0
-        double speedDistance = Utl.clip(Utl.length(m_rawStickY, m_rawStickX), 0.0, 1.0);
+        double speedDistance = Utl.clip(Utl.length(rawStickY, rawStickX), 0.0, 1.0);
         // * the direction is computed from the raw stick X and Y values. Note that is the speed distance is less
         //   than the DRIVE_DEADBAND, then we assume we are still going in the last direction until the driver moves
         //   the stick enough to tell us what is happening next.
-        if (speedDistance < m_driver.getDriveDeadband()) {
-            m_conditionedDirection.setValue(m_lastConditionedDirection);
+        if (speedDistance < driver.getDriveDeadband()) {
+            conditionedDirection.setValue(lastConditionedDirection);
         } else {
-            m_conditionedDirection.atan2(m_rawStickX, m_rawStickY);
+            conditionedDirection.atan2(rawStickX, rawStickY);
         }
 
         // to condition the speedDistance, we apply the deadband correction and then the sensitivity. lastly,
@@ -210,30 +209,30 @@ public class A05DriveCommand extends CommandBase {
         // deadband
         // * first, lets do speed - remember that in getting speedDistance the value is 0.0 to 1.0
         //   * deadband and sensitivity
-        if (speedDistance < m_driver.getDriveDeadband()) {
+        if (speedDistance < driver.getDriveDeadband()) {
             speedDistance = 0.0;
         } else {
-            speedDistance = (speedDistance - m_driver.getDriveDeadband()) / (1.0 - m_driver.getDriveDeadband());
-            speedDistance = Math.pow(speedDistance, m_driver.getDriveSpeedSensitivity()) * gain;
+            speedDistance = (speedDistance - driver.getDriveDeadband()) / (1.0 - driver.getDriveDeadband());
+            speedDistance = Math.pow(speedDistance, driver.getDriveSpeedSensitivity()) * gain;
         }
         //   * delta limiting
-        m_conditionedSpeed = Utl.clip(speedDistance, m_lastConditionedSpeed - m_driver.getDriveSpeedMaxInc(),
-                m_lastConditionedSpeed + m_driver.getDriveSpeedMaxInc());
+        conditionedSpeed = Utl.clip(speedDistance, lastConditionedSpeed - driver.getDriveSpeedMaxInc(),
+                lastConditionedSpeed + driver.getDriveSpeedMaxInc());
         // * Now let's do rotation - note, tha value here ranges from -1.0 to 1.0
         //   * take out rotation sign and store it for later
-        double rotationMult = (m_rawStickRotate < 0.0) ? -1.0 : 1.0;
+        double rotationMult = (rawStickRotate < 0.0) ? -1.0 : 1.0;
         //   * Need the rotation to be between 0.0 and 1.0 to apply deadband and sensitivity
-        double rotation = Math.abs(m_rawStickRotate);
+        double rotation = Math.abs(rawStickRotate);
         // are we rotating?
-        if (rotation < m_driver.getRotateDeadband()) {
+        if (rotation < driver.getRotateDeadband()) {
             // no rotate, keep current heading or 0 if no NavX
-            NavX.HeadingInfo headingInfo = m_navx.getHeadingInfo();
+            NavX.HeadingInfo headingInfo = navX.getHeadingInfo();
             if (headingInfo != null) {
                 // This is a little PID correction to maintain heading
                 rotation = new AngleD(headingInfo.expectedHeading).subtract(new AngleD(headingInfo.heading))
                         .getRadians() * A05Constants.getDriveOrientationkp();
                 // clip and add speed multiplier
-                rotation = Utl.clip(rotation, -0.5, 0.5) * this.m_conditionedSpeed;
+                rotation = Utl.clip(rotation, -0.5, 0.5) * this.conditionedSpeed;
                 if (A05Constants.getPrintDebug()) {
                     System.out.println("**********");
                     System.out.println("Expected Heading: " + headingInfo.expectedHeading.getRadians());
@@ -247,19 +246,19 @@ public class A05DriveCommand extends CommandBase {
         } else {
             // rotating
             // adjust for deadband
-            rotation = (rotation - m_driver.getRotateDeadband()) / (1.0 - m_driver.getRotateDeadband());
+            rotation = (rotation - driver.getRotateDeadband()) / (1.0 - driver.getRotateDeadband());
             // update expected heading
-            m_navx.setExpectedHeadingToCurrent();
+            navX.setExpectedHeadingToCurrent();
             // add sensitivity, gain and sign
-            rotation =  Math.pow(rotation, m_driver.getRotateSensitivity()) * m_driver.getRotateGain() * rotationMult;
+            rotation =  Math.pow(rotation, driver.getRotateSensitivity()) * driver.getRotateGain() * rotationMult;
         }
-        m_conditionedRotate = Utl.clip(rotation, m_lastConditionedRotate - m_driver.getRotateMaxInc(),
-                m_lastConditionedRotate + m_driver.getRotateMaxInc());
+        conditionedRotate = Utl.clip(rotation, lastConditionedRotate - driver.getRotateMaxInc(),
+                lastConditionedRotate + driver.getRotateMaxInc());
 
         // set the last values as references for the delta limiting in the next call to this method
-        m_lastConditionedDirection = m_conditionedDirection;
-        m_lastConditionedSpeed = m_conditionedSpeed;
-        m_lastConditionedRotate = m_conditionedRotate;
+        lastConditionedDirection = conditionedDirection;
+        lastConditionedSpeed = conditionedSpeed;
+        lastConditionedRotate = conditionedRotate;
     }
 
 
