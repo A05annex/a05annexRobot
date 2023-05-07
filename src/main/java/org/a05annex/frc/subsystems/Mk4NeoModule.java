@@ -9,6 +9,7 @@ import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
+import org.a05annex.util.Utl;
 import org.jetbrains.annotations.NotNull;
 
 import static org.a05annex.frc.subsystems.SparkNeo.*;
@@ -488,7 +489,6 @@ public class Mk4NeoModule {
         // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
         return (driveMode == CANSparkMax.ControlType.kVelocity) ||
-                ((currentPosition > targetPosition - SMART_MOTION_TARGET_TOLERANCE * 3) &&
-                        (currentPosition < targetPosition + SMART_MOTION_TARGET_TOLERANCE * 3));
+                Utl.inTolerance(currentPosition, targetPosition, SMART_MOTION_TARGET_TOLERANCE * 3.0);
     }
 }
