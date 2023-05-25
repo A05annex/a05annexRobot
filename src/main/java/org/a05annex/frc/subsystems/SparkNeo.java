@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
  *             that the failure happened around 150&deg;C and extended the temperature curves to estimate a failure
  *             time. Here is a table of test results and various safety factors:
  *             <table>
+ *                 <caption>Motor failure time as a function of AMPS</caption>
  *                 <tr>
  *                     <th>Amps</th>
  *                     <th>failure (sec)</th>
@@ -79,9 +80,10 @@ import org.jetbrains.annotations.NotNull;
  *             While the breakers between the two have the same ratings, they do not behave the same, and the spec
  *             sheet reports things sufficiently differently that they are difficult to compare. The common things
  *             is that they will carry the rated amperage almost indefinitely and they will carry above the rated
- *             current for a <iu>short</iu> time - the higher over rated amperage the faster the breaker will trip.
+ *             current for a <i>short</i> time - the higher over rated amperage the faster the breaker will trip.
  *             What is published is time to trip at a couple different loads - 135%, and 200% as:
  *             <table>
+ *                 <caption>Breaker trip time as a function of AMPS</caption>
  *                 <tr>
  *                     <th>MFG</th>
  *                     <th>load</th>
@@ -118,10 +120,10 @@ import org.jetbrains.annotations.NotNull;
  *                     <th>3.9</th>
  *                 </tr>
  *             </table>
- *             </li>
  *             The main things to notice are that the trip time is highly variable, and that minimum trip time on the
  *             AndyMark breakers is considerably less than the REV breakers. Our swerve drive motors were on 40Amp
  *             (maximum size allowed for FRC) AndyMark breakers, and they would trip during extreme defensive play.
+ *             </li>
  *             <li><b>Motor Use</b> - How a motor is used affects how we should approach a determining an appropriate
  *             maximum current limit. Typically we see these use scenarios:
  *             <ul>
@@ -168,7 +170,7 @@ public class SparkNeo {
      * object is first created, it will represent in its powered up configuration
      *
      * @param canId The CAN id of this Spark MAX
-     * @return
+     * @return The created {@link SparkNeo}
      */
     @NotNull
     public static SparkNeo factory(int canId) {
@@ -177,21 +179,36 @@ public class SparkNeo {
     }
 
     /**
-     *
+     * The PID slot. There are 4 PID slots available. Slots 0-2 are reserved for the speed, smart-motion, and position
+     * PIDs. Slot 3 is the custom slot and can be used for any PID need not addressed by the {@link SparkNeo} wrapper.
      */
-    enum PIDtype {
+    public enum PIDtype {
+        /**
+         * The motor speed (RPM) PID slot managed by this wrapper.
+         */
         RPM(0),
+        /**
+         * The smart motion PID slot managed by this wrapper.
+         */
         SMART_MOTION(1),
-        POSITION(2);
+        /**
+         * The smart position PID slot managed by this wrapper.
+         */
+        POSITION(2),
+        /**
+         * A slot PID that is unused by this wrapper and may be used for custom settings that are beyond the scope
+         * of this wrapper.
+         */
+        CUSTOM(3);
 
-        final int slotId;
+        public final int slotId;
 
         PIDtype(int slotId) {
             this.slotId = slotId;
         }
     }
 
-    enum UseType {
+    public enum UseType {
         FREE_SPINNING(0),
         RPM_OCCASIONAL_STALL(1),
         RPM_PROLONGED_STALL(2),
@@ -204,7 +221,7 @@ public class SparkNeo {
         }
     }
 
-    enum BreakerAmps {
+    public enum BreakerAmps {
         Amps10(0),
         Amps20(1),
         Amps30(2),
@@ -217,8 +234,8 @@ public class SparkNeo {
         }
     }
 
-    enum Direction {
-        FORWARD(false),
+    public enum Direction {
+        DEFAULT(false),
         REVERSE(true);
 
         final boolean reversed;
@@ -338,10 +355,13 @@ public class SparkNeo {
     }
 
     /**
-     * @param direction
+     * Set the positive direction of the motor. This is a configuration method and can only be called between
+     * {@link #startConfig()} and {@link #endConfig()}.
+     *
+     * @param direction The positive direction of the motor.
      */
     public void setDirection(Direction direction) {
-        verifyInConfig(true, "setReversed");
+        verifyInConfig(true, "setDirection");
         sparkMax.setInverted(direction.reversed);
     }
 
@@ -362,12 +382,12 @@ public class SparkNeo {
      * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
      * @param maxRPM
      * @param maxRPMs
-     * @param minRPMs
+     * @param minRPM
      * @param allowableError
      */
     public void setSmartMotion(double kP, double kI, double kIZone, double kFF,
-                               double maxRPM, double maxRPMs, double minRPMs, double allowableError) {
-        setSmartMotion(kP, kI, kIZone, kFF, 0.0, -1.0, 1.0, maxRPM, maxRPMs, minRPMs, allowableError);
+                               double maxRPM, double maxRPMs, double minRPM, double allowableError) {
+        setSmartMotion(kP, kI, kIZone, kFF, 0.0, -1.0, 1.0, maxRPM, maxRPMs, minRPM, allowableError);
     }
 
     /**

@@ -116,7 +116,7 @@ public abstract class A05Constants {
     /**
      * Query whether SparkMax configuration should be burned after configuration.
      *
-     * @return {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise.
+     * @return {@code true} if the CAN devices should be flashed after configuration, {@code false} otherwise.
      */
     public static boolean getSparkBurnConfig() {
         return SPARK_BURN_CONFIG;

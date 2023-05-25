@@ -159,8 +159,8 @@ public class TestSparkNeo {
         // test setDirection()
         sparkNeo.setDirection(SparkNeo.Direction.REVERSE);
         verifySetDirection(sparkNeo.sparkMax, SparkNeo.Direction.REVERSE);
-        sparkNeo.setDirection(SparkNeo.Direction.FORWARD);
-        verifySetDirection(sparkNeo.sparkMax, SparkNeo.Direction.FORWARD);
+        sparkNeo.setDirection(SparkNeo.Direction.DEFAULT);
+        verifySetDirection(sparkNeo.sparkMax, SparkNeo.Direction.DEFAULT);
 
         // test steIdle()
         sparkNeo.setIdleMode(CANSparkMax.IdleMode.kBrake);
