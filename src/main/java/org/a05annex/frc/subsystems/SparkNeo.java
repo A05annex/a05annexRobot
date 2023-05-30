@@ -246,7 +246,7 @@ public class SparkNeo {
     }
 
     static final int[][] maxCurrentMatrix = {
-            // UseType.FREE_SPINNING - a think that is essentially free-spinning. Like a pickup roller which is
+            // UseType.FREE_SPINNING - a thing that is essentially free-spinning. Like a pickup roller which is
             // essentially free spinning except for the momentary power blip during pick up. Current is expected
             // to be low, and since stall is completely unexpected, should be limited to a value the motor and
             // breaker can sustain forever.
