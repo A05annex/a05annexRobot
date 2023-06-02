@@ -462,6 +462,22 @@ public class SparkNeo {
         }
     }
 
+    /**
+     * Sets the soft limits of a motor (programmed stops). This is a configuration method and can only be called between
+     * {@link #startConfig()} and {@link #endConfig()}
+     *
+     * @param min The stop limit in the reverse direction (null for no limit)
+     * @param max The stop limit in the forward direction (null for no limit)
+     */
+    public void setSoftLimits(Double min, Double max) {
+        verifyInConfig(true, "setSoftLimits");
+        if(min != null) {
+            sparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, min.floatValue());
+        }
+        if(max != null) {
+            sparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, max.floatValue());
+        }
+    }
 
     /**
      *
@@ -478,7 +494,10 @@ public class SparkNeo {
         sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6, 500);
     }
 
-    // setIdle
+    public void stopMotor() {
+        verifyInConfig(false, "stopMotor");
+        sparkMax.stopMotor();
+    }
 
     public void setTargetRPM(double targetRpm) {
         verifyInConfig(false, "setTargetRPM");
