@@ -127,10 +127,10 @@ import org.jetbrains.annotations.NotNull;
  *             <li><b>Motor Use</b> - How a motor is used affects how we should approach a determining an appropriate
  *             maximum current limit. Typically we see these use scenarios:
  *             <ul>
- *                 <li><b>Free Spinning</b> -</li>
+ *                 <li><b>Free Spinning</b> - </li>
  *                 <li><b>Occasional Stall</b> - </li>
- *                 <li><b>Prolonged Stall</b></li>
- *                 <li><b>Position (Always Stalled)</b></li>
+ *                 <li><b>Prolonged Stall</b> - </li>
+ *                 <li><b>Position (Always Stalled)</b> - </li>
  *             </ul>
  *             motors that are essentially free spinning motors
  *             </li>
