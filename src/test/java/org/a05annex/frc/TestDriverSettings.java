@@ -37,7 +37,7 @@ public class TestDriverSettings {
          */
         @Override
         public void load() {
-            String filePath = "./src/test/resources/drivers/" + m_driverName + ".json";
+            String filePath = "./src/test/resources/drivers/" + driverName + ".json";
             loadFilePath(filePath);
         }
 

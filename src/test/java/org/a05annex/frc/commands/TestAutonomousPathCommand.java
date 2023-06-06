@@ -55,16 +55,16 @@ public class TestAutonomousPathCommand {
          */
         @Override
         public void load() throws FileNotFoundException {
-            File file = new File(m_filename);
+            File file = new File(filename);
             System.out.println(file.getAbsolutePath());
             if (!file.exists()) {
-                throw new FileNotFoundException("File: '" + m_filename + "' does not exist for path" + m_pathName);
+                throw new FileNotFoundException("File: '" + filename + "' does not exist for path" + pathName);
             }
             KochanekBartelsSpline spline = new KochanekBartelsSpline();
-            if (!spline.loadPath(m_filename)) {
-                throw new FileNotFoundException("Error loading '" + m_filename + "' for path" + m_pathName);
+            if (!spline.loadPath(filename)) {
+                throw new FileNotFoundException("Error loading '" + filename + "' for path" + pathName);
             }
-            m_spline = spline;
+            this.spline = spline;
         }
 
     }
