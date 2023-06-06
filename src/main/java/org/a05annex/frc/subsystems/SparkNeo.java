@@ -419,6 +419,22 @@ public class SparkNeo {
         }
     }
 
+    public void setPositionPID(double kP, double kI, double kIZone, double kFF) {
+        setPID(PIDtype.POSITION, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
+    }
+    public void setPositionPID(double kP, double kI, double kIZone, double kFF,
+                        double kD, double min, double max) {
+        setPID(PIDtype.POSITION, kP, kI, kIZone, kFF, kD, min, max);
+    }
+
+    public void setRpmPID(double kP, double kI, double kIZone, double kFF) {
+        setPID(PIDtype.RPM, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
+    }
+    public void setRpmPID(double kP, double kI, double kIZone, double kFF,
+                        double kD, double min, double max) {
+        setPID(PIDtype.RPM, kP, kI, kIZone, kFF, kD, min, max);
+    }
+
     /**
      * Sets the PID constants for the specified PID control type..
      *
@@ -430,7 +446,7 @@ public class SparkNeo {
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
      */
-    public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF) {
+    void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF) {
         setPID(pidType, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
     }
 
@@ -448,7 +464,7 @@ public class SparkNeo {
      * @param min
      * @param max
      */
-    public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
+    void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
                        double kD, double min, double max) {
         verifyInConfig(true, "setPID");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {

@@ -8,10 +8,10 @@ plugins {
     id 'edu.wpi.first.GradleRIO' version '2023.4.3'
 }
 
-def javaVersion = JavaVersion.VERSION_11
-sourceCompatibility = JavaVersion.VERSION_15
-targetCompatibility = JavaVersion.VERSION_15
-version = '0.0.25'
+def javaVersion = JavaVersion.VERSION_15
+sourceCompatibility = javaVersion
+targetCompatibility = javaVersion
+version = '0.0.26'
 group = 'org.a05annex'
 
 // Set to true to use debug for JNI.
