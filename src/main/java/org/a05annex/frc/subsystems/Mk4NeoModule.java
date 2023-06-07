@@ -207,11 +207,11 @@ public class Mk4NeoModule {
         // Configure the drive motor
         driveMotor.startConfig();
         driveMotor.setCurrentLimit(UseType.RPM_PROLONGED_STALL, BreakerAmps.Amps40);
-        driveMotor.setPID(PIDtype.RPM, DRIVE_kP, DRIVE_kI, DRIVE_IZONE, DRIVE_kFF);
+        driveMotor.setRpmPID(DRIVE_kP, DRIVE_kI, DRIVE_IZONE, DRIVE_kFF);
         driveMotor.setSmartMotion(SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE,
                 SMART_MOTION_kFF, SMART_MOTION_MAX_RPM, SMART_MOTION_MAX_RPMs,
                 SMART_MOTION_MIN_RPM, SMART_MOTION_TARGET_TOLERANCE);
-        driveMotor.setPID(PIDtype.POSITION, DRIVE_POS_kP, DRIVE_POS_kI,
+        driveMotor.setPositionPID(DRIVE_POS_kP, DRIVE_POS_kI,
                 DRIVE_POS_IZONE, DRIVE_POS_kFF);
         driveMotor.endConfig();
 
@@ -222,7 +222,7 @@ public class Mk4NeoModule {
         // current limit the motor to prevent popping breakers
         directionMotor.setCurrentLimit(UseType.POSITION, BreakerAmps.Amps30);
         // initialize the PIDs for the direction controller
-        directionMotor.setPID(PIDtype.POSITION, SPIN_kP, SPIN_kI,SPIN_IZONE, 0.0);
+        directionMotor.setPositionPID(SPIN_kP, SPIN_kI, SPIN_IZONE, 0.0);
         directionMotor.endConfig();
     }
 
