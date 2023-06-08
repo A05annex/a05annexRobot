@@ -122,10 +122,8 @@ public abstract class A05Constants {
         return SPARK_BURN_CONFIG;
     }
     // ---------------------
-    /**
-     *
-     */
     public static final int DRIVE_XBOX_PORT = 0;
+    public static final int ALT_XBOX_PORT = 1;
 
     private static double DRIVE_ORIENTATION_kP;
 

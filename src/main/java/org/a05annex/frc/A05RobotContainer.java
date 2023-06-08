@@ -4,6 +4,7 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import org.a05annex.frc.commands.A05DriveCommand;
 import org.a05annex.frc.commands.A05DriveCommand;
 import org.a05annex.frc.commands.AutonomousPathCommand;
@@ -33,10 +34,13 @@ public abstract class A05RobotContainer {
     protected A05DriveCommand driveCommand;
 
     /**
-     * This is the robot driver XBox controller.
+     * This is the robot driver Xbox controller typically used to control the drive.
      */
     protected final XboxController driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
-
+    /**
+     * This is the alternate Xbox controller typically used to control non-drive subsystems.
+     */
+    protected final XboxController altXbox = new XboxController(A05Constants.ALT_XBOX_PORT);
     /**
      * This is the autonomous path following command initialized for the path specified
      * by the autonomous path selection switches.
@@ -54,6 +58,30 @@ public abstract class A05RobotContainer {
      * and speed calibration correction.
      */
     protected A05Constants.RobotSettings robotSettings = null;
+
+    // drive controller button declarations
+    protected JoystickButton driveA = new JoystickButton(driveXbox, 1),
+                   driveB = new JoystickButton(driveXbox, 2),
+                   driveX = new JoystickButton(driveXbox, 3),
+                   driveY = new JoystickButton(driveXbox, 4),
+                   driveLeftBumper = new JoystickButton(driveXbox, 5),
+                   driveRightBumper = new JoystickButton(driveXbox, 6),
+                   driveBack = new JoystickButton(driveXbox, 7),
+                   driveStart = new JoystickButton(driveXbox, 8),
+                   driveLeftStickPress = new JoystickButton(driveXbox, 9),
+                   driveRightStickPress = new JoystickButton(driveXbox, 10);
+
+    // alternate controller button declarations
+    protected JoystickButton altA = new JoystickButton(altXbox, 1),
+                   altB = new JoystickButton(altXbox, 2),
+                   altX = new JoystickButton(altXbox, 3),
+                   altXY = new JoystickButton(altXbox, 4),
+                   altLeftBumper = new JoystickButton(altXbox, 5),
+                   altRightBumper = new JoystickButton(altXbox, 6),
+                   altBack = new JoystickButton(altXbox, 7),
+                   altStart = new JoystickButton(altXbox, 8),
+                   altLeftStickPress = new JoystickButton(altXbox, 9),
+                   altRightStickPress = new JoystickButton(altXbox, 10);
 
     /**
      * The default robot container initialization, which:
