@@ -92,7 +92,7 @@ public class PhotonCameraWrapper {
      *
      * @return Whether the latest pipeline result and latest target match.
      */
-    public boolean doesLatestPipelineResultAndLatestTargetMatch() {
+    public boolean doesLatestFrameAndTargetMatch() {
         return latestPipelineResultAndLatestTargetMatch;
     }
 
@@ -102,7 +102,7 @@ public class PhotonCameraWrapper {
      * @param targetId The target ID to check.
      * @return Whether the last frame and target match the specified target ID.
      */
-    public boolean doesLastFrameAndTargetMatch(int targetId) {
+    public boolean doesLatestFrameAndTargetMatch(int targetId) {
         return latestFrame.hasTargets() && (lastTargetId == targetId);
     }
 
