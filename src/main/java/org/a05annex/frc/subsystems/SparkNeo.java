@@ -11,6 +11,49 @@ import org.jetbrains.annotations.NotNull;
  * together the {@link com.revrobotics.CANSparkMax}, {@link com.revrobotics.RelativeEncoder}, and
  * {@link com.revrobotics.SparkMaxPIDController} into a single object.
  * <p>
+ * <b>Motivation:</b>
+ * <p>
+ * The genesis of this class is that we had a lot of issues in the last 3 seasons that we really resolved in
+ * the 2022-2023 competition season. So we wanted a container class that made
+ * it easier to use a SparkMax/Neo or SparkMax/Neo550 the <i>correct</i> way, which we are still learning.
+ * We just finished our 3<sup>rd</sup> season of using the
+ * <a href="https://www.revrobotics.com/rev-11-2158/">REV Spark MAX</a> to control
+ * <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> motors on a swerve base. This season we went to all
+ * REV controllers and motors, adding the <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> motor
+ * to our bag of tricks. We have done a lot of things wrong in the past; and we wanted to contain out past mistakes,
+ * so they are not (at least less frequently) repeated.
+ * <p>
+ * <b>Use:</b>
+ * <p>
+ * Here are a couple hints on the best use of {@code SparkNeo}, and the associated class {@link SparkNeo550}:
+ * <ul>
+ *     <li>Create one using the {@link SparkNeo#factory(int)} or {@link SparkNeo550#factory(int)}. While there
+ *     is a constructor for either it exists for creating either a real implementation or a mocked test implementation,
+ *     and is not publicly accessible. The factory method creates what you want to use with the CAN id
+ *     as the only argument.</li>
+ *     <li>Do all your configuration within a {@link SparkNeo#startConfig()} and {@link SparkNeo#endConfig()} block.
+ *     This lets the {@code SparkNeo} handle all the details of how the configuration is handled and burned into the
+ *     controllers. It helps you do configuration in the right place in code. NOTE: sometimes you have special
+ *     needs - like during PID tuning. You can get to any of the wrapped {@link com.revrobotics.CANSparkMax},
+ *     {@link com.revrobotics.RelativeEncoder}, and {@link com.revrobotics.SparkMaxPIDController} classes
+ *     through the {@link SparkNeo#sparkMax}, {@link SparkNeo#encoder}, and {@link SparkNeo#sparkMaxPID} if
+ *     you need to bypass the restrictions of the {@code SparkNeo} implementation - for example, in code that
+ *     tunes PID settings.</li>
+ *     <li>Controller PID slots - yeah, the REV documentation is confusing. {@code SparkNeo} manages the first 3 slots
+ *     as {@link PIDtype#RPM}, {@link PIDtype#SMART_MOTION}, and {@link PIDtype#POSITION} and provides a constant,
+ *     {@link PIDtype#CUSTOM} for the forth. The {@code SparkNeo} also hides the management of the slots by providing
+ *     the {@link #setRpmPID(double, double, double, double)},
+ *     {@link #setSmartMotion(double, double, double, double, double, double, double, double)},
+ *     {@link #setPositionPID(double, double, double, double)}, and
+ *
+ *     </li>
+ *     <li>
+ *
+ *     </li>
+ * </ul>
+ * <p>
+ * <b>Detail:</b>
+ * <p>
  * The genesis of this class is that we had a lot of issues in previous years that we really resolved in the 2022-2023
  * competition season. Our standard pattern of <i>Spark Max - Neo motor</i> was:
  * <ul>
@@ -167,7 +210,8 @@ public class SparkNeo {
 
     /**
      * The factory for {@link SparkNeo} objects for the physical robot. When the robot is powered up and this
-     * object is first created, it will represent in its powered up configuration
+     * object is first created, it will represent the SparkMax/Neo in its powered up configuration (i.e. it will
+     * have the configuration burned into the SparkMax).
      *
      * @param canId The CAN id of this Spark MAX
      * @return The created {@link SparkNeo}
@@ -270,7 +314,15 @@ public class SparkNeo {
     public final SparkMaxPIDController sparkMaxPID;
 
 
-    public SparkNeo(@NotNull CANSparkMax sparkMax, @NotNull RelativeEncoder encoder,
+    /**
+     * The constructor for a {@code SparkNeo}. Always use {@link #factory(int)} to create the {@code SparkNeo}
+     * <i>unless</i> you are creating a mock {@code SparkNeo} for testing.
+     *
+     * @param sparkMax The {@link CANSparkMax}.
+     * @param encoder The {@link RelativeEncoder} of the {@link CANSparkMax}.
+     * @param sparkMaxPID The {@link SparkMaxPIDController} of the {@link CANSparkMax}.
+     */
+    protected SparkNeo(@NotNull CANSparkMax sparkMax, @NotNull RelativeEncoder encoder,
                     @NotNull SparkMaxPIDController sparkMaxPID) {
         this.sparkMax = sparkMax;
         this.encoder = encoder;
@@ -397,9 +449,9 @@ public class SparkNeo {
      *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
-     * @param kD
-     * @param min
-     * @param max
+     * @param kD             The PID differential constant <i>K<sub>i</sub></i>.
+     * @param min            The minimum RPM that will be requested, -1.0 is full reverse speed.
+     * @param max            The maximum RPM that will be requested, 1.0 is full forward speed.
      * @param maxRPM
      * @param maxRPMs
      * @param minRPM
@@ -419,35 +471,64 @@ public class SparkNeo {
         }
     }
 
-    public void setPositionPID(double kP, double kI, double kIZone, double kFF) {
-        setPID(PIDtype.POSITION, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
-    }
-    public void setPositionPID(double kP, double kI, double kIZone, double kFF,
-                        double kD, double min, double max) {
-        setPID(PIDtype.POSITION, kP, kI, kIZone, kFF, kD, min, max);
-    }
-
+    /**
+     * Sets the PID constants for RPM (speed) control.
+     *
+     * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
+     * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kIZone  The PID loop will not include the integral component until the current position or speed is
+     *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
+     *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
+     * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
+     */
     public void setRpmPID(double kP, double kI, double kIZone, double kFF) {
         setPID(PIDtype.RPM, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
     }
-    public void setRpmPID(double kP, double kI, double kIZone, double kFF,
-                        double kD, double min, double max) {
+    /**
+     * Sets the PID constants for position control.
+     *
+     * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
+     * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kIZone  The PID loop will not include the integral component until the current position or speed is
+     *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
+     *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
+     * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
+     */
+    public void setPositionPID(double kP, double kI, double kIZone, double kFF) {
+        setPID(PIDtype.POSITION, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
+    }
+
+    /**
+     * Sets the PID constants for RPM (speed) control.
+     *
+     * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
+     * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kIZone  The PID loop will not include the integral component until the current position or speed is
+     *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
+     *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
+     * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>.
+     * @param kD      The PID differential constant <i>K<sub>i</sub></i>.
+     * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
+     * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
+     */
+    public void setRpmPID(double kP, double kI, double kIZone, double kFF, double kD, double min, double max) {
         setPID(PIDtype.RPM, kP, kI, kIZone, kFF, kD, min, max);
     }
-
     /**
-     * Sets the PID constants for the specified PID control type..
+     * Sets the PID constants for position control.
      *
-     * @param pidType The PID control type.
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
      * @param kIZone  The PID loop will not include the integral component until the current position or speed is
      *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
+     * @param kD      The PID differential constant <i>K<sub>i</sub></i>.
+     * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
+     * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
      */
-    void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF) {
-        setPID(pidType, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
+    public void setPositionPID(double kP, double kI, double kIZone, double kFF,double kD, double min, double max) {
+        setPID(PIDtype.POSITION, kP, kI, kIZone, kFF, kD, min, max);
     }
 
     /**
@@ -460,11 +541,11 @@ public class SparkNeo {
      *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
-     * @param kD
-     * @param min
-     * @param max
+     * @param kD      The PID differential constant <i>K<sub>i</sub></i>.
+     * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
+     * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
      */
-    void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
+    public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
                        double kD, double min, double max) {
         verifyInConfig(true, "setPID");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
@@ -496,7 +577,13 @@ public class SparkNeo {
     }
 
     /**
-     *
+     * End the configuration by performing the following tasks:
+     * <ul>
+     *     <li>verifying we are currently in config;</li>
+     *     <li>burning the current configuration into the SparkMax flash if requested;</li>
+     *     <li>reducing the reporting frequency of non-essential SparkMax state variables to reduce
+     *     CAN traffic.</li>
+     * </ul>
      */
     public void endConfig() {
         verifyInConfig(true, "endConfig");

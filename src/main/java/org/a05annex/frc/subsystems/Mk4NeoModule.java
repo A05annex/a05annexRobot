@@ -211,8 +211,7 @@ public class Mk4NeoModule {
         driveMotor.setSmartMotion(SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE,
                 SMART_MOTION_kFF, SMART_MOTION_MAX_RPM, SMART_MOTION_MAX_RPMs,
                 SMART_MOTION_MIN_RPM, SMART_MOTION_TARGET_TOLERANCE);
-        driveMotor.setPositionPID(DRIVE_POS_kP, DRIVE_POS_kI,
-                DRIVE_POS_IZONE, DRIVE_POS_kFF);
+        driveMotor.setPositionPID(DRIVE_POS_kP, DRIVE_POS_kI, DRIVE_POS_IZONE, DRIVE_POS_kFF);
         driveMotor.endConfig();
 
         // configure the direction motor

@@ -183,17 +183,17 @@ public class TestSparkNeo {
                 10000.0,3000.0, 500.0, 0.5, true);
 
         // test the setPID() variants
-        sparkNeo.setPID(SparkNeo.PIDtype.RPM, 0.05, 0.06, 2.0,0.07, 0.08, -0.9, 0.9);
+        sparkNeo.setRpmPID(0.05, 0.06, 2.0,0.07, 0.08, -0.9, 0.9);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.RPM.slotId, 0.05, 0.06, 2.0,0.07,
                 0.08, -0.9, 0.9, true);
-        sparkNeo.setPID(SparkNeo.PIDtype.RPM, 0.05, 0.06, 2.0,0.07);
+        sparkNeo.setRpmPID(0.05, 0.06, 2.0,0.07);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.RPM.slotId, 0.05, 0.06, 2.0,0.07,
                 0.0, -1.0, 1.0, true);
 
-        sparkNeo.setPID(SparkNeo.PIDtype.POSITION, 0.09, 0.10, 3.0,0.20, 0.30, -0.85, 0.85);
+        sparkNeo.setPositionPID(0.09, 0.10, 3.0,0.20, 0.30, -0.85, 0.85);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.POSITION.slotId, 0.09, 0.10, 3.0,0.20,
                 0.30, -0.85, 0.85, true);
-        sparkNeo.setPID(SparkNeo.PIDtype.POSITION, 0.09, 0.10, 3.0,0.20);
+        sparkNeo.setPositionPID(0.09, 0.10, 3.0,0.20);
         verifyPid(sparkNeo.sparkMaxPID, SparkNeo.PIDtype.POSITION.slotId, 0.09, 0.10, 3.0,0.20,
                 0.0, -1.0, 1.0, true);
 
