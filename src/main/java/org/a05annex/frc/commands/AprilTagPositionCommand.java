@@ -10,6 +10,7 @@ import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
 import org.photonvision.PhotonCamera;
 
+import static org.a05annex.frc.A05Constants.aprilTagPositionParametersDictionary;
 import static org.a05annex.frc.A05Constants.dict;
 
 
@@ -48,7 +49,7 @@ public class AprilTagPositionCommand extends A05DriveCommand {
         // NOTE: the super adds the drive subsystem requirement
         super(SpeedCachedSwerve.getInstance(), xbox, driver);
 
-        this.positionParameters = dict.get(positionParametersKey);
+        this.positionParameters = aprilTagPositionParametersDictionary.get(positionParametersKey);
 
         this.xPosition = xPosition;
         this.yPosition = -yPosition;
