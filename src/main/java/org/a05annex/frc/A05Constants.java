@@ -884,7 +884,7 @@ public abstract class A05Constants {
          * @param tagIDs Array of april tag ids to perform the targeting on
          * @param heading The field relative heading of the robot when facing the AprilTag
          */
-        protected AprilTagPositionParameters(double maxSpeed, double speedSmoothingMultiplier, double xSensitivity,
+        public AprilTagPositionParameters(double maxSpeed, double speedSmoothingMultiplier, double xSensitivity,
                                              double ySensitivity, int[] tagIDs, AngleD heading) {
             this.maxSpeed = maxSpeed;
             this.speedSmoothingMultiplier = speedSmoothingMultiplier;
