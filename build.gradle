@@ -11,7 +11,7 @@ plugins {
 def javaVersion = JavaVersion.VERSION_15
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
-version = '0.0.29'
+version = '0.0.30'
 group = 'org.a05annex'
 
 // Set to true to use debug for JNI.

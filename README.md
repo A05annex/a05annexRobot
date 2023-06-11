@@ -36,7 +36,9 @@ the robot response to their favorite game).
   * 0.0.20 - Added a methods to IServeDrive to get the actual underlying subsystem.
   * 0.0.21 - Code to burn default configuration into the Sparks.
   * 0.0.23 - Post-competition cleanup. Moving common Spark-NEO and Spark-NOE550 combination into
-             a tested wrapper that formalizes our 95% use case into a somple and repeatable pattern.
+             a tested wrapper that formalizes our 95% use case into a sample and repeatable pattern.
+  * 0.0.29 - Added SpeedCachedSwerve
+  * 0.0.30 - Added A05AprilTagPositionCommand
 </details>
 
 ## Creating a Robot Project Using this Library
