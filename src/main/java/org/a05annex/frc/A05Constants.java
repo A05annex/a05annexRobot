@@ -71,7 +71,7 @@ public abstract class A05Constants {
         return HAS_LIMELIGHT;
     }
 
-    public static final Dictionary<String, AprilTagPositionParameters> dict = new Hashtable<>();
+    public static final Dictionary<String, AprilTagPositionParameters> aprilTagPositionParametersDictionary = new Hashtable<>();
 
     /**
      * {@code true} if CAN devices should be set to factory defaults and fully configured from
