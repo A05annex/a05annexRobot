@@ -4,6 +4,8 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.a05annex.util.AngleD;
+import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +16,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 
 import static org.a05annex.util.JsonSupport.readJsonFileAsJSONObject;
@@ -66,7 +70,9 @@ public abstract class A05Constants {
     public static boolean hasLimelight() {
         return HAS_LIMELIGHT;
     }
-    // ---------------------
+
+    public static final Dictionary<String, AprilTagPositionParameters> dict = new Hashtable<>();
+
     /**
      * {@code true} if CAN devices should be set to factory defaults and fully configured from
      * there, {@code false} if it should be assumed configuration is burned into the CAN devices
@@ -834,4 +840,61 @@ public abstract class A05Constants {
      * that there will be no more than 2 robots running the same code.
      */
     public static final List<RobotSettings> ROBOT_SETTINGS_LIST = new ArrayList<>();
+
+
+    /**
+     * This class is used to contain the drive parameters used to do april tag positioning
+     */
+    public static class AprilTagPositionParameters {
+        /**
+         * The maximum speed (0 - 1) that the robot can go while targeting
+         */
+        public final double maxSpeed;
+
+        /**
+         * Makes the robot speed to distance graph curved instead of linear. If the value is between 0 and 1 the robot
+         * will start to slow down later. If value is greater than 1, the robot will slow down sooner.
+         */
+        public final double speedSmoothingMultiplier;
+
+        /**
+         * Values that essentially control how sensitive the forward and strafe is
+         */
+        public final double X_MAX, X_MIN = 0.0, Y_MAX, Y_MIN;
+
+        /**
+         * Array of april tag ids to perform the targeting on
+         */
+        public final int[] tagIDs;
+
+        /**
+         * The field relative heading of the robot when facing the AprilTag
+         */
+        public final AngleD heading;
+
+        /**
+         * @param maxSpeed The maximum speed (0 - 1) that the robot can go while targeting
+         * @param speedSmoothingMultiplier Makes the robot speed to distance graph curved instead of linear. If the
+         *                                 value is between 0 and 1 the robot will start to slow down later. If value
+         *                                 is greater than 1, the robot will slow down sooner.
+         * @param xSensitivity Controls how sensitive and how quickly the robot will try to get the right position on
+         *                     the X axis (forward/backward)
+         * @param ySensitivity Controls how sensitive and how quickly the robot will try to get the right position on
+         *                     the Y axis (side to side)
+         * @param tagIDs Array of april tag ids to perform the targeting on
+         * @param heading The field relative heading of the robot when facing the AprilTag
+         */
+        protected AprilTagPositionParameters(double maxSpeed, double speedSmoothingMultiplier, double xSensitivity,
+                                             double ySensitivity, int[] tagIDs, AngleD heading) {
+            this.maxSpeed = maxSpeed;
+            this.speedSmoothingMultiplier = speedSmoothingMultiplier;
+            double clippedXSensitivity = Utl.clip(xSensitivity, 0.1, 3.0);
+            double clippedYSensitivity = Utl.clip(ySensitivity, 0.1, 3.0);
+            this.X_MAX = 3.0 * clippedXSensitivity;
+            this.Y_MIN = -1.5 * clippedYSensitivity;
+            this.Y_MAX = 1.5 * clippedYSensitivity;
+            this.tagIDs = tagIDs;
+            this.heading = heading;
+        }
+    }
 }
