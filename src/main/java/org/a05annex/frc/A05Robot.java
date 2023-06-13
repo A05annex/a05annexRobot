@@ -1,5 +1,7 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -26,6 +28,15 @@ public abstract class A05Robot extends TimedRobot {
     @SuppressWarnings("unused")
     protected void setRobotContainer(A05RobotContainer container) {
         a05RobotContainer = container;
+    }
+
+    @Override
+    public void robotInit() {
+        // Starts recording to data log
+        DataLogManager.start();
+
+        // Record both DS control and joystick data
+        DriverStation.startDataLog(DataLogManager.getLog());
     }
 
     /**
@@ -80,83 +91,4 @@ public abstract class A05Robot extends TimedRobot {
             }
         }
     }
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // This next section is for telemetry in the default labview driver station dashboard, Which allows 10 telemetry
-    // slots. If you are using the Shuffleboard dashboard, you will never use these.
-    // -----------------------------------------------------------------------------------------------------------------
-    Object[] lastLabviewTelemetry = {null, null, null, null, null, null, null, null, null, null};
-
-    /**
-     * Update telemetry feedback for a real number value. If the value has not changed, no update is sent
-     *
-     * @param port      (int) The port 0 - 9 to write to.
-     * @param key       (String) The key for the telemetry.
-     * @param var       (double) The number to be reported.
-     */
-    @SuppressWarnings("unused")
-    protected void labviewTelemetry(int port, String key, double var) {
-        if ((lastLabviewTelemetry[port] == null) || (var != (Double)lastLabviewTelemetry[port])) {
-            SmartDashboard.putString(String.format("DB/String %d", port), String.format("%s: %10.6f", key, var));
-            lastLabviewTelemetry[port] = var;
-        }
-    }
-
-    /**
-     * Update telemetry feedback for an integer value. If the value has not changed, no update is sent
-     *
-     * @param port      (int) The port 0 - 9 to write to.
-     * @param key       (String) The key for the telemetry.
-     * @param var       (int) The integer to be reported.
-     */
-    @SuppressWarnings("unused")
-    protected void labviewTelemetry(int port, String key, int var) {
-        if ((lastLabviewTelemetry[port] == null) || (var != (Integer)lastLabviewTelemetry[port])) {
-            SmartDashboard.putString(String.format("DB/String %d", port), String.format("%s: %d", key, var));
-            lastLabviewTelemetry[port] = var;
-        }
-    }
-
-    /**
-     * Update telemetry feedback for a string value. If the value has not changed, no update is sent
-     *
-     * @param port      (int) The port 0 - 9 to write to.
-     * @param key       (String) The key for the telemetry.
-     * @param var       (String) The string to be reported.
-     */
-    @SuppressWarnings("unused")
-    protected void labviewTelemetry(int port, String key, String var) {
-        if ((lastLabviewTelemetry[port] == null) || ((var != lastLabviewTelemetry[port])) &&
-                !var.equals(lastLabviewTelemetry[port])) {
-            SmartDashboard.putString(String.format("DB/String %d", port), String.format("%s: %s", key, var));
-            lastLabviewTelemetry[port] = var;
-        }
-    }
-
-    /**
-     * Update telemetry feedback for a boolean value. If the value has not changed, no update is sent
-     *
-     * @param port      (int) The port 0 - 9 to write to.
-     * @param key       (String) The key for the telemetry.
-     * @param var       (boolean) The boolean to be reported.
-     */
-    @SuppressWarnings("unused")
-    protected void labviewTelemetry(int port, String key, boolean var) {
-        if ((lastLabviewTelemetry[port] == null) || (var != (Boolean)lastLabviewTelemetry[port])) {
-            SmartDashboard.putString(String.format("DB/String %d", port),
-                    String.format("%s: %s", key, var ? "on" : "off"));
-            lastLabviewTelemetry[port] = var;
-        }
-    }
-
-    /**
-     * Initialize the labview telemetry dashboard to empty entries.
-     */
-    protected void initLabviewTelemetry() {
-        for (int i = 0; i < 10; i++) {
-            SmartDashboard.putString(String.format("DB/String %d", i), " ");
-        }
-
-    }
-
 }
