@@ -29,8 +29,7 @@ public class TestSparkNeo {
     }
 
     /**
-     * Verify smart motion
-     * /** This method verifies that the PID motor controller constants were set as expected.
+     * Verify smart motion PID motor controller constants were set as expected.
      *
      * @param pid       (SparkMaxPIDController, not null) The mocked PID motor controller.
      * @param kP        (double, readonly) The expected proportional multiplier.
@@ -235,4 +234,47 @@ public class TestSparkNeo {
         assertThrows(IllegalStateException.class,
                 () -> sparkNeo.setCurrentLimit(SparkNeo.UseType.FREE_SPINNING, SparkNeo.BreakerAmps.Amps40));
     }
+
+    @Test
+    @DisplayName("test setTargetRPM no config")
+    void test_invalidNotConfigured_position() {
+        A05Constants.setSparkConfig(false,false);
+        SparkNeo sparkNeo = newSparkNeo();
+        assertThrows(IllegalStateException.class,
+                () -> sparkNeo.setTargetRPM(1000.0));
+    }
+
+    @Test
+    @DisplayName("test setSmartMotionTarget no config")
+    void test_invalidNotConfigured_rpm() {
+        A05Constants.setSparkConfig(false,false);
+        SparkNeo sparkNeo = newSparkNeo();
+        assertThrows(IllegalStateException.class,
+                () -> sparkNeo.setSmartMotionTarget(1000.0));
+    }
+
+    @Test
+    @DisplayName("test setTargetPosition no config")
+    void test_invalidNotConfigured_smartMotion() {
+        A05Constants.setSparkConfig(false,false);
+        SparkNeo sparkNeo = newSparkNeo();
+        assertThrows(IllegalStateException.class,
+                () -> sparkNeo.setTargetPosition(400.0));
+    }
+
+    /**
+     * Test that the default current limits are correctly set.
+     */
+    @Test
+    @DisplayName("test the default current limits.")
+    void test_defaultCurrentLimits() {
+        A05Constants.setSparkConfig(true,false);
+        SparkNeo sparkNeo = newSparkNeo();
+        sparkNeo.startConfig();
+        sparkNeo.endConfig();
+        verifySetCurrentLimit(sparkNeo.sparkMax, SparkNeo.UseType.FREE_SPINNING, SparkNeo.BreakerAmps.Amps10);
+    }
+
+
+
 }

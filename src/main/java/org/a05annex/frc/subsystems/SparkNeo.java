@@ -5,6 +5,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.A05Constants;
 import org.jetbrains.annotations.NotNull;
 
+import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
+
 /**
  * This class is the packaging for a <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> motor
  * powered by a <a href="https://www.revrobotics.com/rev-11-2158/">REV Spark MAX</a> motor controller. It binds
@@ -252,10 +254,33 @@ public class SparkNeo {
         }
     }
 
+    /**
+     * The motor use types for guessing the best current limits
+     */
     public enum UseType {
+        /**
+         * The motor is expected to be essentially free spinning - as in a pickup that catches and delivers game
+         * elements to the next stage. Stall is unexpected, so the current limits is low enough that the motor
+         * is expected to survive forever at this current.
+         */
         FREE_SPINNING(0),
+        /**
+         * The motor is expected to occasionally stall, and needs a bit of extra power to break the stall. This
+         * gives a bit more current to break the stall - but not enough to be damaging if the stall continues
+         * through the match.
+         */
         RPM_OCCASIONAL_STALL(1),
+        /**
+         * There are driver induced prolonged stalls, an interesting case like the driver playing defence and stalling
+         * against another robot. the driver needs the most power available for short periods of time. The current
+         * must not exceed that which will damage the motor or throw the breaker for several consecutive 5 second
+         * bursts of stall (5 seconds being the typical max defensive engagement time before penalty).
+         */
         RPM_PROLONGED_STALL(2),
+        /**
+         * The motor is position controlled - which means it is essentially always stalled. The current limit must
+         * not exceed a current that would damage the motor if sustained, or throw the breaker.
+         */
         POSITION(3);
 
         final int index;
@@ -309,6 +334,8 @@ public class SparkNeo {
     };
 
     boolean inConfig = false;
+    boolean isConfigured = false;
+    boolean currentLimitIsSet = false;
     public final CANSparkMax sparkMax;
     public final RelativeEncoder encoder;
     public final SparkMaxPIDController sparkMaxPID;
@@ -329,6 +356,11 @@ public class SparkNeo {
         this.sparkMaxPID = sparkMaxPID;
     }
 
+    /**
+     *
+     * @param expectedInConfig
+     * @param method
+     */
     protected void verifyInConfig(boolean expectedInConfig, @NotNull String method) {
         if (this.inConfig != expectedInConfig) {
             System.out.println();
@@ -345,6 +377,23 @@ public class SparkNeo {
     }
 
     /**
+     *
+     * @param method
+     */
+    protected void verifyIsConfigured(@NotNull String method) {
+        if (!this.isConfigured) {
+            System.out.println();
+            System.out.println("**********************************************************************");
+            System.out.println("**********************************************************************");
+            System.out.println("***** %s() may only be called after configuration".formatted(method));
+            System.out.println("**********************************************************************");
+            System.out.println("**********************************************************************");
+            System.out.println();
+            throw new IllegalStateException("%s() may only be called after configuration".formatted(method));
+        }
+    }
+
+    /**
      * Get the maximum free RPM. This is published in the
      * <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> summary as 5676RPM
      *
@@ -355,14 +404,27 @@ public class SparkNeo {
         return 5676.0;
     }
 
+    /**
+     *
+     * @return
+     */
     public double getEncoderVelocity() {
         return encoder.getVelocity();
     }
 
+    /**
+     *
+     * @return
+     */
     public double getEncoderPosition() {
         return encoder.getPosition();
     }
 
+    /**
+     * The encoder position may only be set during configuration.
+     *
+     * @param position
+     */
     public void setEncoderPosition(double position) {
         verifyInConfig(false, "setEncoderPosition");
         encoder.setPosition(position);
@@ -404,6 +466,7 @@ public class SparkNeo {
             int maxAmps = maxCurrentMatrix[useType.index][breakertAmps.index];
             sparkMax.setSmartCurrentLimit(maxAmps, maxAmps, 10000);
         }
+        currentLimitIsSet = true;
     }
 
     /**
@@ -418,7 +481,11 @@ public class SparkNeo {
     }
 
     /**
-     * @param idleMode
+     * Sets whether the power=0.0 mode should be free spinning ({@link com.revrobotics.CANSparkMax.IdleMode#kCoast})
+     * or brake ({@link com.revrobotics.CANSparkMax.IdleMode#kBrake}). NOTE: this is one os the few methods that can
+     * be called inside or outside configuration.
+     *
+     * @param idleMode The idle mode.
      */
     public void setIdleMode(CANSparkMax.IdleMode idleMode) {
         sparkMax.setIdleMode(idleMode);
@@ -587,14 +654,22 @@ public class SparkNeo {
      */
     public void endConfig() {
         verifyInConfig(true, "endConfig");
-        inConfig = false;
         if (A05Constants.getSparkConfigFromFactoryDefaults() && A05Constants.getSparkBurnConfig()) {
             sparkMax.burnFlash();
         }
+        // These cannot be burned into the configuration - so they must be set at configuration
         sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3, 500);
         sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4, 500);
         sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5, 500);
         sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6, 500);
+        // current limit configuration IS REQUIRED. If the current limit has not been set - pick the safest, and
+        // of course, the lowest possible breaker amperage.
+        if (!currentLimitIsSet) {
+            setCurrentLimit(FREE_SPINNING, BreakerAmps.Amps10);
+        }
+        // this spark is now configured
+        inConfig = false;
+        isConfigured = true;
     }
 
     public void stopMotor() {
@@ -602,18 +677,30 @@ public class SparkNeo {
         sparkMax.stopMotor();
     }
 
+    /**
+     *
+     * @param targetRpm
+     */
     public void setTargetRPM(double targetRpm) {
-        verifyInConfig(false, "setTargetRPM");
+        verifyIsConfigured("setTargetRPM");
         sparkMaxPID.setReference(targetRpm, CANSparkMax.ControlType.kVelocity, PIDtype.RPM.slotId);
     }
 
+    /**
+     *
+     * @param targetPosition
+     */
     public void setSmartMotionTarget(double targetPosition) {
-        verifyInConfig(false, "setSmartMotionTarget");
+        verifyIsConfigured("setSmartMotionTarget");
         sparkMaxPID.setReference(targetPosition, CANSparkMax.ControlType.kSmartMotion, PIDtype.SMART_MOTION.slotId);
     }
 
+    /**
+     *
+     * @param targetPosition
+     */
     public void setTargetPosition(double targetPosition) {
-        verifyInConfig(false, "setTargetPosition");
+        verifyIsConfigured("setTargetPosition");
         sparkMaxPID.setReference(targetPosition, CANSparkMax.ControlType.kPosition, PIDtype.POSITION.slotId);
     }
 }
