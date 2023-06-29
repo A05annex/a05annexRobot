@@ -635,11 +635,18 @@ public class SparkNeo {
      */
     public void setSoftLimits(Double min, Double max) {
         verifyInConfig(true, "setSoftLimits");
-        if(min != null) {
+        if(min == null) {
+            sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, false);
+        } else {
+            sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, true);
             sparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, min.floatValue());
         }
-        if(max != null) {
-            sparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, max.floatValue());
+
+        if(max == null) {
+            sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, false);
+        } else {
+            sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
+            sparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, max.floatValue());
         }
     }
 
