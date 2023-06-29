@@ -151,7 +151,7 @@ public class PhotonCameraWrapper {
      */
     public boolean isTargetVisible(int id) {
         PhotonTrackedTarget target = getTargetById(id);
-        return target != null && target.getFiducialId() == lastTargetId;
+        return target != null;
     }
 
     /**
