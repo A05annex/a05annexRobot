@@ -643,7 +643,7 @@ public class SparkNeo {
         }
 
         if(max == null) {
-            sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, false);
+            sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, false);
         } else {
             sparkMax.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
             sparkMax.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, max.floatValue());
