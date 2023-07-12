@@ -9,6 +9,7 @@ import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.ISwerveDrive;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleUnit;
+import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 
@@ -295,7 +296,7 @@ public class AutonomousPathCommand extends CommandBase {
                 NavX.getInstance().setExpectedHeading(pathPoint.fieldHeading());
 //                double headingCorrection = headingError / (12.0 * 0.02);
                 double headingCorrection = headingError * A05Constants.getDriveOrientationkp();
-                double rotation = (pathPoint.speedRotation() + headingCorrection) / swerveDrive.getMaxRadiansPerSec();
+                double rotation = Utl.clip((pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec()) + headingCorrection, -1.0, 1.0);
                 swerveDrive.swerveDriveComponents(forward, strafe, rotation);
 
                 lastPathPoint = pathPoint;
