@@ -14,39 +14,39 @@ import static org.a05annex.frc.A05Constants.aprilTagPositionParametersDictionary
 
 public class A05AprilTagPositionCommand extends A05DriveCommand {
 
-    private final SpeedCachedSwerve swerveDrive = SpeedCachedSwerve.getInstance();
+    protected final SpeedCachedSwerve swerveDrive = SpeedCachedSwerve.getInstance();
 
-    SpeedCachedSwerve.RobotRelativePosition positionAtFrame;
+    protected SpeedCachedSwerve.RobotRelativePosition positionAtFrame;
 
-    private final A05Constants.AprilTagPositionParameters positionParameters;
+    protected final A05Constants.AprilTagPositionParameters positionParameters;
 
-    private final PhotonCameraWrapper camera;
+    protected final PhotonCameraWrapper camera;
 
     protected boolean canPerformTargeting = false;
 
     // Counter for how many ticks the robot hasn't seen a valid target
-    private int ticksWithoutTarget = 0;
+    protected int ticksWithoutTarget = 0;
 
     // Maximum number of ticks where the robot hasn't had a valid target before resuming normal driving
-    private final int resumeDrivingTickThreshold = 50;
+    protected final int resumeDrivingTickThreshold = 50;
 
     // The size of the "box" in which the robot is considered in the right position
-    private final double inZoneThreshold;
+    protected final double inZoneThreshold;
 
     // Number of ticks where the robot needs to be in the zone to end the command
-    private final int TICKS_IN_ZONE = 10;
+    protected final int TICKS_IN_ZONE = 10;
 
     // Counter for how many ticks the robot has been in the zone
-    private int ticksInZoneCounter;
+    protected int ticksInZoneCounter;
 
     // Drive and control constants
-    private final double MAX_SPEED_DELTA = 0.075, ROTATION_KP = 0.9;
-    private final double X_POSITION, Y_POSITION, MAX_SPEED, SPEED_SMOOTHING_MULTIPLIER;
-    private final int[] aprilTagIds;
-    private final AngleD HEADING;
-    private final double X_MAX, X_MIN, Y_MAX, Y_MIN;
+    protected final double MAX_SPEED_DELTA = 0.075, ROTATION_KP = 0.9;
+    protected final double X_POSITION, Y_POSITION, MAX_SPEED, SPEED_SMOOTHING_MULTIPLIER;
+    protected final int[] aprilTagIds;
+    protected final AngleD HEADING;
+    protected final double X_MAX, X_MIN, Y_MAX, Y_MIN;
 
-    private boolean isFinished;
+    protected boolean isFinished;
 
     protected A05AprilTagPositionCommand(XboxController xbox, A05Constants.DriverSettings driver, PhotonCameraWrapper camera,
                                       double xPosition, double yPosition, String positionParametersKey) {

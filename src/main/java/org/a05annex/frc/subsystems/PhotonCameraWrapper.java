@@ -43,7 +43,10 @@ public class PhotonCameraWrapper {
      */
     public void updateLatestFrameAndTarget() {
         latestFrame = camera.getLatestResult();
-        if(latestFrame != null && latestFrame.hasTargets()) {
+        if(latestFrame == null) {
+            throw new NullPointerException("Latest frame or target data is null.");
+        }
+        if(latestFrame.hasTargets()) {
             latestFrameWithTarget = latestFrame;
             latestTarget = latestFrameWithTarget.getBestTarget();
             if(lastTargetId == latestTarget.getFiducialId()) {
@@ -55,7 +58,6 @@ public class PhotonCameraWrapper {
             }
         } else {
             latestPipelineResultAndLatestTargetMatch = false;
-            throw new NullPointerException("Latest frame or target data is null.");
         }
     }
 
