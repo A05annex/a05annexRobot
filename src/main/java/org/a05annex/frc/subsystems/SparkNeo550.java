@@ -56,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
     }
 
     @Override
-    public void setCurrentLimit(@NotNull UseType useType,  @NotNull BreakerAmps breakertAmps) {
+    public void setCurrentLimit(@NotNull UseType useType,  @NotNull BreakerAmps breakerAmps) {
         verifyInConfig(true, "setCurrentLimit");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            int maxAmps = maxCurrentMatrix[useType.index][breakertAmps.index];
+            int maxAmps = maxCurrentMatrix[useType.index][breakerAmps.index];
             sparkMax.setSmartCurrentLimit(maxAmps, maxAmps, 10000);
         }
     }
