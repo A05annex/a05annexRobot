@@ -95,7 +95,7 @@ public class ConditionSpeedCacheLog {
                                     formatDouble("%.5f",lastRecord.get(aprilTagDistIndex)),
                                     formatDouble("%.5f",lastRecord.get(aprilTagStrafeIndex)),
                                     formatDouble("%.5f",lastRecord.get(cumulativeCacheDistIndex)),
-                                    formatDouble("%.5f",lastRecord.get(cumulativeCacheDistIndex))));
+                                    formatDouble("%.5f",lastRecord.get(cumulativeCacheStrafeIndex))));
                             recordIsImportant = true;
                         }
                         lastAprilTime = thisAprilTime;
