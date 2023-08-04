@@ -45,7 +45,7 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         } catch (ArgumentParserException e) {
             parser.handleError(e);
         }
-        // start the path planning window
+        // start display window
         try {
             final TuneSpeedCache tuneSpeedCache = new TuneSpeedCache(aprilTagFile, swerveFile);
             tuneSpeedCache.setVisible(true);
@@ -147,6 +147,15 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
 
         add(canvas, BorderLayout.CENTER);
 
+        //------------------------------------------------------------------
+        // Setup the app menu
+        //------------------------------------------------------------------
+        try {
+            Desktop desktop = Desktop.getDesktop();
+            desktop.setQuitHandler((e, r) -> exitTuneSpeedCache());
+        } catch (UnsupportedOperationException e) {
+            System.out.println("No desktop quit handler setup, not supported by this platform.");
+        }
 
 
     }
@@ -208,6 +217,9 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         return records;
     }
 
+    private void exitTuneSpeedCache() {
+        dispose();
+    }
 
     //------------------------------------------------------------------------------------------------------------------
     // ************** ActionListener **************
@@ -223,7 +235,7 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
 
     @Override
     public void windowClosing(WindowEvent e) {
-
+        exitTuneSpeedCache();
     }
 
     @Override

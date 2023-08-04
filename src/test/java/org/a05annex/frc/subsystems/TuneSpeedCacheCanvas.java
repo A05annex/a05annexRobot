@@ -1,7 +1,6 @@
 package org.a05annex.frc.subsystems;
 
 import org.a05annex.util.Utl;
-import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -12,7 +11,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.a05annex.frc.subsystems.TuneSpeedCache.*;
@@ -91,36 +89,36 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     public void setDisplayGeometry() {
         float width = this.getWidth();
         float height = this.getHeight();
-        // The first step here - the april target is near the top of the screen at 0.0, positive distance is
-        // down, positive strafe is to the right. We need a size of the display - assume starting Y at -0.25
-        // (behind the target), and max at max (april dist or predicted dist) + 1m; for X, use min-max
-        // (april dist or predicted dist) + 2m (1m on each side) - this let's us compute the scale factor.
-        double distMax = Utl.max(aprilTagStats.get(TuneSpeedCache.APRIL_DISTANCE_INDEX).max,
-                aprilTagStats.get(TuneSpeedCache.SPEED_CACHE_DISTANCE_INDEX).max);
-        double scaleX = width / (distMax + 0.25);
-        double strafeMin = Utl.min(aprilTagStats.get(APRIL_STRAFE_INDEX).min,
-                aprilTagStats.get(SPEED_CACHE_STRAFE_INDEX).min);
-        double strafeMax = Utl.max(aprilTagStats.get(APRIL_STRAFE_INDEX).max,
-                aprilTagStats.get(SPEED_CACHE_STRAFE_INDEX).max);
-        double scaleY = height / ((strafeMax - strafeMin) + 2.0);
-        scale = Math.min(scaleX, scaleY);
-        // second step - get the translation that moves the april target to 0.25m from the top of the window.
-        // OK, what is happening here?? Magic - well, not really. The width/2.0 and height/2.0 bits of the
-        // m02 and m12 shift the origin to the center of the screen window. For the default competition field
-        // this is great because we adopted 0,0 as center field.
-        drawXfm = new AffineTransform(scale, 0.0f, 0.0f, scale,
-                (width / 2.0) -
-                        (scale * (((strafeMax - strafeMin) / 2.0) + strafeMin)),
-                (height / 2.0) +
-                        (-scale * (((distMax - 0.25) / 2.0) + 0.25)));
-        mouseXfm = new AffineTransform(drawXfm);
-        try {
-            mouseXfm.invert();
-        } catch (NoninvertibleTransformException ex) {
-            System.out.println("  -- can't invert draw transform");
+        if ((0 < width) && (0 < height)) {
+            // The first step here - the april target is near the top of the screen at 0.0, positive distance is
+            // down, positive strafe is to the right. We need a size of the display - assume starting Y at -0.10
+            // (behind the target), and max at max (april dist or predicted dist) + 1m; for X, use min-max
+            // (april dist or predicted dist) + .50m (.25m on each side) - this let's us compute the scale factor.
+            double distMax = Utl.max(aprilTagStats.get(TuneSpeedCache.APRIL_DISTANCE_INDEX).max,
+                    aprilTagStats.get(TuneSpeedCache.SPEED_CACHE_DISTANCE_INDEX).max);
+            double scaleX = width / (distMax + 0.1 + 0.25);
+            double strafeMin = Utl.min(aprilTagStats.get(APRIL_STRAFE_INDEX).min,
+                    aprilTagStats.get(SPEED_CACHE_STRAFE_INDEX).min);
+            double strafeMax = Utl.max(aprilTagStats.get(APRIL_STRAFE_INDEX).max,
+                    aprilTagStats.get(SPEED_CACHE_STRAFE_INDEX).max);
+            double scaleY = height / ((strafeMax - strafeMin) + 0.5);
+            scale = Math.min(scaleX, scaleY);
+            // second step - get the translation that moves the april target to 0.25m from the top of the window.
+            // OK, what is happening here?? Magic - well, not really. The width/2.0 and height/2.0 bits of the
+            // m02 and m12 shift the origin to the center of the screen window. For the default competition field
+            // this is great because we adopted 0,0 as center field.
+            drawXfm = new AffineTransform(scale, 0.0f, 0.0f, scale,
+                    (width / 2.0) -
+                            (scale * (((strafeMax - strafeMin) / 2.0) + strafeMin)),
+                    (height / 2.0) +
+                            (-scale * (((distMax - 0.1) / 2.0) + 0.1)));
+            mouseXfm = new AffineTransform(drawXfm);
+            try {
+                mouseXfm.invert();
+            } catch (NoninvertibleTransformException ex) {
+                System.out.println("  -- can't invert draw transform");
+            }
         }
-
-
     }
 
     /**
