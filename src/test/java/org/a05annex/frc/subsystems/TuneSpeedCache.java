@@ -58,7 +58,10 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
     // -----------------------------------------------------------------------------------------------------------------
     // Creating a test SpeedCachedSwerve
     // -----------------------------------------------------------------------------------------------------------------
-    //These are the configuration settings for the 2023 competition robot - might want to move these to a data file
+    /**
+     * These are the setting for the calibrated competition robot from '2023 Charged Up' used in testing - might
+     * want to move these to a data file
+     */
     static A05Constants.RobotSettings robotSettings = new A05Constants.RobotSettings(0, "Competition",
             0.5461, 0.5461, 2.700, 1.161,
             2.723, 2.448, 1.026,0.9650);

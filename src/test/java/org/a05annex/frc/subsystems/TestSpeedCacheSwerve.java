@@ -11,6 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestSpeedCacheSwerve {
 
+    /**
+     * These are the setting for the calibrated competition robot from '2023 Charged Up' used in testing
+     */
     A05Constants.RobotSettings robotSettings = new A05Constants.RobotSettings(0, "Competition",
             0.5461, 0.5461, 2.700, 1.161,
              2.723, 2.448, 1.026,0.9650);
