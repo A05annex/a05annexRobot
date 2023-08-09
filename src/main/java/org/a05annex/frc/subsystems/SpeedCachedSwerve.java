@@ -150,11 +150,13 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         double headingRadians = 0.0;
         boolean cacheOverrun = false;
         while (controlRequests[backIndex].timeStamp > sinceTime) {
-            double deltaTime = currentTime - controlRequests[backIndex].timeStamp;
-            forward += deltaTime * controlRequests[backIndex].forward * maxMetersPerSec;
-            strafe += deltaTime * controlRequests[backIndex].strafe * maxMetersPerSec;
-            headingRadians += deltaTime * controlRequests[backIndex].rotation * maxRadiansPerSec;
-            currentTime = controlRequests[backIndex].timeStamp;
+            if (currentTime > controlRequests[backIndex].timeStamp) {
+                double deltaTime = currentTime - controlRequests[backIndex].timeStamp;
+                forward += deltaTime * controlRequests[backIndex].forward * maxMetersPerSec;
+                strafe += deltaTime * controlRequests[backIndex].strafe * maxMetersPerSec;
+                headingRadians += deltaTime * controlRequests[backIndex].rotation * maxRadiansPerSec;
+                currentTime = controlRequests[backIndex].timeStamp;
+            }
             backIndex--;
             if (backIndex < 0) {
                 backIndex = cacheLength - 1;

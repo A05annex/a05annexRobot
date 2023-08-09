@@ -60,14 +60,18 @@ public class ConditionSpeedCacheLog {
         //
         List<List<String>> meaningfulRawRecords = new ArrayList<>();
         List<List<String>> meaningfulAprilRecords = new ArrayList<>();
-        meaningfulAprilRecords.add(Arrays.asList("aprilTime", "aprilDistance", "aprilStrafe",
+        meaningfulAprilRecords.add(Arrays.asList("aprilTime", "aprilTimeDelta", "aprilDistance", "aprilStrafe",
                 "predictedDistance", "predictedStrafe"));
-        String lastAprilTime = "null";
-        String thisAprilTime = "null";
+        String lastAprilTimeStr = "null";
+        double lastAprilTime = 0.0;
+        String thisAprilTimeStr = "null";
+        double aprilTimeDelta = 0.0;
         List<List<String>> meaningfulSwerveRecords = new ArrayList<>();
-        meaningfulSwerveRecords.add(Arrays.asList("swerveTime", "speed", "direction", "rotate"));
-        String thisSwerveTime = "null";
-        String lastSwerveTime = "null";
+        meaningfulSwerveRecords.add(Arrays.asList("swerveTime", "swerveTimeDelta", "speed", "direction", "rotate"));
+        String thisSwerveTimeStr = "null";
+        double lastSwerveTime = 0.0;
+        String lastSwerveTimeStr = "null";
+        double swerveTimeDelta = 0.0;
         List<String> lastRecord = null;
         int lineCt = 0;
         try (BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
@@ -84,36 +88,44 @@ public class ConditionSpeedCacheLog {
                         continue;
                     }
                     boolean recordIsImportant = false;
-                    thisAprilTime = record.get(aprilTagTimeIndex);
-                    if (!lastAprilTime.equals(thisAprilTime)) {
-                        // This is good, a new april tag time on this line - the last line was the time and location
+                    thisAprilTimeStr = record.get(aprilTagTimeIndex);
+                    if (!lastAprilTimeStr.equals(thisAprilTimeStr) && !thisAprilTimeStr.equals("null")) {
+                        // This is good, a new april tag time on this line - the last record was the time and location
                         // that we want to log; i.e. it may be an important point.
-                        if (!lastAprilTime.equals("null")) {
+                        double thisAprilTime = Double.parseDouble(thisAprilTimeStr);
+                        if (!lastAprilTimeStr.equals("null") && (thisAprilTime > lastAprilTime)) {
                             //the last record was the record we should use for the april tag data
                             meaningfulAprilRecords.add(Arrays.asList(
                                     formatDouble("%.4f",lastRecord.get(aprilTagTimeIndex)),
+                                    String.format("%.4f",aprilTimeDelta),
                                     formatDouble("%.5f",lastRecord.get(aprilTagDistIndex)),
                                     formatDouble("%.5f",lastRecord.get(aprilTagStrafeIndex)),
                                     formatDouble("%.5f",lastRecord.get(cumulativeCacheDistIndex)),
                                     formatDouble("%.5f",lastRecord.get(cumulativeCacheStrafeIndex))));
+                            aprilTimeDelta = thisAprilTime - lastAprilTime;
                             recordIsImportant = true;
                         }
-                        lastAprilTime = thisAprilTime;
+                        lastAprilTimeStr = thisAprilTimeStr;
+                        lastAprilTime = Double.parseDouble(lastAprilTimeStr);
                     }
-                    thisSwerveTime = record.get(swerveTimeIndex);
-                    if (!lastSwerveTime.equals(thisSwerveTime)) {
+                    thisSwerveTimeStr = record.get(swerveTimeIndex);
+                    if (!lastSwerveTimeStr.equals(thisSwerveTimeStr)) {
                         // This is good, a new april tag time on this line - the last line was the time and location
                         // that we want to log; i.e. it may be an important point.
-                        if (!lastSwerveTime.equals("null")) {
+                        double thisSwerveTime = Double.parseDouble(thisSwerveTimeStr);
+                        if (!lastSwerveTimeStr.equals("null") && (thisSwerveTime > lastSwerveTime)) {
                             //the last record was the record we should use for the april tag data
                             meaningfulSwerveRecords.add(Arrays.asList(
                                     formatDouble("%.4f",lastRecord.get(swerveTimeIndex)),
+                                    String.format("%.4f",swerveTimeDelta),
                                     formatDouble("%.5f",lastRecord.get(swerveSpeedIndex)),
                                     formatDouble("%.5f",lastRecord.get(swerveDirectionIndex)),
                                     formatDouble("%.5f",lastRecord.get(swerveRotateIndex))));
+                            swerveTimeDelta = thisSwerveTime - lastSwerveTime;
                             recordIsImportant = true;
                         }
-                        lastSwerveTime = thisSwerveTime;
+                        lastSwerveTimeStr = thisSwerveTimeStr;
+                        lastSwerveTime = Double.parseDouble(lastSwerveTimeStr);
                     }
                     if (recordIsImportant) {
                         meaningfulRawRecords.add(record);
@@ -130,6 +142,7 @@ public class ConditionSpeedCacheLog {
         writeCSV("./scrubbedRawData_" + args[1] + ".csv", meaningfulRawRecords);
         writeCSV("./AprilData_" + args[1] + ".csv", meaningfulAprilRecords);
         writeCSV("./SwerveData_" + args[1] + ".csv", meaningfulSwerveRecords);
+        System.exit(0);
     }
 
     static void mapHeader(List<String> headerRecord) {
@@ -190,7 +203,7 @@ public class ConditionSpeedCacheLog {
     }
 
     static String formatDouble(String format, String doubleAsString) {
-        return String.format("%.5f" , Double.parseDouble(doubleAsString));
+        return String.format(format , Double.parseDouble(doubleAsString));
     }
 
     static String convertRowToCSV(List<String> data) {

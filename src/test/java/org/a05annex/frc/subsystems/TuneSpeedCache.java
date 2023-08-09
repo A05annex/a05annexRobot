@@ -5,6 +5,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.a05annex.frc.A05Constants;
+import org.a05annex.util.AngleD;
+import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -86,15 +88,17 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
     // This is the main TuneSpeedCache instance that controls the application window.
     // -----------------------------------------------------------------------------------------------------------------
     static final int APRIL_TIME_INDEX = 0;
-    static final int APRIL_DISTANCE_INDEX = 1;
-    static final int APRIL_STRAFE_INDEX = 2;
-    static final int SPEED_CACHE_DISTANCE_INDEX = 3;
-    static final int SPEED_CACHE_STRAFE_INDEX = 4;
+    static final int APRIL_TIME_DELTA_INDEX = 1;
+    static final int APRIL_DISTANCE_INDEX = 2;
+    static final int APRIL_STRAFE_INDEX = 3;
+    static final int SPEED_CACHE_DISTANCE_INDEX = 4;
+    static final int SPEED_CACHE_STRAFE_INDEX = 5;
 
     static final int SWERVE_TIME_INDEX = 0;
-    static final int SWERVE_SPEED_INDEX = 1;
-    static final int SWERVE_STRAFE_INDEX = 2;
-    static final int SWERVE_ROTATE_INDEX = 3;
+    static final int SWERVE_TIME_DELTA_INDEX = 1;
+    static final int SWERVE_SPEED_INDEX = 2;
+    static final int SWERVE_DIORECTION_INDEX = 3;
+    static final int SWERVE_ROTATE_INDEX = 4;
 
     static class ColumnStats {
         final String name;
@@ -138,10 +142,13 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         aprilTagData = readCsvFile(aprilTagFile, aprilTagStats, APRIL_TIME_INDEX);
         swerveData = readCsvFile(swerveFile, swerveStats, SWERVE_TIME_INDEX);
         for (List<Double> swerveCommand : swerveData) {
-            speedCachedSwerve.addControlRequest(swerveCommand.get(SWERVE_SPEED_INDEX),
-                    swerveCommand.get(SWERVE_STRAFE_INDEX), swerveCommand.get(SWERVE_ROTATE_INDEX),
+            AngleD direction = new AngleD(AngleUnit.RADIANS, swerveCommand.get(SWERVE_DIORECTION_INDEX));
+            speedCachedSwerve.addControlRequest(direction.cos() * swerveCommand.get(SWERVE_SPEED_INDEX),
+                    direction.sin() * swerveCommand.get(SWERVE_SPEED_INDEX), swerveCommand.get(SWERVE_ROTATE_INDEX),
                     swerveCommand.get(SWERVE_TIME_INDEX));
         }
+
+        // add a menu here when you get to it
         //-----------------------------------------------------------------------------------------------
         // create a canvas to draw on
         //-----------------------------------------------------------------------------------------------
@@ -149,6 +156,9 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
                 swerveStats, speedCachedSwerve);
 
         add(canvas, BorderLayout.CENTER);
+
+        // and right now everything is so simple that this is the window listener
+        addWindowListener(this);
 
         //------------------------------------------------------------------
         // Setup the app menu
@@ -243,7 +253,6 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
 
     @Override
     public void windowClosed(WindowEvent e) {
-
     }
 
     @Override
