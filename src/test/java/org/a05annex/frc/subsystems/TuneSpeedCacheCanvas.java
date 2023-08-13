@@ -8,7 +8,7 @@ import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 import static org.a05annex.frc.subsystems.TuneSpeedCache.*;
@@ -18,10 +18,11 @@ import static org.a05annex.frc.subsystems.TuneSpeedCache.*;
  */
 public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
-    private int m_nSizeX = 565;     // the initial X size of the app window.
-    private int m_nSizeY = 574;     // the initial Y size of the app window.
-    private final GraphicsConfiguration graphicsConfig = null;  // the graphics configuration of the window device
 
+    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     *
+     */
     static class PathPoint {
         double time;
         Point2D.Double fieldPt;
@@ -48,15 +49,68 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     *
+     */
+    static class PlottedPath extends ArrayList<PathPoint> {
+        final int index;
+        final String name;
+        final Color color;
+        boolean displayed;
+
+        PlottedPath(int index, String name, Color color, boolean displayed) {
+            super();
+            this.index = index;
+            this.name = name;
+            this.color = color;
+            this.displayed = displayed;
+        }
+
+        void transformPath(AffineTransform drawXfm) {
+            for (PathPoint pathPt : this) {
+                pathPt.transform(drawXfm);
+            }
+        }
+
+        void paintPath(Graphics2D g2d) {
+            if (displayed) {
+                g2d.setPaint(color);
+                Point2D.Double lastPt = null;
+                for (PathPoint pathPt : this) {
+                    Point2D.Double thisPt = pathPt.screenPt;
+                    g2d.drawOval((int) thisPt.getX() - 2, (int) thisPt.getY() - 2, 4, 4);
+                    if (null != lastPt) {
+                        g2d.drawLine((int) lastPt.getX(), (int) lastPt.getY(),
+                                (int) thisPt.getX(), (int) thisPt.getY());
+                    }
+                    lastPt = thisPt;
+                }
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    static public final int APRIL_TAG_PATH = 0;
+    static public final int FILTERED_APRIL_TAG_PATH = 1;
+    static public final int SWERVE_PATH = 2;
+    static public final int SPEED_CACHE_PATH = 3;
+    static public final int SPEED_CACHE_FROM_SELECTED = 4;
+
+    List<PlottedPath> plottedPaths = new ArrayList<>(Arrays.asList(
+            new PlottedPath(APRIL_TAG_PATH, "April Tag Path", Color.WHITE, true),
+            new PlottedPath(FILTERED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.YELLOW, true),
+            new PlottedPath(SWERVE_PATH,"Projected Path at Test", Color.CYAN, true),
+            new PlottedPath(SPEED_CACHE_PATH,"Cache Computed Path", Color.ORANGE, true),
+            new PlottedPath(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected", Color.ORANGE, true)
+        )
+    );
+
     List<List<Double>> aprilTagData;
     List<TuneSpeedCache.ColumnStats> aprilTagStats;
-    List<PathPoint> aprilTagPath = new ArrayList<>();
-    List<PathPoint> filteredAprilTagPath = new ArrayList<>();
-    List<PathPoint> swervePath = new ArrayList<>();
     List<List<Double>> swerveData;
     List<TuneSpeedCache.ColumnStats> swerveStats;
     SpeedCachedSwerve speedCachedSwerve;
-    List<PathPoint> speedCachePath = new ArrayList<>();
 
     // the back buffer to support double buffering
     private int bufferWidth;
@@ -90,12 +144,27 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
      * what the mouse is over, selection of editable targets (like control point location of tangent
      * and heading handles), and dragging things around on the game canvas.
      */
-    private class MouseHandler extends MouseAdapter {
+    private class MouseHandler extends MouseAdapter{
+
+        @Override
+        public void mouseClicked(MouseEvent e) {}
+
+        @Override
+        public void mousePressed(MouseEvent e) {}
+
+        @Override
+        public void mouseReleased(MouseEvent e) {}
 
         @Override
         public void mouseEntered(MouseEvent e) {
             mouse = (Point2D.Double) mouseXfm.transform(
                     new Point2D.Double(e.getPoint().getX(), e.getPoint().getY()), null);
+        }
+        @Override
+        public void mouseExited(MouseEvent e) {}
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            System.out.println("mouseWheel: " + e);
         }
         @Override
         public void mouseDragged(MouseEvent e) {
@@ -131,11 +200,11 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         Point2D.Double lastPt = null;
         Point2D.Double lastLastPt = null;
         for (List<Double> aprilTag : aprilTagData) {
-            swervePath.add(new PathPoint(aprilTag.get(APRIL_TIME_INDEX),
+            plottedPaths.get(SWERVE_PATH).add(new PathPoint(aprilTag.get(APRIL_TIME_INDEX),
                     aprilTag.get(SPEED_CACHE_DISTANCE_INDEX), aprilTag.get(SPEED_CACHE_STRAFE_INDEX)));
             PathPoint pathPt = new PathPoint(aprilTag.get(APRIL_TIME_INDEX),
                     aprilTag.get(APRIL_DISTANCE_INDEX),aprilTag.get(APRIL_STRAFE_INDEX));
-            aprilTagPath.add(pathPt);
+            plottedPaths.get(APRIL_TAG_PATH).add(pathPt);
             // this is the computation for a 3 point running average filtering for the position value.
             Point2D.Double thisPt = pathPt.fieldPt;
             double thisTime = pathPt.time;
@@ -149,15 +218,19 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                         (thisPt.getY() + lastPt.getY()) / 2.0);
                 thisAveTime = (thisTime + lastTime) / 2.0;
             } else {
+//                // This is the code for a 1,1,1 weighting of a sample and the sample before
+//                // and after (a 3 value running average)
 //                thisAvePt = new Point2D.Double((thisPt.getX() + lastPt.getX() + lastLastPt.getX()) / 3.0,
 //                        (thisPt.getY() + lastPt.getY() + lastLastPt.getY()) / 3.0);
 //                thisAveTime = (thisTime + lastTime + lastLastTime) / 3.0;
+                // This is a .25,1.,25 filtering (a gaussian-like filter for running 3 points - looks
+                // the best in the path plots.
                 thisAvePt = new Point2D.Double(
                         ((0.5 * thisPt.getX()) + lastPt.getX() + (0.5 * lastLastPt.getX())) / 2.0,
                         ((0.5 * thisPt.getY()) + lastPt.getY() + (0.5 * lastLastPt.getY())) / 2.0);
                 thisAveTime = ((0.5 * thisTime) + lastTime + (0.5 * lastLastTime)) / 2.0;
             }
-            filteredAprilTagPath.add(new PathPoint(thisAveTime,
+            plottedPaths.get(FILTERED_APRIL_TAG_PATH).add(new PathPoint(thisAveTime,
                     thisAvePt.getY(),thisAvePt.getX()));
             lastLastPt = lastPt;
             lastPt = thisPt;
@@ -180,14 +253,14 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         double aprilTagStartTime = aprilTagStart.get(APRIL_TIME_INDEX);
         double aprilTagStartDistance = aprilTagStart.get(APRIL_DISTANCE_INDEX);
         double aprilTagStartStrafe = aprilTagStart.get(APRIL_STRAFE_INDEX);
-        speedCachePath.add(new PathPoint(aprilTagStartTime,aprilTagStartDistance,aprilTagStartStrafe));
+        plottedPaths.get(SPEED_CACHE_PATH).add(new PathPoint(aprilTagStartTime,aprilTagStartDistance,aprilTagStartStrafe));
         for (List<Double> swerveCommand : swerveData) {
             speedCacheTime = swerveCommand.get(SWERVE_TIME_INDEX);
             if (speedCacheTime > aprilTagStartTime) {
                 SpeedCachedSwerve.RobotRelativePosition relPosition =
                         speedCachedSwerve.getRobotRelativePositionSince( speedCacheTime, aprilTagStartTime);
-                speedCachePath.add(new PathPoint(speedCacheTime,aprilTagStartDistance - relPosition.forward,
-                        aprilTagStartStrafe - relPosition.strafe));
+                plottedPaths.get(SPEED_CACHE_PATH).add(new PathPoint(speedCacheTime,
+                        aprilTagStartDistance - relPosition.forward, aprilTagStartStrafe - relPosition.strafe));
             }
         }
 
@@ -206,6 +279,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        System.out.println("action: " + e);
 
     }
 
@@ -250,16 +324,9 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             }
 
             // transform the paths
-            transformPath(aprilTagPath);
-            transformPath(filteredAprilTagPath);
-            transformPath(swervePath);
-            transformPath(speedCachePath);
-        }
-    }
-
-    void transformPath(List<PathPoint> path) {
-        for (PathPoint pathPt : path) {
-            pathPt.transform(drawXfm);
+            for (PlottedPath path : plottedPaths) {
+                path.transformPath(drawXfm);
+            }
         }
     }
 
@@ -350,10 +417,9 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                 (int) rightPt.getX(), (int) rightPt.getY());
 
         // draw the april path, the filtered path, and the path projected from start.
-        paintPath(g2d, aprilTagPath, Color.WHITE);
-        paintPath(g2d, filteredAprilTagPath, Color.YELLOW);
-        paintPath(g2d, swervePath, Color.CYAN);
-        paintPath(g2d, speedCachePath, Color.ORANGE);
+        for (PlottedPath path : plottedPaths) {
+            path.paintPath(g2d);
+        }
 
         // draw the mouse and tracking info
         // TODO: handle repositioning the text when the cursor gets to the edge of
@@ -364,20 +430,6 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             g2d.drawString(
                     String.format(" (%.4f,%.4f)", mouse.getX(), mouse.getY()),
                     (int) screenMouse.getX(), (int) screenMouse.getY());
-        }
-    }
-
-    void paintPath(Graphics2D g2d, List<PathPoint> path, Color color) {
-        g2d.setPaint(color);
-        Point2D.Double lastPt = null;
-        for (PathPoint pathPt : path) {
-            Point2D.Double thisPt = pathPt.screenPt;
-            g2d.drawOval((int) thisPt.getX() - 2, (int) thisPt.getY() - 2, 4, 4);
-            if (null != lastPt) {
-                g2d.drawLine((int) lastPt.getX(), (int) lastPt.getY(),
-                        (int) thisPt.getX(), (int) thisPt.getY());
-            }
-            lastPt = thisPt;
         }
     }
 

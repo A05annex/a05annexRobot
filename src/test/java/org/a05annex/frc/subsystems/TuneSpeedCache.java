@@ -125,6 +125,7 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
     SpeedCachedSwerve speedCachedSwerve = getInitializedSCS();
 
     private final TuneSpeedCacheCanvas canvas;
+    private final TuneSpeedCacheControls controls;
 
     TuneSpeedCache( String aprilTagFile, String swerveFile) {
         //-----------------------------------------------------------------------------------------------
@@ -154,8 +155,10 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         //-----------------------------------------------------------------------------------------------
         canvas = new TuneSpeedCacheCanvas(graphicsConfig, aprilTagData, aprilTagStats, swerveData,
                 swerveStats, speedCachedSwerve);
+        controls = new TuneSpeedCacheControls(canvas);
 
         add(canvas, BorderLayout.CENTER);
+        add(controls, BorderLayout.LINE_END);
 
         // and right now everything is so simple that this is the window listener
         addWindowListener(this);
