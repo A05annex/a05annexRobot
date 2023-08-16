@@ -227,7 +227,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         controlRequests[mostRecentControlRequest].set(timestamp, actualHeading, expectedHeading,
                 forward, strafe, rotation );
         if (logSpeedCache) {
-            speedCacheLog.append(String.format("%.4f,%.5f,%.5f,%.5f,%.5f,F.5f",
+            speedCacheLog.append(String.format("%.4f,%.5f,%.5f,%.5f,%.5f,%.5f",
                     timestamp, actualHeading.getRadians(), expectedHeading.getRadians(),
                     forward, strafe, rotation));
         }
