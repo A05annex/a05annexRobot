@@ -88,9 +88,21 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                 }
             }
         }
+
+        PathPoint hitTestPath(Point2D.Double pt, double tolerance) {
+            for (PathPoint pathPt : this) {
+                Point2D.Double thisPt = pathPt.screenPt;
+                if (Utl.inTolerance(thisPt.getX(), pt.getX(), tolerance) &&
+                        Utl.inTolerance(thisPt.getY(), pt.getY(), tolerance)) {
+                    return pathPt;
+                }
+            }
+            return null;
+        }
     }
 
     // -----------------------------------------------------------------------------------------------------------------
+    // These are the paths we are plotting
     static public final int APRIL_TAG_PATH = 0;
     static public final int FILTERED_APRIL_TAG_PATH = 1;
     static public final int SWERVE_PATH = 2;
@@ -106,10 +118,17 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         )
     );
 
+    PlottedPath hitPath = null;
+    PathPoint hitPoint = null;
+    private final Stroke normalStroke = new BasicStroke(1.0f);
+    private final Stroke highlightStroke = new BasicStroke(3.0f);
+
+    // This is the raw data
     List<List<Double>> aprilTagData;
     List<TuneSpeedCache.ColumnStats> aprilTagStats;
     List<List<Double>> swerveData;
     List<TuneSpeedCache.ColumnStats> swerveStats;
+    // This is the swerve cache loaded with the raw data
     SpeedCachedSwerve speedCachedSwerve;
 
     // the back buffer to support double buffering
@@ -175,10 +194,29 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         public void mouseMoved(MouseEvent e) {
             Point2D pt = mouse = (Point2D.Double) mouseXfm.transform(
                     new Point2D.Double(e.getPoint().getX(), e.getPoint().getY()), null);
+            testMouseOver(new Point2D.Double(e.getPoint().getX(),e.getPoint().getY()));
             repaint();
         }
-        private void testMouseOver(@NotNull Point2D pt) {
-
+        private void testMouseOver(@NotNull Point2D.Double pt) {
+            // initially we will only test on the april and filtered april paths
+            PlottedPath testPath = plottedPaths.get(APRIL_TAG_PATH);
+            if (testPath.displayed) {
+                hitPoint = testPath.hitTestPath(pt, 2.0);
+                if (null != hitPoint) {
+                    hitPath = testPath;
+                    return;
+                }
+            }
+            testPath = plottedPaths.get(FILTERED_APRIL_TAG_PATH);
+            if (testPath.displayed) {
+                hitPoint = testPath.hitTestPath(pt, 2.0);
+                if (null != hitPoint) {
+                    hitPath = testPath;
+                    return;
+                }
+            }
+            hitPath = null;
+            hitPoint = null;
         }
     }
 
@@ -406,6 +444,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     public void pkgPaintBuffer(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setPaint(Color.WHITE);
+        g2d.setStroke(normalStroke);
 
 
         // draw the target
@@ -421,27 +460,44 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             path.paintPath(g2d);
         }
 
+        // Is there a mouse point over?
+        if (null != hitPoint) {
+            g2d.setPaint(Color.RED);
+            g2d.setStroke(highlightStroke);
+            Point2D.Double thisPt = hitPoint.screenPt;
+            g2d.drawOval((int) thisPt.getX() - 3, (int) thisPt.getY() - 3, 6, 6);
+        }
+
+
         // draw the mouse and tracking info
         // TODO: handle repositioning the text when the cursor gets to the edge of
         //  the window.
         if (null != mouse) {
-            g2d.setPaint(Color.WHITE);
-            Point2D screenMouse = drawXfm.transform(mouse, null);
-            g2d.drawString(
-                    String.format(" (%.4f,%.4f)", mouse.getX(), mouse.getY()),
-                    (int) screenMouse.getX(), (int) screenMouse.getY());
+            if (null != hitPoint) {
+                g2d.setPaint(Color.RED);
+                g2d.drawString(
+                        String.format(" %.3fsec,(%.4f,%.4f)",
+                                hitPoint.time, hitPoint.fieldPt.getX(), hitPoint.fieldPt.getY()),
+                            (int) hitPoint.screenPt.getX() + 4, (int) hitPoint.screenPt.getY() - 4);
+            } else {
+                g2d.setPaint(Color.WHITE);
+                Point2D screenMouse = drawXfm.transform(mouse, null);
+                g2d.drawString(
+                        String.format(" (%.4f,%.4f)", mouse.getX(), mouse.getY()),
+                        (int) screenMouse.getX() + 4, (int) screenMouse.getY() - 4);
+            }
         }
     }
 
-    PathPoint hitTestPath(List<PathPoint> path, Point2D.Double pt, double tolerance) {
-        for (PathPoint pathPt : path) {
-            Point2D.Double thisPt = pathPt.screenPt;
-            if (Utl.inTolerance(thisPt.getX(), pt.getX(), tolerance) &&
-                    Utl.inTolerance(thisPt.getY(), pt.getY(), tolerance)) {
-                return pathPt;
-            }
-        }
-        return null;
-    }
+//    PathPoint hitTestPath(List<PathPoint> path, Point2D.Double pt, double tolerance) {
+//        for (PathPoint pathPt : path) {
+//            Point2D.Double thisPt = pathPt.screenPt;
+//            if (Utl.inTolerance(thisPt.getX(), pt.getX(), tolerance) &&
+//                    Utl.inTolerance(thisPt.getY(), pt.getY(), tolerance)) {
+//                return pathPt;
+//            }
+//        }
+//        return null;
+//    }
 
 }

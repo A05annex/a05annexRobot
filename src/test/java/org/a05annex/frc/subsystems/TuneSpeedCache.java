@@ -5,6 +5,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.a05annex.frc.A05Constants;
+import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
@@ -144,9 +145,9 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         swerveData = readCsvFile(swerveFile, swerveStats, SWERVE_TIME_INDEX);
         for (List<Double> swerveCommand : swerveData) {
             AngleD direction = new AngleD(AngleUnit.RADIANS, swerveCommand.get(SWERVE_DIORECTION_INDEX));
-            speedCachedSwerve.addControlRequest(direction.cos() * swerveCommand.get(SWERVE_SPEED_INDEX),
-                    direction.sin() * swerveCommand.get(SWERVE_SPEED_INDEX), swerveCommand.get(SWERVE_ROTATE_INDEX),
-                    swerveCommand.get(SWERVE_TIME_INDEX));
+            speedCachedSwerve.addControlRequest(swerveCommand.get(SWERVE_TIME_INDEX), AngleConstantD.ZERO, AngleConstantD.ZERO, direction.cos() * swerveCommand.get(SWERVE_SPEED_INDEX),
+                    direction.sin() * swerveCommand.get(SWERVE_SPEED_INDEX), swerveCommand.get(SWERVE_ROTATE_INDEX)
+            );
         }
 
         // add a menu here when you get to it

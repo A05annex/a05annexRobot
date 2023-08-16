@@ -1,5 +1,7 @@
 package org.a05annex.frc.subsystems;
 
+import edu.wpi.first.util.datalog.StringLogEntry;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.a05annex.frc.NavX;
@@ -45,18 +47,33 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      *
      */
     public static class ControlRequest {
+        double timeStamp;
+        AngleConstantD actualHeading;
+        AngleConstantD expectedHeading;
         double forward;
         double strafe;
         double rotation;
-        double timeStamp;
 
-        void set(double forward, double strafe, double rotation, double timeStamp) {
+        void set(double timeStamp, AngleConstantD actualHeading, AngleConstantD expectedHeading,
+                 double forward, double strafe, double rotation) {
+            this.timeStamp = timeStamp;
+            this.actualHeading = actualHeading;
+            this.expectedHeading = expectedHeading;
             this.forward = forward;
             this.strafe = strafe;
             this.rotation = rotation;
-            this.timeStamp = timeStamp;
         }
 
+        public double getTimeStamp() {
+            return timeStamp;
+        }
+
+        public AngleConstantD getActualHeading() {
+            return actualHeading;
+        }
+        public AngleConstantD getExpectedHeading() {
+            return expectedHeading;
+        }
         public double getForward() {
             return forward;
         }
@@ -69,9 +86,6 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             return forward;
         }
 
-        public double getTimeStamp() {
-            return timeStamp;
-        }
     }
 
     public static class RobotRelativePosition {
@@ -91,10 +105,13 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         }
     }
 
+    // This is the actual cache of drive commands.
     ControlRequest[] controlRequests = null;
     int cacheLength;
     int mostRecentControlRequest;
 
+    // This is the swerve drive subsystem the cache sits on top of, and the swerve geometry and performance
+    // data the cache uses to predict current robot position from detected past positions.
     private DriveSubsystem driveSubsystem = null;
     private DriveMode driveMode = DriveMode.FIELD_RELATIVE;
     private double driveLength = 0.0;
@@ -102,6 +119,13 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     private double maxMetersPerSec = 3.136;
     private double maxRadiansPerSec = 3.136;
 
+    // logging the cache data for analysis, testing, and tuning
+    public static final String SPEED_CACHE_LOG_NAME = "speedCache";
+    boolean logSpeedCache = false;
+    StringLogEntry speedCacheLog = null;
+    /**
+     *
+     */
     private SpeedCachedSwerve() {
         // the constructor does nothing ...
     }
@@ -150,7 +174,16 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         double headingRadians = 0.0;
         boolean cacheOverrun = false;
         while (controlRequests[backIndex].timeStamp > sinceTime) {
+            // So this is not quite as simple as it seems, primarily because of testing/tuning scenarios. Let's
+            // elaborate on that:
+            // * In competition the cache is used because we have sensed information from the past (april tag or other
+            //   sensing that has latency) giving us a robot position at some time in the past. From that we want to
+            //   project/guess the current position so we can use that to drive a responsive position PID. In that
+            //   case, the mostRecentControlRequest is now, and we want the change between the sinceTime and now.
+            // * In tuning/testing the cache is loaded with test-generated positions, so, the current time is generated
+            //   relative to the data in the cache and is probably way before the last time in the cache.
             if (currentTime > controlRequests[backIndex].timeStamp) {
+                // OK, this after the sinceTime, and before the currentTime
                 double deltaTime = currentTime - controlRequests[backIndex].timeStamp;
                 forward += deltaTime * controlRequests[backIndex].forward * maxMetersPerSec;
                 strafe += deltaTime * controlRequests[backIndex].strafe * maxMetersPerSec;
@@ -175,20 +208,29 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      * Adds a control request to the cache. This is a package function where the timestamp is specified, so the
      * cache can be loaded for test scenarios.
      *
-     * @param forward   Forward speed (-1.0 to 1.0)
-     * @param strafe    Strafe speed (-1.0 to 1.0)
-     * @param rotation  Rotation speed (-1.0 to 1.0)
-     * @param timestamp The <i>current time</i>, which is the FPGA timestamp (in seconds) during match play,
-     *                  but will be assigned as required for testing.
+     * @param timestamp       The <i>current time</i>, which is the FPGA timestamp (in seconds) during match play,
+     *                        but will be assigned as required for testing.
+     * @param actualHeading   The actual field heading of the robot when this method is called.
+     * @param expectedHeading The expected field heading of the robot when this method is called.
+     * @param forward         Forward speed (-1.0 to 1.0)
+     * @param strafe          Strafe speed (-1.0 to 1.0)
+     * @param rotation        Rotation speed (-1.0 to 1.0)
      */
-    void addControlRequest(double forward, double strafe, double rotation, double timestamp) {
+    void addControlRequest(double timestamp, AngleConstantD actualHeading, AngleConstantD expectedHeading,
+                           double forward, double strafe, double rotation) {
         // increment the index to the array of cached control requests
         mostRecentControlRequest++;
         if (mostRecentControlRequest >= cacheLength) {
             mostRecentControlRequest = 0;
         }
         // save this request with a timestamp
-        controlRequests[mostRecentControlRequest].set(forward, strafe, rotation, timestamp);
+        controlRequests[mostRecentControlRequest].set(timestamp, actualHeading, expectedHeading,
+                forward, strafe, rotation );
+        if (logSpeedCache) {
+            speedCacheLog.append(String.format("%.4f,%.5f,%.5f,%.5f,%.5f,F.5f",
+                    timestamp, actualHeading.getRadians(), expectedHeading.getRadians(),
+                    forward, strafe, rotation));
+        }
     }
 
     public void setCacheLength(int cacheLength) {
@@ -203,6 +245,15 @@ public class SpeedCachedSwerve implements ISwerveDrive {
 
     public int getCacheLength() {
         return cacheLength;
+    }
+
+    public void setLogging(boolean on) {
+        logSpeedCache = on;
+        if (logSpeedCache) {
+            if (null == speedCacheLog) {
+                speedCacheLog = new StringLogEntry(DataLogManager.getLog(), SPEED_CACHE_LOG_NAME);
+            }
+        }
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -298,7 +349,10 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         if (driveSubsystem != null) {
             driveSubsystem.swerveDriveComponents(forward, strafe, rotation);
         }
-        addControlRequest(forward, strafe, rotation, Timer.getFPGATimestamp());
+        NavX.HeadingInfo headingInfo = NavX.getInstance().getHeadingInfo();
+        addControlRequest(Timer.getFPGATimestamp(), headingInfo.heading, headingInfo.expectedHeading,
+                forward, strafe, rotation
+        );
     }
 
     @Override

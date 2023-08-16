@@ -2,6 +2,7 @@ package org.a05annex.frc.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import org.a05annex.frc.A05Constants;
+import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.Utl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -77,11 +78,11 @@ public class TestSpeedCacheSwerve {
     @DisplayName("test getPositionSinceTime")
     void TestGetPositionSinceTime() {
         SpeedCachedSwerve SCS = getInitializedSCS();
-        SCS.addControlRequest(0.2, 0.1, 0.3, 4.0);
-        SCS.addControlRequest(0.2, 0.1, -0.1, 4.02);
-        SCS.addControlRequest(0.2, 0.1, -0.1, 4.04);
-        SCS.addControlRequest(0.2, 0.1, -0.1, 4.06);
-        SCS.addControlRequest(0.2, 0.1, 0.3, 4.08);
+        SCS.addControlRequest(4.0, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, 0.3);
+        SCS.addControlRequest(4.02, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, -0.1);
+        SCS.addControlRequest(4.04, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, -0.1);
+        SCS.addControlRequest(4.06, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, -0.1);
+        SCS.addControlRequest(4.08, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, 0.3);
         SpeedCachedSwerve.RobotRelativePosition position =
                 SCS.getRobotRelativePositionSince(4.10, 4.03);
         assertEquals(.06 * 0.2 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
@@ -98,7 +99,7 @@ public class TestSpeedCacheSwerve {
         double nextRequestTime = 2.0;
         // populate the cache a wrap around the end (more entries than the length of the cache.
         for (int i = 0; i < 1.5 * TEST_CACHE_LENGTH; i++) {
-            SCS.addControlRequest(0.2, 0.1, 0.01, nextRequestTime);
+            SCS.addControlRequest(nextRequestTime, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, 0.01);
             nextRequestTime += 0.02;
         }
         // OK, do something in the cache range, (0.02 * (TEST_CACHE_LENGTH - 1)) - .001, the .001 is to get just past
