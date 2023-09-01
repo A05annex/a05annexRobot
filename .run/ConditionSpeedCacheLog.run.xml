@@ -1,10 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="ConditionSpeedCacheLog" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="/Library/Java/JavaVirtualMachines/jdk-16.0.1.jdk/Contents/Home" />
+    <option name="ALTERNATIVE_JRE_PATH" value="azul-16" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="org.a05annex.frc.ConditionSpeedCacheLog" />
     <module name="a05annexRobot.test" />
-    <option name="PROGRAM_PARAMETERS" value="$USER_HOME$/Downloads/SpeedCacheRaw_20230712.csv 20230712 " />
+    <option name="PROGRAM_PARAMETERS" value="$USER_HOME$/Downloads/FRC_20230816_203024.csv 20230816" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/test/resources/test_data" />
     <extension name="coverage">
       <pattern>

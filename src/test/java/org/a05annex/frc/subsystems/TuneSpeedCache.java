@@ -6,7 +6,6 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
-import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -88,6 +88,119 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
     // -----------------------------------------------------------------------------------------------------------------
     // This is the main TuneSpeedCache instance that controls the application window.
     // -----------------------------------------------------------------------------------------------------------------
+    static class ParameterStats {
+        double min = Double.NaN;
+        double max = Double.NaN;
+        double ave = 0.0;
+        int ct = 0;
+        ParameterStats() { }
+        void add(double value) {
+            if (Double.isNaN(min) || (value < min)) {
+                min = value;
+            }
+            if (Double.isNaN(max) || (value > max)) {
+                max = value;
+            }
+            ave += value;
+            ct++;
+        }
+        void add(ParameterStats stats) {
+            if (Double.isNaN(min) || (stats.min < min)) {
+                min = stats.min;
+            }
+            if (Double.isNaN(max) || (stats.max > max)) {
+                max = stats.max;
+            }
+            ave += stats.ave;
+            ct++;
+        }
+        void doneAdding() {
+            ave /= ct;
+        }
+    }
+    static class AprilTagData {
+        boolean hasTarget;
+        double aprilTime;
+        double aprilDistance;
+        double aprilStrafe;
+        double predictedDistance;
+        double predictedStrafe;
+        AngleConstantD headingDelta;
+        AprilTagData(String csvLine, AprilTagTest aprilTagTest, SpeedCachedSwerve speedCachedSwerve) {
+            String[] values = csvLine.split(",");
+            hasTarget = Boolean.valueOf(values[0]);
+            if (hasTarget) {
+                aprilTime = Double.parseDouble(values[1]);
+                aprilDistance = Double.parseDouble(values[2]);
+                aprilTagTest.aprilDistanceStats.add(aprilDistance);
+                aprilStrafe = Double.parseDouble(values[3]);
+                aprilTagTest.aprilStrafeStats.add(aprilStrafe);
+                predictedDistance = Double.parseDouble(values[4]);
+                aprilTagTest.predictedDistanceStats.add(predictedDistance);
+                predictedStrafe = Double.parseDouble(values[5]);
+                aprilTagTest.predictedStrafeStats.add(predictedStrafe);
+                headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(aprilTime);
+                if (null == headingDelta) {
+                    headingDelta = AngleConstantD.ZERO;
+                }
+            }
+            aprilTagTest.aprilPath.add(this);
+        }
+    }
+    static class AprilTagTest {
+        List<AprilTagData> aprilPath = new ArrayList<>();
+        ParameterStats aprilDistanceStats = new ParameterStats();
+        ParameterStats aprilStrafeStats = new ParameterStats();
+        ParameterStats predictedDistanceStats = new ParameterStats();
+        ParameterStats predictedStrafeStats = new ParameterStats();
+        boolean doneAdding = false;
+
+        void doneAdding() {
+            if (!doneAdding) {
+                aprilDistanceStats.doneAdding();
+                aprilStrafeStats.doneAdding();
+                predictedDistanceStats.doneAdding();
+                predictedStrafeStats.doneAdding();
+                doneAdding = true;
+            }
+        }
+    }
+    static class AprilTagTestRuns {
+        List<AprilTagTest> aprilPath = new ArrayList<>();
+        ParameterStats aprilDistanceStats = new ParameterStats();
+        ParameterStats aprilStrafeStats = new ParameterStats();
+        ParameterStats predictedDistanceStats = new ParameterStats();
+        ParameterStats predictedStrafeStats = new ParameterStats();
+        boolean doneAdding = false;
+
+        void doneAdding() {
+            if (!doneAdding) {
+                aprilDistanceStats.doneAdding();
+                aprilStrafeStats.doneAdding();
+                predictedDistanceStats.doneAdding();
+                predictedStrafeStats.doneAdding();
+                doneAdding = true;
+            }
+        }
+    }
+
+    static class SpeedCacheData {
+        double swerveTime;
+        AngleConstantD actualHeading;
+        AngleConstantD expectedHeading;
+        double speed;
+        double direction;
+        double rotate;
+        SpeedCacheData(String csvLine) {
+            String[] values = csvLine.split(",");
+            swerveTime = Double.parseDouble(values[0]);
+            actualHeading = new AngleConstantD(AngleUnit.RADIANS, Double.parseDouble(values[1]));
+            expectedHeading = new AngleConstantD(AngleUnit.RADIANS, Double.parseDouble(values[2]));
+            speed = Double.parseDouble(values[3]);
+            direction = Double.parseDouble(values[4]);
+            rotate = Double.parseDouble(values[5]);
+        }
+    }
     static final int APRIL_TIME_INDEX = 0;
     static final int APRIL_TIME_DELTA_INDEX = 1;
     static final int APRIL_DISTANCE_INDEX = 2;
@@ -101,27 +214,13 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
     static final int SWERVE_DIORECTION_INDEX = 3;
     static final int SWERVE_ROTATE_INDEX = 4;
 
-    static class ColumnStats {
-        final String name;
-        double min = Double.NaN;
-        double max = Double.NaN;
-        double ave = 0.0;
-        double minDelta = Double.NaN;
-        double maxDelta = Double.NaN;
-        double aveDelta = 0.0;
-        ColumnStats(String name) {
-            this.name = name;
-        }
-    }
 
     int nSizeX = 700;
     int nSizeY = 500;
     private final GraphicsConfiguration graphicsConfig;   // the graphics configuration of the window device
 
-    List<List<Double>> aprilTagData = null;
-    List<ColumnStats> aprilTagStats = new ArrayList<>();
-    List<List<Double>> swerveData = null;
-    List<ColumnStats> swerveStats = new ArrayList<>();
+    AprilTagTestRuns aprilTagData = new AprilTagTestRuns();
+    List<SpeedCacheData> speedCacheData = new ArrayList<>();
 
     SpeedCachedSwerve speedCachedSwerve = getInitializedSCS();
 
@@ -138,24 +237,68 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         if (boundsRect.width < nSizeX) nSizeX = boundsRect.width;
         if (boundsRect.height < nSizeY) nSizeY = boundsRect.height;
         setSize(nSizeX, nSizeY);
+
+        //-----------------------------------------------------------------------------------------------
+        // Get the logged speed cache data and load the SpeedCacheSwerve
+        //-----------------------------------------------------------------------------------------------
+        try (BufferedReader br = new BufferedReader(new FileReader(swerveFile))) {
+            boolean headerLine = true;
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (headerLine) {
+                    headerLine = false;
+                    continue;
+                }
+                SpeedCacheData thisLineData = new SpeedCacheData(line);
+                speedCacheData.add(thisLineData);
+                speedCachedSwerve.addControlRequest(thisLineData.swerveTime, thisLineData.actualHeading,
+                        thisLineData.expectedHeading, thisLineData.speed, thisLineData.direction, thisLineData.rotate);
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         //-----------------------------------------------------------------------------------------------
         // Get the logged april tag and speed cache data files, load the SpeedCacheSwerve
         //-----------------------------------------------------------------------------------------------
-        aprilTagData = readCsvFile(aprilTagFile, aprilTagStats, APRIL_TIME_INDEX);
-        swerveData = readCsvFile(swerveFile, swerveStats, SWERVE_TIME_INDEX);
-        for (List<Double> swerveCommand : swerveData) {
-            AngleD direction = new AngleD(AngleUnit.RADIANS, swerveCommand.get(SWERVE_DIORECTION_INDEX));
-            speedCachedSwerve.addControlRequest(swerveCommand.get(SWERVE_TIME_INDEX), AngleConstantD.ZERO, AngleConstantD.ZERO, direction.cos() * swerveCommand.get(SWERVE_SPEED_INDEX),
-                    direction.sin() * swerveCommand.get(SWERVE_SPEED_INDEX), swerveCommand.get(SWERVE_ROTATE_INDEX)
-            );
+        AprilTagTest thisAprilSegment = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(aprilTagFile))) {
+           boolean headerLine = true;
+           String line;
+            while ((line = br.readLine()) != null) {
+                if (headerLine) {
+                    headerLine = false;
+                    continue;
+                }
+                if (0 == line.length()) {
+                    // empty entry - the end of this test segment
+                    thisAprilSegment = closeTestSegment(thisAprilSegment);
+                    continue;
+                }
+                if (null == thisAprilSegment) {
+                    thisAprilSegment = new AprilTagTest();
+                    aprilTagData.aprilPath.add(thisAprilSegment);
+                }
+                new AprilTagData(line, thisAprilSegment, speedCachedSwerve);
+            }
+            if (null != thisAprilSegment) {
+                thisAprilSegment.doneAdding();
+            }
+            aprilTagData.doneAdding();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
 
         // add a menu here when you get to it
         //-----------------------------------------------------------------------------------------------
         // create a canvas to draw on
         //-----------------------------------------------------------------------------------------------
-        canvas = new TuneSpeedCacheCanvas(graphicsConfig, aprilTagData, aprilTagStats, swerveData,
-                swerveStats, speedCachedSwerve);
+        canvas = new TuneSpeedCacheCanvas(graphicsConfig, aprilTagData, speedCacheData, speedCachedSwerve);
         controls = new TuneSpeedCacheControls(canvas);
 
         add(canvas, BorderLayout.CENTER);
@@ -177,62 +320,71 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
 
     }
 
-    List<List<Double>> readCsvFile(String filename, List<ColumnStats> columnStats, int timeIndex) {
-        List<List<Double>> records = new ArrayList<>();
-        int lineCt = -1;
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-            String line;
-            List<Double> lastRecord = null;
-            while ((line = br.readLine()) != null) {
-                String[] values = line.split(",");
-                if (-1 != lineCt) {
-                    // skip the header, only save the data
-                    List<Double> record =  new ArrayList<>();
-                    int valueInd = 0;
-                    for (String strValue : values) {
-                        Double value = Double.valueOf(strValue);
-                        record.add(value);
-                        ColumnStats stats = columnStats.get(valueInd);
-                        if (Double.isNaN(stats.min) || (value < stats.min)) {
-                            stats.min = value;
-                        }
-                        if (Double.isNaN(stats.max) || (value > stats.max)) {
-                            stats.max = value;
-                        }
-                        stats.ave += value;
-                        if (null != lastRecord) {
-                            Double delta = value - lastRecord.get(valueInd);
-                            if (Double.isNaN(stats.minDelta) || (delta < stats.minDelta)) {
-                                stats.minDelta = delta;
-                            }
-                            if (Double.isNaN(stats.maxDelta) || (delta > stats.maxDelta)) {
-                                stats.maxDelta = delta;
-                            }
-                            stats.aveDelta += delta;
-                        }
-                        valueInd++;
-                    }
-                    records.add(record);
-                    lastRecord = record;
-                } else {
-                    // create the stats for this data set
-                    for (String name : values) {
-                        columnStats.add(new ColumnStats(name));
-                    }
-                }
-                lineCt++;
-            }
-            for (ColumnStats stats : columnStats) {
-                stats.ave /= lineCt;
-                stats.aveDelta /= lineCt;
-            }
-        } catch (IOException e) {
-            System.out.println("Error reading file: \"" + filename + "\"");
-            throw new RuntimeException(e);
-        }
-        System.out.println("\"" + filename + "\" read, " + lineCt + " lines of data.");
-        return records;
+    AprilTagTest closeTestSegment(AprilTagTest aprilTagPath) {
+        aprilTagPath.doneAdding();
+        aprilTagData.aprilDistanceStats.add(aprilTagPath.aprilDistanceStats);
+        aprilTagData.aprilStrafeStats.add(aprilTagPath.aprilStrafeStats);
+        aprilTagData.predictedDistanceStats.add(aprilTagPath.predictedDistanceStats);
+        aprilTagData.predictedStrafeStats.add(aprilTagPath.predictedStrafeStats);
+        return null;
     }
+
+//    List<List<Double>> readCsvFile(String filename, List<ColumnStats> columnStats, int timeIndex) {
+//        List<List<Double>> records = new ArrayList<>();
+//        int lineCt = -1;
+//        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+//            String line;
+//            List<Double> lastRecord = null;
+//            while ((line = br.readLine()) != null) {
+//                String[] values = line.split(",");
+//                if (-1 != lineCt) {
+//                    // skip the header, only save the data
+//                    List<Double> record =  new ArrayList<>();
+//                    int valueInd = 0;
+//                    for (String strValue : values) {
+//                        Double value = Double.valueOf(strValue);
+//                        record.add(value);
+//                        ColumnStats stats = columnStats.get(valueInd);
+//                        if (Double.isNaN(stats.min) || (value < stats.min)) {
+//                            stats.min = value;
+//                        }
+//                        if (Double.isNaN(stats.max) || (value > stats.max)) {
+//                            stats.max = value;
+//                        }
+//                        stats.ave += value;
+//                        if (null != lastRecord) {
+//                            Double delta = value - lastRecord.get(valueInd);
+//                            if (Double.isNaN(stats.minDelta) || (delta < stats.minDelta)) {
+//                                stats.minDelta = delta;
+//                            }
+//                            if (Double.isNaN(stats.maxDelta) || (delta > stats.maxDelta)) {
+//                                stats.maxDelta = delta;
+//                            }
+//                            stats.aveDelta += delta;
+//                        }
+//                        valueInd++;
+//                    }
+//                    records.add(record);
+//                    lastRecord = record;
+//                } else {
+//                    // create the stats for this data set
+//                    for (String name : values) {
+//                        columnStats.add(new ColumnStats(name));
+//                    }
+//                }
+//                lineCt++;
+//            }
+//            for (ColumnStats stats : columnStats) {
+//                stats.ave /= lineCt;
+//                stats.aveDelta /= lineCt;
+//            }
+//        } catch (IOException e) {
+//            System.out.println("Error reading file: \"" + filename + "\"");
+//            throw new RuntimeException(e);
+//        }
+//        System.out.println("\"" + filename + "\" read, " + lineCt + " lines of data.");
+//        return records;
+//    }
 
     private void exitTuneSpeedCache() {
         dispose();

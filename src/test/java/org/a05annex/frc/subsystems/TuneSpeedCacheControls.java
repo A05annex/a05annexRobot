@@ -15,13 +15,22 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
 
     final TuneSpeedCacheCanvas canvas;
     List<JCheckBox> plottedPathCheckbox = new ArrayList<JCheckBox>();
+    List<JCheckBox> plottedTestCheckbox = new ArrayList<JCheckBox>();
 
     TuneSpeedCacheControls(TuneSpeedCacheCanvas canvas) {
         super(new BorderLayout(5, 5));
         this.canvas = canvas;
         JPanel controlPanel = new JPanel(new GridLayout(0, 1, 2, 2));
-        pkgLoadAndAddLabel(controlPanel, "Displayed Data:");
-        for (TuneSpeedCacheCanvas.PlottedPath plottedPath : canvas.plottedPaths) {
+        pkgLoadAndAddLabel(controlPanel, "Displayed Test:");
+        int testId = 1;
+        for (TuneSpeedCacheCanvas.PlottedTest plottedTest : canvas.plottedPaths ) {
+            plottedTestCheckbox.add(pkgLoadAndAddCheckbox(controlPanel, "test %d".formatted(testId),
+                    plottedTest.isDisplayed));
+            testId++;
+        }
+        controlPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
+        pkgLoadAndAddLabel(controlPanel, "Displayed Paths:");
+        for (TuneSpeedCacheCanvas.PlottedPath plottedPath : canvas.plottedPaths.get(0).plottedPaths) {
             plottedPathCheckbox.add(pkgLoadAndAddCheckbox(controlPanel, plottedPath.name, plottedPath.displayed));
         }
         controlPanel.add(new JSeparator(SwingConstants.HORIZONTAL));
@@ -84,16 +93,31 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
     @Override
     public void itemStateChanged(ItemEvent e) {
         Object item = e.getItem();
+        int testIndex = 0;
+        for (JCheckBox checkbox : plottedTestCheckbox ) {
+            if (item == checkbox) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    canvas.plottedPaths.get(testIndex).isDisplayed = true;
+                } else if (e.getStateChange() == ItemEvent.DESELECTED) {
+                    canvas.plottedPaths.get(testIndex).isDisplayed = false;
+                }
+                canvas.repaint();
+                return;
+            }
+            testIndex++;
+        }
         int plottedPathIndex = 0;
         for (JCheckBox checkbox : plottedPathCheckbox) {
             if (item == checkbox) {
-               if (e.getStateChange() == ItemEvent.SELECTED) {
-                   canvas.plottedPaths.get(plottedPathIndex).displayed = true;
-               } else if (e.getStateChange() == ItemEvent.DESELECTED){
-                   canvas.plottedPaths.get(plottedPathIndex).displayed = false;
-               }
-               canvas.repaint();
-               break;
+                for ( TuneSpeedCacheCanvas.PlottedTest plottedTest : canvas.plottedPaths) {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
+                        plottedTest.plottedPaths.get(plottedPathIndex).displayed = true;
+                    } else if (e.getStateChange() == ItemEvent.DESELECTED) {
+                        plottedTest.plottedPaths.get(plottedPathIndex).displayed = false;
+                    }
+                }
+                canvas.repaint();
+                return;
             }
             plottedPathIndex++;
         }

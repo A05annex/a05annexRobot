@@ -10,6 +10,7 @@ import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This is a layer that goes on top of the swerve drive to provide caching of past drive commands for some
@@ -190,11 +191,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
                 headingRadians += deltaTime * controlRequests[backIndex].rotation * maxRadiansPerSec;
                 currentTime = controlRequests[backIndex].timeStamp;
             }
-            backIndex--;
-            if (backIndex < 0) {
-                backIndex = cacheLength - 1;
-            }
-            if (backIndex == mostRecentControlRequest) {
+            if ((backIndex = nextBackIndex(backIndex)) == -1) {
                 // There are not enough entries in the cache
                 cacheOverrun = true;
                 break;
@@ -202,6 +199,49 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         }
         return new RobotRelativePosition(forward, strafe,
                 new AngleD(AngleUnit.RADIANS, headingRadians), sinceTime, cacheOverrun);
+    }
+
+    @Nullable
+    AngleD getExpectedHeadingDeltaAt(double time) {
+        double nextTime;
+        AngleD nextDelta = new AngleD();
+        double lastTime = controlRequests[mostRecentControlRequest].timeStamp;
+        AngleD lastDelta = new AngleD( AngleUnit.RADIANS,
+                (controlRequests[mostRecentControlRequest].actualHeading.getRadians() -
+                        controlRequests[mostRecentControlRequest].expectedHeading.getRadians()));
+        boolean cacheOverrun = false;
+        int backIndex = nextBackIndex(mostRecentControlRequest);
+        while (true) {
+            nextTime = lastTime;
+            nextDelta.setValue(lastDelta);
+            lastTime = controlRequests[backIndex].timeStamp;
+            lastDelta.setValue( AngleUnit.RADIANS,
+                    (controlRequests[backIndex].actualHeading.getRadians() -
+                            controlRequests[backIndex].expectedHeading.getRadians()));
+            if (lastTime <= time) {
+                // So we are now at the point where the lastTime is before the requested time, and the nextTime
+                // is after the requested time. interpolate the heading delta between the
+                return new AngleD(AngleUnit.RADIANS, lastDelta.getRadians() +
+                        ((time - lastTime)/(nextTime-lastTime)) * (nextDelta.getRadians() - lastDelta.getRadians()));
+            }
+
+            if ((backIndex = nextBackIndex(backIndex)) == -1) {
+                // There are not enough entries in the cache
+                break;
+            }
+        }
+        return null;
+    }
+
+    private int nextBackIndex(int currentBackIndex) {
+        currentBackIndex--;
+        if (currentBackIndex < 0) {
+            currentBackIndex = cacheLength - 1;
+        }
+        // Check for overflow - i.e. we've wrapped around and are back to the last entry we put in the
+        // cache, or, we've gone past the the first entry in the cache.
+        return ((currentBackIndex == mostRecentControlRequest) ||
+                (null == controlRequests[currentBackIndex].expectedHeading)) ? -1 : currentBackIndex;
     }
 
     /**

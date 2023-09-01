@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
  */
 public class ConditionSpeedCacheLog {
 
-    static int hasValidFrameIndex = -1;
     static int aprilTagTimeIndex = -1;
     static int aprilTagStrafeIndex = -1;
     static int aprilTagDistIndex = -1;
@@ -40,6 +39,9 @@ public class ConditionSpeedCacheLog {
     static int swerveSpeedIndex = -1;
     static int swerveDirectionIndex = -1;
     static int swerveRotateIndex = -1;
+
+    static int aprilTagIndex = -1;
+    static int speedCacheIndex = -1;
 
     public static void main(@NotNull final String[] args) {
         if (2 != args.length) {
@@ -59,78 +61,52 @@ public class ConditionSpeedCacheLog {
         // file and the conditioned files for testing/tuning the speed cache.
         //
         List<List<String>> meaningfulRawRecords = new ArrayList<>();
+        meaningfulRawRecords.add(Arrays.asList("aprilTag","speedCache"));
+
         List<List<String>> meaningfulAprilRecords = new ArrayList<>();
-        meaningfulAprilRecords.add(Arrays.asList("aprilTime", "aprilTimeDelta", "aprilDistance", "aprilStrafe",
+        meaningfulAprilRecords.add(Arrays.asList("hasTarget", "aprilTime", "aprilDistance", "aprilStrafe",
                 "predictedDistance", "predictedStrafe"));
-        String lastAprilTimeStr = "null";
-        double lastAprilTime = 0.0;
-        String thisAprilTimeStr = "null";
-        double aprilTimeDelta = 0.0;
-        List<List<String>> meaningfulSwerveRecords = new ArrayList<>();
-        meaningfulSwerveRecords.add(Arrays.asList("swerveTime", "swerveTimeDelta", "speed", "direction", "rotate"));
-        String thisSwerveTimeStr = "null";
-        double lastSwerveTime = 0.0;
-        String lastSwerveTimeStr = "null";
-        double swerveTimeDelta = 0.0;
-        List<String> lastRecord = null;
+        String lastAprilTagStr = "null";
+        String thisAprilTagStr = "null";
+
+        List<List<String>> meaningfulSpeedCacheRecords = new ArrayList<>();
+        meaningfulSpeedCacheRecords.add(Arrays.asList("swerveTime", "actualHeading", "expectedHeading",
+                "speed", "direction", "rotate"));
+        String lastSpeedCacheStr = "null";
+        String thisSpeedCacheStr = "null";
+
         int lineCt = 0;
         try (BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] values = line.split(",");
                 List<String> record = Arrays.asList(values);
+                boolean recordIsImportant = false;
                 if (0 == lineCt) {
-                    meaningfulRawRecords.add(record);
                     mapHeader(record);
                 } else {
                     if (0 == record.size()) {
                         // this is an empty record, skip it
                         continue;
                     }
-                    boolean recordIsImportant = false;
-                    thisAprilTimeStr = record.get(aprilTagTimeIndex);
-                    if (!lastAprilTimeStr.equals(thisAprilTimeStr) && !thisAprilTimeStr.equals("null")) {
-                        // This is good, a new april tag time on this line - the last record was the time and location
-                        // that we want to log; i.e. it may be an important point.
-                        double thisAprilTime = Double.parseDouble(thisAprilTimeStr);
-                        if (!lastAprilTimeStr.equals("null") && (thisAprilTime > lastAprilTime)) {
-                            //the last record was the record we should use for the april tag data
-                            meaningfulAprilRecords.add(Arrays.asList(
-                                    formatDouble("%.4f",lastRecord.get(aprilTagTimeIndex)),
-                                    String.format("%.4f",aprilTimeDelta),
-                                    formatDouble("%.5f",lastRecord.get(aprilTagDistIndex)),
-                                    formatDouble("%.5f",lastRecord.get(aprilTagStrafeIndex)),
-                                    formatDouble("%.5f",lastRecord.get(cumulativeCacheDistIndex)),
-                                    formatDouble("%.5f",lastRecord.get(cumulativeCacheStrafeIndex))));
-                            aprilTimeDelta = thisAprilTime - lastAprilTime;
-                            recordIsImportant = true;
-                        }
-                        lastAprilTimeStr = thisAprilTimeStr;
-                        lastAprilTime = Double.parseDouble(lastAprilTimeStr);
+                    thisAprilTagStr = record.get(aprilTagIndex);
+                    thisSpeedCacheStr = record.get(speedCacheIndex);
+                    if (!thisAprilTagStr.equals("null") && !thisAprilTagStr.equals(lastAprilTagStr)) {
+                        String[] aprilTagValues = thisAprilTagStr.replace("\"","").split(";");
+                        meaningfulAprilRecords.add(Arrays.asList(aprilTagValues));
+                        lastAprilTagStr = thisAprilTagStr;
+                        recordIsImportant = true;
                     }
-                    thisSwerveTimeStr = record.get(swerveTimeIndex);
-                    if (!lastSwerveTimeStr.equals(thisSwerveTimeStr)) {
-                        // This is good, a new april tag time on this line - the last line was the time and location
-                        // that we want to log; i.e. it may be an important point.
-                        double thisSwerveTime = Double.parseDouble(thisSwerveTimeStr);
-                        if (!lastSwerveTimeStr.equals("null") && (thisSwerveTime > lastSwerveTime)) {
-                            //the last record was the record we should use for the april tag data
-                            meaningfulSwerveRecords.add(Arrays.asList(
-                                    formatDouble("%.4f",lastRecord.get(swerveTimeIndex)),
-                                    String.format("%.4f",swerveTimeDelta),
-                                    formatDouble("%.5f",lastRecord.get(swerveSpeedIndex)),
-                                    formatDouble("%.5f",lastRecord.get(swerveDirectionIndex)),
-                                    formatDouble("%.5f",lastRecord.get(swerveRotateIndex))));
-                            swerveTimeDelta = thisSwerveTime - lastSwerveTime;
-                            recordIsImportant = true;
-                        }
-                        lastSwerveTimeStr = thisSwerveTimeStr;
-                        lastSwerveTime = Double.parseDouble(lastSwerveTimeStr);
+                    if (!thisSpeedCacheStr.equals("null") && !thisSpeedCacheStr.equals(lastSpeedCacheStr) ) {
+                        String[] speedCacheValues = thisSpeedCacheStr.replace("\"","").split(";");
+                        meaningfulSpeedCacheRecords.add(Arrays.asList(speedCacheValues));
+                        lastSpeedCacheStr = thisSpeedCacheStr;
+                        recordIsImportant = true;
                     }
                     if (recordIsImportant) {
+                        System.out.println(record.get(aprilTagIndex) + "     " + record.get(speedCacheIndex));
                         meaningfulRawRecords.add(record);
                     }
-                    lastRecord = record;
                 }
                 lineCt++;
             }
@@ -141,7 +117,7 @@ public class ConditionSpeedCacheLog {
 
         writeCSV("./scrubbedRawData_" + args[1] + ".csv", meaningfulRawRecords);
         writeCSV("./AprilData_" + args[1] + ".csv", meaningfulAprilRecords);
-        writeCSV("./SwerveData_" + args[1] + ".csv", meaningfulSwerveRecords);
+        writeCSV("./SwerveData_" + args[1] + ".csv", meaningfulSpeedCacheRecords);
         System.exit(0);
     }
 
@@ -152,34 +128,12 @@ public class ConditionSpeedCacheLog {
         int i = 0;
         for (String header : headerRecord) {
             switch (header) {
-                case "actualPositionTimeLog":
-                    aprilTagTimeIndex = i;
+                case "speedCache":
+                    speedCacheIndex = i;
                     break;
-                case "actualXPosition":
-                    aprilTagDistIndex = i;
+                case "aprilTag":
+                    aprilTagIndex = i;
                     break;
-                case "actualYPosition":
-                    aprilTagStrafeIndex = i;
-                    break;
-                case "cacheXPosition":
-                    cumulativeCacheDistIndex = i;
-                    break;
-                case "cacheYPosition":
-                    cumulativeCacheStrafeIndex = i;
-                    break;
-                case "swerveTime":
-                    swerveTimeIndex = i;
-                    break;
-                case "speed":
-                    swerveSpeedIndex = i;
-                    break;
-                case "direction":
-                    swerveDirectionIndex = i;
-                    break;
-                case "rotate":
-                    swerveRotateIndex = i;
-                    break;
-
             }
             i++;
         }
@@ -200,10 +154,6 @@ public class ConditionSpeedCacheLog {
             System.out.println("Error writing file: " + filename);
             throw new RuntimeException(e);
         }
-    }
-
-    static String formatDouble(String format, String doubleAsString) {
-        return String.format(format , Double.parseDouble(doubleAsString));
     }
 
     static String convertRowToCSV(List<String> data) {

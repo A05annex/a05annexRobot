@@ -1,8 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="TuneSpeedCache" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="ALTERNATIVE_JRE_PATH" value="azul-16" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="org.a05annex.frc.subsystems.TuneSpeedCache" />
     <module name="a05annexRobot.test" />
-    <option name="PROGRAM_PARAMETERS" value="-a AprilData_20230712.csv -s SwerveData_20230712.csv" />
+    <option name="PROGRAM_PARAMETERS" value="-a AprilData_20230816.csv -s SwerveData_20230816.csv" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/test/resources/test_data" />
     <extension name="coverage">
       <pattern>
