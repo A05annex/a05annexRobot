@@ -14,14 +14,45 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This is a layer that goes on top of the swerve drive to provide caching of past drive commands for some
- * period of time so that the relative position of the robot can be approximated for some time in the past. The
- * scenario for use is that there is a sensor system, such as vision processing of a target, that estimates
- * a robot's position relative to the target; however, it has a several command cycle latency. This means
- * that a control algorithm based on the robot's position relative to the target is using information about that
- * position stale by several cycles when used - and needs to be corrected for the robot's current position.
+ * period of time so that the motion from a previously known field position at a previous time can be projected
+ * to a field position at the current time. The use case is with vision systems tha take some time (typically
+ * 20 to 120ms) to analyze the field targets and report their position relative the the target, and it follows
+ * that if we know the field position of the target we can compute the field position of the robot. Unfortunately,
+ * that position is 20-120ms old, so running a PID loop to put the robot at a specific point on the field requires
+ * very low gains to prevent oscillation around the target position. In addition to the processing latency issue,
+ * there is also the case where when the robot is in the desired field position, it cannot see the target, so it
+ * may be necessary to predict the current position based on the last time the target was visible (perhaps
+ * one second ago).
  * <p>
- * This cache provides the data and processing to predict where the robot is now, relative to the location,
- * location reported for some time in the past.
+ * For each command cycle we save:
+ * <ul>
+ *     <li>forward speed (-1.0 to +1.0);</li>
+ *     <li>strafe speed (-1.0 to +1.0);</li>
+ *     <li>rotation speed (-1.0 to +1.0);</li>
+ *     <li>expected heading;</li>
+ *     <li>actual heading.</li>
+ * </ul>
+ * The cache has a fixed size (which can be configured with the {@link #setCacheLength(int)} method. The default
+ * size is 250, which will have the last 5 seconds of motion at 20ms/commandCycle, and should be reasonable
+ * for competition code.
+ * <p>
+ * The change in the position of the robot since the last target data is found
+ * using {@link #getRobotRelativePositionSince(double)} where the {@code sinceTime} is the time of the last processed
+ * target image, and this reports the estimated change in field position after {@code sinceTime}. Please note the
+ * following assumptions about this relative position:
+ * <ul>
+ *     <li>The robot is locked into an expected heading when targeting starts, so any rotation speeds have been set
+ *     by the PID loop trying to hold the heading constant, and are ignored.</li>
+ *     <li>Since the expected heading is locked, the relative position is with respect to the the position at
+ *     {@code sinceTime} assuming the robot was in the expected heading, i.e. The
+ *     {@link RobotRelativePosition#forward}</li> is along the expected heading; the
+ *     {@link RobotRelativePosition#strafe}</li> is 90&deg; to the expected heading; the
+ *     {@link RobotRelativePosition#heading}</li> will be set to the expected heading; and,
+ *     {@link RobotRelativePosition#cacheOverrun}</li> will normally be {@code false}, but, if it is {@code true}
+ *     it means the {@code sinceTime} is before the oldest entry in the cache, and anything else in
+ *     {@link RobotRelativePosition} is invalid.
+ * </ul>
+ *
  */
 public class SpeedCachedSwerve implements ISwerveDrive {
 
@@ -124,11 +155,17 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     public static final String SPEED_CACHE_LOG_NAME = "speedCache";
     boolean logSpeedCache = false;
     StringLogEntry speedCacheLog = null;
+
+    // The factors for tuning the speed cache position projections
+    public double scaleForward = 1.0;
+    public double scaleStrafe = 1.0;
+    public double phase = 0.0;
     /**
      *
      */
     private SpeedCachedSwerve() {
-        // the constructor does nothing ...
+        // the constructor does nothing, except setup a default 5 second cache.
+        setCacheLength(250);
     }
 
     public ControlRequest getMostRecentControlRequest() {
@@ -184,12 +221,19 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             // * In tuning/testing the cache is loaded with test-generated positions, so, the current time is generated
             //   relative to the data in the cache and is probably way before the last time in the cache.
             if (currentTime > controlRequests[backIndex].timeStamp) {
-                // OK, this after the sinceTime, and before the currentTime
-                double deltaTime = currentTime - controlRequests[backIndex].timeStamp;
-                forward += deltaTime * controlRequests[backIndex].forward * maxMetersPerSec;
-                strafe += deltaTime * controlRequests[backIndex].strafe * maxMetersPerSec;
-                headingRadians += deltaTime * controlRequests[backIndex].rotation * maxRadiansPerSec;
-                currentTime = controlRequests[backIndex].timeStamp;
+                // OK, this after the sinceTime, and before the currentTime, the current time represents either the
+                // start of the interval we are interested in, or, the time of the last control request.
+                ControlRequest controlRequest = controlRequests[backIndex];
+                double deltaTime = currentTime - controlRequest.timeStamp;
+                double deltaForward = deltaTime * controlRequest.forward * maxMetersPerSec;
+                double deltaStrafe = deltaTime * controlRequest.strafe * maxMetersPerSec;;
+                // correct the forward and strafe for the deviation from the expected heading
+                AngleD headingDelta = new AngleD(controlRequest.actualHeading).subtract(controlRequest.expectedHeading);
+                forward += (deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin());
+                strafe += (deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos());
+                // the expected heading is set at targeting so, the heading here is the expected heading
+                headingRadians = controlRequest.expectedHeading.getRadians();
+                currentTime = controlRequest.timeStamp;
             }
             if ((backIndex = nextBackIndex(backIndex)) == -1) {
                 // There are not enough entries in the cache
@@ -206,9 +250,17 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         double nextTime;
         AngleD nextDelta = new AngleD();
         double lastTime = controlRequests[mostRecentControlRequest].timeStamp;
-        AngleD lastDelta = new AngleD( AngleUnit.RADIANS,
-                (controlRequests[mostRecentControlRequest].actualHeading.getRadians() -
-                        controlRequests[mostRecentControlRequest].expectedHeading.getRadians()));
+        if (time > lastTime) {
+            // a strange situation where the requested time is after (more recent) than the most recently
+            // recorded request (i.e. the time we are looking for is after our last recorded request). This
+            // is a handling conundrum - if you want the current heading, talk to the NavX, you can't get it
+            // here.
+            throw new IllegalArgumentException("You are asking for newer heading information than what is in" +
+                    " the speed cache. Please query the NavX for current heading information instead of the" +
+                    " speed cache.");
+        }
+        AngleD lastDelta = new AngleD(controlRequests[mostRecentControlRequest].actualHeading).subtract(
+                controlRequests[mostRecentControlRequest].expectedHeading);
         boolean cacheOverrun = false;
         int backIndex = nextBackIndex(mostRecentControlRequest);
         while (true) {

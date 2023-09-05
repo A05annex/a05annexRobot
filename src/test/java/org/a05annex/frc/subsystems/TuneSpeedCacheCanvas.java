@@ -108,8 +108,8 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     // -----------------------------------------------------------------------------------------------------------------
     // These are the paths we are plotting
     static public final int APRIL_TAG_PATH = 0;
-    static public final int FILTERED_APRIL_TAG_PATH = 1;
-    static public final int HEADING_CORRECTED_APRIL_TAG_PATH = 2;
+    static public final int HEADING_CORRECTED_APRIL_TAG_PATH = 1;
+    static public final int FILTERED_APRIL_TAG_PATH = 2;
     static public final int SWERVE_PATH = 3;
     static public final int SPEED_CACHE_PATH = 4;
     static public final int SPEED_CACHE_FROM_SELECTED = 5;
@@ -117,8 +117,8 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     static class PlottedTest {
         List<PlottedPath> plottedPaths = new ArrayList<>(Arrays.asList(
                 new PlottedPath(APRIL_TAG_PATH, "April Tag Path", Color.WHITE, true),
-                new PlottedPath(FILTERED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.YELLOW, true),
-                new PlottedPath(HEADING_CORRECTED_APRIL_TAG_PATH,"Nav Corrected Tag Path", Color.MAGENTA, true),
+                new PlottedPath(FILTERED_APRIL_TAG_PATH,"Nav Corrected Tag Path", Color.YELLOW, true),
+                new PlottedPath(HEADING_CORRECTED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.MAGENTA, true),
                 new PlottedPath(SWERVE_PATH,"Projected Path at Test", Color.CYAN, true),
                 new PlottedPath(SPEED_CACHE_PATH,"Cache Computed Path", Color.ORANGE, true),
                 new PlottedPath(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected", Color.ORANGE, true)
@@ -257,6 +257,17 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                     PathPoint pathPt = new PathPoint(aprilTag.aprilTime,
                             aprilTag.aprilDistance, aprilTag.aprilStrafe, aprilTag.headingDelta);
                     plottedTest.plottedPaths.get(APRIL_TAG_PATH).add(pathPt);
+                    // this corrects the distance and strafe when the heading drifts
+                    AngleConstantD headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(aprilTag.aprilTime);
+                    if (null == headingDelta) {
+                        headingDelta = AngleConstantD.ZERO;
+                    }
+                    double actDist = (pathPt.fieldPt.getY() * headingDelta.cos()) -
+                            (pathPt.fieldPt.getX() * headingDelta.sin());
+                    double actStrafe = (pathPt.fieldPt.getY() * headingDelta.sin()) +
+                            (pathPt.fieldPt.getX() * headingDelta.cos());
+                    pathPt = new PathPoint(aprilTag.aprilTime,actDist, actStrafe, headingDelta);
+                    plottedTest.plottedPaths.get(HEADING_CORRECTED_APRIL_TAG_PATH).add(pathPt);
                     // this is the computation for a 3 point weighted average filtering for the position value.
                     Point2D.Double thisPt = pathPt.fieldPt;
                     double thisTime = pathPt.time;
@@ -270,29 +281,20 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                                 (thisPt.getY() + lastPt.getY()) / 2.0);
                         thisAveTime = (thisTime + lastTime) / 2.0;
                     } else {
-//                // This is the code for a 1,1,1 weighting of a sample and the sample before
-//                // and after (a 3 value running average)
-//                thisAvePt = new Point2D.Double((thisPt.getX() + lastPt.getX() + lastLastPt.getX()) / 3.0,
-//                        (thisPt.getY() + lastPt.getY() + lastLastPt.getY()) / 3.0);
-//                thisAveTime = (thisTime + lastTime + lastLastTime) / 3.0;
-                        // This is an 0.2,00..6,2 filtering (a gaussian-like filter for running 3 points - looks
+//                      // This is an 0.2, 0.8, 0.2 filtering (a gaussian-like filter for running 3 points - looks
                         // gretty good in the path plots.
                         thisAvePt = new Point2D.Double(
                                 (0.2 * thisPt.getX()) + (0.6 * lastPt.getX()) + (0.2 * lastLastPt.getX()),
                                 (0.2 * thisPt.getY()) + (0.6 * lastPt.getY()) + (0.2 * lastLastPt.getY()));
                         thisAveTime = (0.2 * thisTime) + (0.6 * lastTime) + (0.2 * lastLastTime);
                     }
-                    AngleConstantD headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(thisAveTime);
+                    headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(thisAveTime);
                     if (null == headingDelta) {
                         headingDelta = AngleConstantD.ZERO;
                     }
                     plottedTest.plottedPaths.get(FILTERED_APRIL_TAG_PATH).add(new PathPoint(thisAveTime,
                             thisAvePt.getY(), thisAvePt.getX(), headingDelta));
-                    double actDist = (thisAvePt.getX() * headingDelta.sin()) + (thisAvePt.getY() * headingDelta.cos());
-                    double actStrafe = (thisAvePt.getX() * headingDelta.cos()) + (thisAvePt.getY() * headingDelta.sin());
-                    plottedTest.plottedPaths.get(HEADING_CORRECTED_APRIL_TAG_PATH).add(new PathPoint(thisAveTime,
-                            actDist, actStrafe, headingDelta));
-                    lastLastPt = lastPt;
+//                  lastLastPt = lastPt;
                     lastPt = thisPt;
                     lastLastTime = lastTime;
                     lastTime = thisTime;

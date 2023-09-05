@@ -30,4 +30,43 @@ april tags. We had no idea what to expect when we started this exercise. The res
 
 For this test we dragged in the carpet, tried to stretch it and put heavy desks/tables on it to anchor it, taped an
 april tag to the wall, and drove around a bit. Though we had some heavy furniture on the carpet, it was no stretched
-out, so it moved a bit.
+out, so it moved a bit. Our initial attempts to plot things showed us this:
+
+In this plot, the test is quite long (like 50 seconds), and we mostly discovered we were not logging what we
+really needed to log to analyze the results of the test. In the image above, the april tag is at the top of the screen
+and we are looking at a view from above the field. The various traces are:
+* **white** - the reported april tag position.
+* **yellow** - we saw a lot of noise in tha april tag position and tried passing a gaussian filter over it.
+* **cyan** - the path of the robot predicted by the cache based on the april tag position at the start of the path.
+* **orange** - what the current cache code predicts the position of the robot should be based on the april tag
+  position at the start of the path. This should be the same as the **cyan** path unless the speed cache code
+  is altered since the test - this points out some obvious logging issues.
+
+Conclusion - we really didn't have a test plan, and learned that logging was not telling us what we needed for
+analysis. We initially stared by implementing a command that locked heading and started logging april tag state
+and commands to the swerve. Initial analysis attempts were hampered because every time any parameter is logged
+that creates a new log entry, so it was difficult to isolate the state for the command; additionally information
+about losing the april tag, performing multiple runs of the command, etc. were not sufficiently thought out to
+allow us to make the logs comprehensible. Subsequent logging changes:
+* **Speed Cache Logging** - The speed cache does it's own logging, turned on by a configuration command. This allows
+  the state of the cache during the test to be exactly recreated during analysis. Some specifics:
+  * The speed cache entry is a a single string per command cycle, so we know there is a new entry if the string
+    changes (i.e. the time will change every command cycle even if nothing else does);
+  * In addition to time, forward, strafe, and rotation, the expected and actual heading are now logged and saved
+    in the cache.
+* **April Tag Logging** - Mostly to make it easier to parse and modify logging:
+  * The april tag info is now a single log entry, so we know something has changed if the string changes;
+  * valid tag state and test state are clearly identified so that one robot session may contain several tests.
+
+Subsequent thoughts on a test plan:
+* tests should be short and with a specific goal;
+* a forward-backward test should be run;
+* a strafe test should be run;
+* a short random motion test should be run;
+* a test that moved out of april tag sight, and then back in should be run.
+
+### Second Test 2023-08-16 (16 August 2023)
+
+A lot of other stuff happening during the summer - took a while to get back to this. Logging changes were made in
+the interim. Same carpet drill, ran a test, examined logs, fixed some logging errors, finally got a good test session
+that included a random test, a strafe test, and a forward-backward test.
