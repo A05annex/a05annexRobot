@@ -325,7 +325,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     void loadCalculatedSpeedCachePath(@NotNull List<SpeedCacheData> speedCacheData,
                                       @NotNull SpeedCachedSwerve speedCachedSwerve,
                                       List<AprilTagData> aprilPath, PlottedPath plottedPath) {
-        double speedCacheTime = speedCacheData.get(0).swerveTime;
+        double speedCacheTime = speedCacheData.get(1).swerveTime;
 
         AprilTagData aprilTagStart = null;
         AprilTagData aprilTagEnd = aprilPath.get(aprilPath.size()-1);

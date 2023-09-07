@@ -67,7 +67,7 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
         
         pkgLoadAndAddLabel(controlPanel, "Phase:");
         phaseSlider = new JSlider(JSlider.HORIZONTAL,
-                0, 1000, 500);
+                0, 1000, (int)(500.0 * canvas.speedCachedSwerve.getPhase()));
         phaseSlider.addChangeListener(this);
         //Turn on labels at major tick marks.
         phaseSlider.setMajorTickSpacing(500);
@@ -177,8 +177,10 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
         }
         else if (source == phaseSlider) {
             if (source.getValueIsAdjusting()) {
-                double scale = (int) source.getValue() / 1000.0;
-                System.out.println("phase = " + scale);
+                double phase = (int) source.getValue() / 1000.0;
+                System.out.println("phase = " + phase);
+                canvas.speedCachedSwerve.setPhase(phase);
+                reloadCalcPath = true;
             }
         }
 
