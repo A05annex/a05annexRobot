@@ -152,7 +152,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     private Point2D.Double mouse = null;
     private PathPoint mouseOverPathPt = null;
 
-    private AffineTransform drawXfm = null;
+    AffineTransform drawXfm = null;
     private AffineTransform mouseXfm = null;
     private double scale;
 
@@ -239,13 +239,15 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         // first thing, there may be multiple tests in this data set. So inspect the april tag data that has been
         // passed in, and figure out how many tests are in this data set. Then create a path data set for each of
         // the test data sets that was passed it.
+        this.aprilTagData = aprilTagData;
+        this.swerveData = speedCacheData;
+        this.speedCachedSwerve = speedCachedSwerve;
         for (AprilTagTest thisTest : aprilTagData.aprilPath) {
             // create the paths for this data set.
             PlottedTest plottedTest = new PlottedTest();
             plottedPaths.add(plottedTest);
             // This is the stuff that is logged about the april tag and projected position at each command cycle
             // that the target is visible.
-            this.aprilTagData = aprilTagData;
             double lastTime = 0.0;
             double lastLastTime = 0.0;
             Point2D.Double lastPt = null;
@@ -302,38 +304,8 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
             }
 
-            this.swerveData = speedCacheData;
-            this.speedCachedSwerve = speedCachedSwerve;
-            double speedCacheTime = speedCacheData.get(0).swerveTime;
-            AprilTagData aprilTagStart = null;
-            AprilTagData aprilTagEnd = thisTest.aprilPath.get(thisTest.aprilPath.size()-1);
-            for (AprilTagData aprilTag : thisTest.aprilPath) {
-                if (aprilTag.aprilTime > speedCacheTime) {
-                    aprilTagStart = aprilTag;
-                    break;
-                }
-            }
-            double aprilTagStartTime = aprilTagStart.aprilTime;
-            double aprilTagEndTime = aprilTagEnd.aprilTime;
-            double aprilTagStartDistance = aprilTagStart.aprilDistance;
-            double aprilTagStartStrafe = aprilTagStart.aprilStrafe;
-            AngleConstantD aprilTagStartDelta = aprilTagStart.headingDelta;
-            plottedTest.plottedPaths.get(SPEED_CACHE_PATH).add(new PathPoint(aprilTagStartTime,
-                    aprilTagStartDistance,aprilTagStartStrafe,aprilTagStartDelta));
-            for (SpeedCacheData swerveCommand : speedCacheData) {
-                speedCacheTime = swerveCommand.swerveTime;
-                if (speedCacheTime > aprilTagEndTime) {
-                    break;
-                }
-                if (speedCacheTime > aprilTagStartTime) {
-                    SpeedCachedSwerve.RobotRelativePosition relPosition =
-                            speedCachedSwerve.getRobotRelativePositionSince( speedCacheTime, aprilTagStartTime);
-                    plottedTest.plottedPaths.get(SPEED_CACHE_PATH).add(new PathPoint(speedCacheTime,
-                            aprilTagStartDistance - relPosition.forward,
-                            aprilTagStartStrafe - relPosition.strafe,
-                            new AngleD(swerveCommand.expectedHeading).subtract(swerveCommand.actualHeading)));
-                }
-            }
+            loadCalculatedSpeedCachePath(speedCacheData, speedCachedSwerve, thisTest.aprilPath,
+                    plottedTest.plottedPaths.get(SPEED_CACHE_PATH));
         }
 
 
@@ -348,6 +320,45 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         addComponentListener(new ComponentHandler());
         resetDisplayGeometry();
 
+    }
+
+    void loadCalculatedSpeedCachePath(@NotNull List<SpeedCacheData> speedCacheData,
+                                      @NotNull SpeedCachedSwerve speedCachedSwerve,
+                                      List<AprilTagData> aprilPath, PlottedPath plottedPath) {
+        double speedCacheTime = speedCacheData.get(0).swerveTime;
+
+        AprilTagData aprilTagStart = null;
+        AprilTagData aprilTagEnd = aprilPath.get(aprilPath.size()-1);
+        for (AprilTagData aprilTag : aprilPath) {
+            if (aprilTag.aprilTime > speedCacheTime) {
+                aprilTagStart = aprilTag;
+                break;
+            }
+        }
+        double aprilTagStartTime = aprilTagStart.aprilTime;
+        double aprilTagEndTime = aprilTagEnd.aprilTime;
+        double aprilTagStartDistance = aprilTagStart.aprilDistance;
+        double aprilTagStartStrafe = aprilTagStart.aprilStrafe;
+        AngleConstantD aprilTagStartDelta = aprilTagStart.headingDelta;
+
+        plottedPath.clear();
+        plottedPath.add(new PathPoint(aprilTagStartTime,
+                aprilTagStartDistance,aprilTagStartStrafe,aprilTagStartDelta));
+        for (SpeedCacheData swerveCommand : speedCacheData) {
+            speedCacheTime = swerveCommand.swerveTime;
+            if (speedCacheTime > aprilTagEndTime) {
+                break;
+            }
+            if (speedCacheTime > aprilTagStartTime) {
+                SpeedCachedSwerve.RobotRelativePosition relPosition =
+                        speedCachedSwerve.getRobotRelativePositionSince(speedCacheTime,
+                                aprilTagStartTime);
+                plottedPath.add(new PathPoint(speedCacheTime,
+                        aprilTagStartDistance - relPosition.forward,
+                        aprilTagStartStrafe - relPosition.strafe,
+                        new AngleD(swerveCommand.expectedHeading).subtract(swerveCommand.actualHeading)));
+            }
+        }
     }
 
     @Override

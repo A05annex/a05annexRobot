@@ -157,9 +157,9 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     StringLogEntry speedCacheLog = null;
 
     // The factors for tuning the speed cache position projections
-    public double scaleForward = 1.0;
-    public double scaleStrafe = 1.0;
-    public double phase = 0.0;
+    private double scaleForward = 1.0;
+    private double scaleStrafe = 1.0;
+    private double phase = 0.0;
     /**
      *
      */
@@ -172,6 +172,22 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         return controlRequests[mostRecentControlRequest];
     }
 
+    public void setMaxVelocityScale(double scale) {
+        this.scaleForward = scale;
+        this.scaleStrafe = scale;
+    }
+    public void setMaxForwardScale(double forwardScale){
+        this.scaleForward = forwardScale;
+    }
+    public double getMaxForwardScale() {
+        return scaleForward;
+    }
+    public void setMaxStrafeScale(double scaleStrafe){
+        this.scaleStrafe = scaleStrafe;
+    }
+    public double getMaxStrafeScale() {
+        return scaleStrafe;
+    }
     /**
      * Get the robot position now, relative to where the robot was at the specified time. For example if the robot
      * were approaching a target, and the targeting software reported that the robot was 2.0m from the target and
@@ -229,8 +245,8 @@ public class SpeedCachedSwerve implements ISwerveDrive {
                 double deltaStrafe = deltaTime * controlRequest.strafe * maxMetersPerSec;;
                 // correct the forward and strafe for the deviation from the expected heading
                 AngleD headingDelta = new AngleD(controlRequest.actualHeading).subtract(controlRequest.expectedHeading);
-                forward += (deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin());
-                strafe += (deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos());
+                forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+                strafe += (deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos()) * scaleStrafe;
                 // the expected heading is set at targeting so, the heading here is the expected heading
                 headingRadians = controlRequest.expectedHeading.getRadians();
                 currentTime = controlRequest.timeStamp;
@@ -245,6 +261,24 @@ public class SpeedCachedSwerve implements ISwerveDrive {
                 new AngleD(AngleUnit.RADIANS, headingRadians), sinceTime, cacheOverrun);
     }
 
+    /**
+     * Returns the delta between the expected robot heading and the actual robot heading at the requested time. The
+     * use case is when the heading for some sensor (like vision) has a latency and requires information about the
+     * robot heading sometime in the past. This returned delta is an linear interpolation approximation between the
+     * cached heading in the command cycles before and after the requested time. <b>NOTE:</b> there are 2 conditions
+     * where this method fails.
+     * <ul>
+     *     <li><b>cache Overflow</b> - There is not enough history in the cache to satisfy this request, in which
+     *     case {@code null} is returned.</li>
+     *     <li>{@link IllegalArgumentException} - the requested {@code time} is more recent than the last cache
+     *     entry, please used {@link NavX#getHeadingInfo()} to get the most recent (current) heading.</li>
+     * </ul>
+     * @param time The time (FPGA timestamp in seconds) at which you want to know the heading delta.
+     * @return Returns the heading delta, of {@code null} if the data in the cache does not extend back to the
+     * specified time.
+     * @throws IllegalArgumentException Thrown if the requested {@code time} is more recent than the last cache
+     *    entry, please used {@link NavX#getHeadingInfo()} to get the most recent (current) heading.
+     */
     @Nullable
     AngleD getExpectedHeadingDeltaAt(double time) {
         double nextTime;
@@ -267,9 +301,8 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             nextTime = lastTime;
             nextDelta.setValue(lastDelta);
             lastTime = controlRequests[backIndex].timeStamp;
-            lastDelta.setValue( AngleUnit.RADIANS,
-                    (controlRequests[backIndex].actualHeading.getRadians() -
-                            controlRequests[backIndex].expectedHeading.getRadians()));
+            lastDelta.setValue(controlRequests[backIndex].actualHeading).subtract(
+                    controlRequests[backIndex].expectedHeading);
             if (lastTime <= time) {
                 // So we are now at the point where the lastTime is before the requested time, and the nextTime
                 // is after the requested time. interpolate the heading delta between the
@@ -285,6 +318,11 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         return null;
     }
 
+    /**
+     *
+     * @param currentBackIndex
+     * @return
+     */
     private int nextBackIndex(int currentBackIndex) {
         currentBackIndex--;
         if (currentBackIndex < 0) {

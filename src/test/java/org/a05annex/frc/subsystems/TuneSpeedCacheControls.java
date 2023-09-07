@@ -16,6 +16,9 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
     final TuneSpeedCacheCanvas canvas;
     List<JCheckBox> plottedPathCheckbox = new ArrayList<JCheckBox>();
     List<JCheckBox> plottedTestCheckbox = new ArrayList<JCheckBox>();
+    JSlider forwardScaleSlider = null;
+    JSlider strafeScaleSlider = null;
+    JSlider phaseSlider = null;
 
     TuneSpeedCacheControls(TuneSpeedCacheCanvas canvas) {
         super(new BorderLayout(5, 5));
@@ -37,38 +40,47 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
         pkgLoadAndAddLabel(controlPanel, "Speed Cache Tuning:");
 
 
-        pkgLoadAndAddLabel(controlPanel, "Swerve Max Velocity:");
-        JSlider speedScale = new JSlider(JSlider.HORIZONTAL,
-                900, 1100, 1000);
-        speedScale.addChangeListener(this);
-        //Turn on labels at major tick marks.
-        speedScale.setMajorTickSpacing(100);
-        speedScale.setMinorTickSpacing(10);
-        speedScale.setPaintTicks(true);
         Hashtable labelTable = new Hashtable();
-        labelTable.put( Integer.valueOf( 900), new JLabel("90%") );
+        labelTable.put( Integer.valueOf( 800), new JLabel("80%") );
+        //labelTable.put( Integer.valueOf( 900), new JLabel("90%") );
         labelTable.put( Integer.valueOf( 1000 ), new JLabel("100%") );
-        labelTable.put( Integer.valueOf( 1100 ), new JLabel("110%") );
-        speedScale.setLabelTable( labelTable );
-        speedScale.setPaintLabels(true);
-        controlPanel.add(speedScale);
+        //labelTable.put( Integer.valueOf( 1100 ), new JLabel("110%") );
+        labelTable.put( Integer.valueOf( 1200 ), new JLabel("120%") );
+        pkgLoadAndAddLabel(controlPanel, "Forward Velocity Scale:");
+        forwardScaleSlider = phgLoadAndAddSlider(controlPanel, 700, 1300,
+                (int)(1000.0 * canvas.speedCachedSwerve.getMaxForwardScale()),
+                100,25, labelTable );
+        pkgLoadAndAddLabel(controlPanel, "Strafe Velocity Scale:");
+        strafeScaleSlider = phgLoadAndAddSlider(controlPanel, 700, 1300,
+                (int)(1000.0 * canvas.speedCachedSwerve.getMaxForwardScale()),
+                100,25, labelTable );
+//        speedScaleSlider = new JSlider(JSlider.HORIZONTAL,
+//                900, 1100, 1000);
+//        speedScaleSlider.addChangeListener(this);
+//        //Turn on labels at major tick marks.
+//        speedScaleSlider.setMajorTickSpacing(100);
+//        speedScaleSlider.setMinorTickSpacing(10);
+//        speedScaleSlider.setPaintTicks(true);
+//        speedScaleSlider.setLabelTable( labelTable );
+//        speedScaleSlider.setPaintLabels(true);
+//        controlPanel.add(speedScaleSlider);
         
         pkgLoadAndAddLabel(controlPanel, "Phase:");
-        JSlider phaseSlider = new JSlider(JSlider.HORIZONTAL,
+        phaseSlider = new JSlider(JSlider.HORIZONTAL,
                 0, 1000, 500);
         phaseSlider.addChangeListener(this);
         //Turn on labels at major tick marks.
         phaseSlider.setMajorTickSpacing(500);
         phaseSlider.setMinorTickSpacing(50);
         phaseSlider.setPaintTicks(true);
-        Hashtable phaseLabelTable = new Hashtable();
-        phaseLabelTable.put( Integer.valueOf( 0), new JLabel("0.0") );
-        phaseLabelTable.put( Integer.valueOf( 500 ), new JLabel("0.5") );
-        phaseLabelTable.put( Integer.valueOf( 1000 ), new JLabel("1.0") );
+        Hashtable<Integer, JLabel> phaseLabelTable = new Hashtable<>();
+        phaseLabelTable.put(0, new JLabel("0.0") );
+        phaseLabelTable.put(500, new JLabel("0.5") );
+        phaseLabelTable.put(1000, new JLabel("1.0") );
         phaseSlider.setLabelTable( phaseLabelTable );
         phaseSlider.setPaintLabels(true);
         controlPanel.add(phaseSlider);
-        
+
         
 
         add(controlPanel, BorderLayout.LINE_START);
@@ -86,6 +98,23 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
         panel.add(checkBox);
         checkBox.addItemListener(this);
         return checkBox;
+    }
+
+    private @NotNull JSlider phgLoadAndAddSlider(@NotNull JPanel panel, int min, int max, int value,
+                                                 int majorTic, int minorTic, Hashtable labels) {
+        JSlider slider = new JSlider(JSlider.HORIZONTAL,
+                min, max, value);
+        slider.addChangeListener(this);
+        //Turn on labels at major tick marks.
+        slider.setMajorTickSpacing(majorTic);
+        slider.setMinorTickSpacing(minorTic);
+        slider.setPaintTicks(true);
+        if (null != labels) {
+            slider.setLabelTable(labels);
+            slider.setPaintLabels(true);
+        }
+        panel.add(slider);
+        return slider;
     }
 
     // ------------------------------ ItemListener start ---------------------------------------------------------------
@@ -128,6 +157,43 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
     // This listener deals with changes in the sliders (max swerve speed, phase)
     @Override
     public void stateChanged(ChangeEvent e) {
+        JSlider source = (JSlider)e.getSource();
+        boolean reloadCalcPath = false;
+        if (source == forwardScaleSlider) {
+            if (source.getValueIsAdjusting()) {
+                double scale = (int) source.getValue() / 1000.0;
+                System.out.println("forward scale = " + scale);
+                canvas.speedCachedSwerve.setMaxForwardScale(scale);
+                reloadCalcPath = true;
+            }
+        }
+        else if (source == strafeScaleSlider) {
+            if (source.getValueIsAdjusting()) {
+                double scale = (int) source.getValue() / 1000.0;
+                System.out.println("strafe scale = " + scale);
+                canvas.speedCachedSwerve.setMaxStrafeScale(scale);
+                reloadCalcPath = true;
+            }
+        }
+        else if (source == phaseSlider) {
+            if (source.getValueIsAdjusting()) {
+                double scale = (int) source.getValue() / 1000.0;
+                System.out.println("phase = " + scale);
+            }
+        }
+
+        if (reloadCalcPath) {
+            int testIndex = 0;
+            for (TuneSpeedCache.AprilTagTest thisTest : canvas.aprilTagData.aprilPath) {
+                TuneSpeedCacheCanvas.PlottedPath path = canvas.plottedPaths.get(testIndex).
+                        plottedPaths.get(TuneSpeedCacheCanvas.SPEED_CACHE_PATH);
+                canvas.loadCalculatedSpeedCachePath(canvas.swerveData, canvas.speedCachedSwerve, thisTest.aprilPath,
+                        path);
+                path.transformPath(canvas.drawXfm);
+                testIndex++;
+            }
+            canvas.repaint();
+        }
 
     }
     // ------------------------------ ChangeListener end ---------------------------------------------------------------
