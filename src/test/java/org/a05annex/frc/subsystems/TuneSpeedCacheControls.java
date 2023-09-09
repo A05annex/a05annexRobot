@@ -186,10 +186,11 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
 
         if (reloadCalcPath) {
             int testIndex = 0;
-            for (TuneSpeedCache.AprilTagTest thisTest : canvas.aprilTagData.aprilPath) {
-                TuneSpeedCacheCanvas.PlottedPath path = canvas.plottedPaths.get(testIndex).
+            for (TuneSpeedCacheCanvas.PlottedTest thisTest : canvas.plottedPaths) {
+                TuneSpeedCacheCanvas.PlottedPath path = thisTest.
                         plottedPaths.get(TuneSpeedCacheCanvas.SPEED_CACHE_PATH);
-                canvas.loadCalculatedSpeedCachePath(canvas.swerveData, canvas.speedCachedSwerve, thisTest.aprilPath,
+                canvas.loadCalculatedSpeedCachePath(canvas.swerveData, canvas.speedCachedSwerve,
+                        thisTest. plottedPaths.get(TuneSpeedCacheCanvas.FILTERED_APRIL_TAG_PATH),
                         path);
                 path.transformPath(canvas.drawXfm);
                 testIndex++;

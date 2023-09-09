@@ -52,6 +52,11 @@ import org.jetbrains.annotations.Nullable;
  *     it means the {@code sinceTime} is before the oldest entry in the cache, and anything else in
  *     {@link RobotRelativePosition} is invalid.
  * </ul>
+ * <b>The Forward Projection Algorithm</b>
+ * So the question is, now that we have cached all this data about robot heading and what we have asked to robot
+ * to do at every command, how do we project the relative movement from a known field position in the past;
+ * specifically, we have a past position relative to an april tag, and we want to know the current position
+ * relative to that tag.
  */
 public class SpeedCachedSwerve implements ISwerveDrive {
 
@@ -122,13 +127,13 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     }
 
     public static class RobotRelativePosition {
-        public final double forward;
-        public final double strafe;
-        public final AngleConstantD heading;
-        public final double timeStamp;
-        public final boolean cacheOverrun;
+        public double forward;
+        public double strafe;
+        public AngleD heading;
+        public double timeStamp;
+        public boolean cacheOverrun;
 
-        RobotRelativePosition(double forward, double strafe, AngleConstantD heading,
+        RobotRelativePosition(double forward, double strafe, AngleD heading,
                               double timeStamp, boolean cacheOverrun) {
             this.forward = forward;
             this.strafe = strafe;
@@ -202,6 +207,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     public double getPhase() {
         return phase;
     }
+
     /**
      * Get the robot position now, relative to where the robot was at the specified time. For example if the robot
      * were approaching a target, and the targeting software reported that the robot was 2.0m from the target and
@@ -237,13 +243,24 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     @NotNull
     RobotRelativePosition getRobotRelativePositionSince(double targetTime, double sinceTime) {
         int backIndex = mostRecentControlRequest;
-        int forwardIndex;
         ControlRequest lastControlRequest = controlRequests[backIndex];
         double lastTime = controlRequests[backIndex].timeStamp;
+        if (targetTime > lastTime) {
+            // a strange situation where the requested time is after (more recent) than the most recently
+            // recorded request (i.e. the time we are looking for is after our last recorded request). This
+            // is a handling conundrum - if you want the current heading, talk to the NavX, you can't get it
+            // here.
+            throw new IllegalArgumentException("You are asking for a position projected into the future," +
+                    " which this cache cannot do. If you want to know where the robot is now, you need a" +
+                    " different strategy.");
+        }
         double nextTime;
         ControlRequest nextControlRequest;
-        double forwardTime;
+        int forwardIndex;
         ControlRequest forwardControlRequest;
+        double forwardTime;
+        RobotRelativePosition position = new RobotRelativePosition(0.0, 0.0,
+                new AngleD(AngleUnit.RADIANS, 0.0), sinceTime, false);
         // we need a bit of history before the sinceTime, so we know what the robot is doing at sinceTime. ideally
         // we need the speed info from two steps before - because we expect the robot to have achieved that speed by
         // the step before - and then the fun begins.
@@ -254,8 +271,8 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             forwardIndex = backIndex;
             if ((backIndex = nextBackIndex(backIndex)) == -1) {
                 // There are not enough entries in the cache
-                return new RobotRelativePosition(0.0, 0.0,
-                        AngleConstantD.ZERO, sinceTime, true);
+                position.cacheOverrun = true;
+                return position;
             }
             lastControlRequest = controlRequests[backIndex];
             lastTime = lastControlRequest.timeStamp;
@@ -271,9 +288,6 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             }
         }
         // OK, we have the start index and we will start accumulating from there
-        double forward = 0.0;
-        double strafe = 0.0;
-        double headingRadians = 0.0;
         AngleD headingDelta;
         forwardIndex = nextForwardIndex(forwardIndex);
         forwardControlRequest = controlRequests[forwardIndex];
@@ -287,8 +301,8 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
             double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
             headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
-            forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
         } else {
             // sinceTimePositionInStep > 1.0 which means we are an interval earlier than the interval that includes
             // the sinceTime, and that sinceTime is before the phase in the next step, so the robot is going at the
@@ -301,16 +315,16 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
             double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
             headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
-            forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
             // this is the part after the phase where the velocities have reached those set at the start of the
             // interval and the heading delta from the forward
             timeAtSpeed = (1.0 - phase) * (forwardTime - nextTime);
             deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
             deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
             headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
-            forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
             // now move an interval forward
             lastControlRequest = nextControlRequest;
             lastTime = nextTime;
@@ -323,20 +337,20 @@ public class SpeedCachedSwerve implements ISwerveDrive {
 
         // now step through until the end of the next interval is
         while (forwardTime < targetTime) {
-            double timeAtSpeed = (phase) * (forwardTime - nextTime);
+            double timeAtSpeed = phase * (forwardTime - nextTime);
             double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
             double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
             headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
-            forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
             // this is the part after the phase where the velocities have reached those set at the start of the
             // interval and the heading delta from the forward
             timeAtSpeed = (1.0-phase) * (forwardTime - nextTime);
             deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
             deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
             headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
-            forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
             // now move an interval forward
             lastControlRequest = nextControlRequest;
             lastTime = nextTime;
@@ -347,40 +361,27 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             forwardTime = forwardControlRequest.timeStamp;
         }
 
+        // OK, the forward point is ahead of (at a newer time than) the target time
+        double targetTimePositionInStep = (targetTime - nextTime) / (forwardTime - nextTime);
+        double timeAtSpeed = ((phase < targetTimePositionInStep) ? phase  : targetTimePositionInStep) *
+                (forwardTime - nextTime);
+        double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
+        double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
+        headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
+        position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+        position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+        if (targetTimePositionInStep > phase) {
+            // this is the part after the phase where the velocities have reached those set at the start of the
+            // interval and the heading delta from the forward
+            timeAtSpeed = (targetTimePositionInStep - phase) * (forwardTime - nextTime);
+            deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
+            deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
+            headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
+            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+        }
 
-//        while (controlRequests[backIndex].timeStamp > sinceTime) {
-//            // So this is not quite as simple as it seems, primarily because of testing/tuning scenarios. Let's
-//            // elaborate on that:
-//            // * In competition the cache is used because we have sensed information from the past (april tag or other
-//            //   sensing that has latency) giving us a robot position at some time in the past. From that we want to
-//            //   project/guess the current position so we can use that to drive a responsive position PID. In that
-//            //   case, the mostRecentControlRequest is now, and we want the change between the sinceTime and now.
-//            // * In tuning/testing the cache is loaded with test-generated positions, so, the current time is generated
-//            //   relative to the data in the cache and is probably way before the last time in the cache.
-//            if (targetTime > controlRequests[backIndex].timeStamp) {
-//                // OK, this after the sinceTime, and before the currentTime, the current time represents either the
-//                // start of the interval we are interested in, or, the time of the last control request.
-//                ControlRequest controlRequest = controlRequests[backIndex];
-//                double deltaTime = targetTime - controlRequest.timeStamp;
-//                double deltaForward = deltaTime * controlRequest.forward * maxMetersPerSec;
-//                double deltaStrafe = deltaTime * controlRequest.strafe * maxMetersPerSec;
-//                ;
-//                // correct the forward and strafe for the deviation from the expected heading
-//                AngleD headingDelta = new AngleD(controlRequest.actualHeading).subtract(controlRequest.expectedHeading);
-//                forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-//                strafe += (deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos()) * scaleStrafe;
-//                // the expected heading is set at targeting so, the heading here is the expected heading
-//                headingRadians = controlRequest.expectedHeading.getRadians();
-//                targetTime = controlRequest.timeStamp;
-//            }
-//            if ((backIndex = nextBackIndex(backIndex)) == -1) {
-//                // There are not enough entries in the cache
-//                cacheOverrun = true;
-//                break;
-//            }
-//        }
-        return new RobotRelativePosition(forward, strafe,
-                new AngleD(AngleUnit.RADIANS, headingRadians), sinceTime, false);
+        return position;
     }
 
     /**

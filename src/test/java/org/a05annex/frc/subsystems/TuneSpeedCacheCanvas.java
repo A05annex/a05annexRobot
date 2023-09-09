@@ -117,17 +117,13 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     static class PlottedTest {
         List<PlottedPath> plottedPaths = new ArrayList<>(Arrays.asList(
                 new PlottedPath(APRIL_TAG_PATH, "April Tag Path", Color.WHITE, true),
-                new PlottedPath(FILTERED_APRIL_TAG_PATH,"Nav Corrected Tag Path", Color.YELLOW, true),
-                new PlottedPath(HEADING_CORRECTED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.MAGENTA, true),
+                new PlottedPath(HEADING_CORRECTED_APRIL_TAG_PATH,"Nav Corrected Tag Path", Color.YELLOW, true),
+                new PlottedPath(FILTERED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.MAGENTA, true),
                 new PlottedPath(SWERVE_PATH,"Projected Path at Test", Color.CYAN, true),
                 new PlottedPath(SPEED_CACHE_PATH,"Cache Computed Path", Color.ORANGE, true),
-                new PlottedPath(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected", Color.ORANGE, true)
+                new PlottedPath(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected", Color.BLUE, true)
         ));
         boolean isDisplayed = true;
-
-        void setDisplayed(boolean isDisplayed) {
-            this.isDisplayed = isDisplayed;
-        }
     }
 
     List<PlottedTest> plottedPaths = new ArrayList<>();
@@ -304,7 +300,8 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
             }
 
-            loadCalculatedSpeedCachePath(speedCacheData, speedCachedSwerve, thisTest.aprilPath,
+            loadCalculatedSpeedCachePath(speedCacheData, speedCachedSwerve,
+                    plottedTest.plottedPaths.get(FILTERED_APRIL_TAG_PATH),
                     plottedTest.plottedPaths.get(SPEED_CACHE_PATH));
         }
 
@@ -324,22 +321,22 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
     void loadCalculatedSpeedCachePath(@NotNull List<SpeedCacheData> speedCacheData,
                                       @NotNull SpeedCachedSwerve speedCachedSwerve,
-                                      List<AprilTagData> aprilPath, PlottedPath plottedPath) {
+                                      PlottedPath aprilPath, PlottedPath plottedPath) {
         double speedCacheTime = speedCacheData.get(1).swerveTime;
 
-        AprilTagData aprilTagStart = null;
-        AprilTagData aprilTagEnd = aprilPath.get(aprilPath.size()-1);
-        for (AprilTagData aprilTag : aprilPath) {
-            if (aprilTag.aprilTime > speedCacheTime) {
+        PathPoint aprilTagStart = null;
+        PathPoint aprilTagEnd = aprilPath.get(aprilPath.size()-1);
+        for (PathPoint aprilTag : aprilPath) {
+            if (aprilTag.time > speedCacheTime) {
                 aprilTagStart = aprilTag;
                 break;
             }
         }
-        double aprilTagStartTime = aprilTagStart.aprilTime;
-        double aprilTagEndTime = aprilTagEnd.aprilTime;
-        double aprilTagStartDistance = aprilTagStart.aprilDistance;
-        double aprilTagStartStrafe = aprilTagStart.aprilStrafe;
-        AngleConstantD aprilTagStartDelta = aprilTagStart.headingDelta;
+        double aprilTagStartTime = aprilTagStart.time;
+        double aprilTagEndTime = aprilTagEnd.time;
+        double aprilTagStartDistance = aprilTagStart.getDistance();
+        double aprilTagStartStrafe = aprilTagStart.getStrafe();
+        AngleConstantD aprilTagStartDelta = aprilTagStart.deltaHeading;
 
         plottedPath.clear();
         plottedPath.add(new PathPoint(aprilTagStartTime,
@@ -426,7 +423,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     }
 
     /**
-     * Paint the panel, which in the double buffer context means:
+     * Paint the panel, which, in the double buffer context means:
      * <ul>
      *     <li>make sure there is a back buffer that is the size of the panel.</li>
      *     <li>clear the back buffer</li>
@@ -482,7 +479,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
     /**
      * Paint everything we want to see to the back buffer. This happens while the user sees the font buffer, so there
      * is no effect on the user while the paint is happening. Once this paint finishes, the screen will flip to
-     * display the content of the back buffer as the screen buffer - displaying everyting porinted here..
+     * display the content of the back buffer as the screen buffer - displaying everything painted here.
      *
      * @param g The graphics description for the back buffer.
      */
@@ -537,16 +534,4 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             }
         }
     }
-
-//    PathPoint hitTestPath(List<PathPoint> path, Point2D.Double pt, double tolerance) {
-//        for (PathPoint pathPt : path) {
-//            Point2D.Double thisPt = pathPt.screenPt;
-//            if (Utl.inTolerance(thisPt.getX(), pt.getX(), tolerance) &&
-//                    Utl.inTolerance(thisPt.getY(), pt.getY(), tolerance)) {
-//                return pathPt;
-//            }
-//        }
-//        return null;
-//    }
-
 }

@@ -83,10 +83,25 @@ public class TestSpeedCacheSwerve {
         SCS.addControlRequest(4.04, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, -0.1);
         SCS.addControlRequest(4.06, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, -0.1);
         SCS.addControlRequest(4.08, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, 0.3);
+        // at default phase = 0.0
         SpeedCachedSwerve.RobotRelativePosition position =
-                SCS.getRobotRelativePositionSince(4.10, 4.03);
-        assertEquals(.06 * 0.2 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
-        assertEquals(.06 * 0.1 * SCS.getMaxMetersPerSec(), position.strafe, 0.0000001);
+                SCS.getRobotRelativePositionSince(4.078, 4.028);
+        assertEquals(.05 * 0.2 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
+        assertEquals(.05 * 0.1 * SCS.getMaxMetersPerSec(), position.strafe, 0.0000001);
+        assertEquals(0.0,position.heading.getRadians(), 0.0000001);
+        assertEquals(false, position.cacheOverrun);
+        // at phase = 0.5
+        SCS.setPhase(0.5);
+        position = SCS.getRobotRelativePositionSince(4.078, 4.028);
+        assertEquals(.05 * 0.2 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
+        assertEquals(.05 * 0.1 * SCS.getMaxMetersPerSec(), position.strafe, 0.0000001);
+        assertEquals(0.0,position.heading.getRadians(), 0.0000001);
+        assertEquals(false, position.cacheOverrun);
+        // at phase = 1.0
+        SCS.setPhase(1.0);
+        position = SCS.getRobotRelativePositionSince(4.078, 4.028);
+        assertEquals(.05 * 0.2 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
+        assertEquals(.05 * 0.1 * SCS.getMaxMetersPerSec(), position.strafe, 0.0000001);
         assertEquals(0.0,position.heading.getRadians(), 0.0000001);
         assertEquals(false, position.cacheOverrun);
     }
@@ -98,30 +113,32 @@ public class TestSpeedCacheSwerve {
         double nextRequestTime = 2.0;
         // populate the cache a wrap around the end (more entries than the length of the cache.
         for (int i = 0; i < 1.5 * TEST_CACHE_LENGTH; i++) {
-            SCS.addControlRequest(nextRequestTime, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, 0.01);
             nextRequestTime += 0.02;
+            SCS.addControlRequest(nextRequestTime, AngleConstantD.ZERO,
+                    AngleConstantD.ZERO, 0.2, 0.1, 0.01);
         }
+
         // OK, do something in the cache range, (0.02 * (TEST_CACHE_LENGTH - 1)) - .001, the .001 is to get just past
         // the time of the last point to be included.
         SpeedCachedSwerve.RobotRelativePosition position =
                 SCS.getRobotRelativePositionSince(nextRequestTime,
-                        nextRequestTime - (0.02 * (TEST_CACHE_LENGTH - 1)) - .001);
-        assertEquals((TEST_CACHE_LENGTH - 1) * 0.02 * 0.2 * SCS.getMaxMetersPerSec(),
-                position.forward, 0.0000001);
-        assertEquals((TEST_CACHE_LENGTH - 1) * 0.02 * 0.1 * SCS.getMaxMetersPerSec(),
-                position.strafe, 0.0000001);
-        assertEquals(0.0,position.heading.getRadians(), 0.0000001);
+                        nextRequestTime - (0.02 * (TEST_CACHE_LENGTH - 2)) - .001);
         assertEquals(false, position.cacheOverrun);
+        assertEquals((TEST_CACHE_LENGTH - 2) * 0.02 * 0.2 * SCS.getMaxMetersPerSec(),
+                position.forward, 0.0007);
+        assertEquals((TEST_CACHE_LENGTH - 2) * 0.02 * 0.1 * SCS.getMaxMetersPerSec(),
+                position.strafe, 0.0007);
+        assertEquals(0.0,position.heading.getRadians(), 0.0000001);
         // OK, now do something outside the cache range, and we should only get the cached number of values added, and
         // the cacheOverrun flag should be set.
         position = SCS.getRobotRelativePositionSince(nextRequestTime,
                 nextRequestTime - (0.02 * (TEST_CACHE_LENGTH + 2)));
-        assertEquals(TEST_CACHE_LENGTH * 0.02 * 0.2 * SCS.getMaxMetersPerSec(),
+        assertEquals(true, position.cacheOverrun);
+        assertEquals(0.0,
                 position.forward, 0.0000001);
-        assertEquals(TEST_CACHE_LENGTH * 0.02 * 0.1 * SCS.getMaxMetersPerSec(),
+        assertEquals(0.0,
                 position.strafe, 0.0000001);
         assertEquals(0.0,position.heading.getRadians(), 0.0000001);
-        assertEquals(true, position.cacheOverrun);
     }
 
     @Test
