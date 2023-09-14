@@ -150,14 +150,15 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             if (displayed) {
                 if (null != startPath) {
                     super.paintPath(g2d);
+                    g2d.setColor(startPath.color);
                     g2d.setStroke(highlightStroke);
-                    for (PathPoint keyPt : pathKeyPoints) {
+                    for (PathPoint keyPt : refPathKeyPoints) {
                         Point2D.Double thisPt = keyPt.screenPt;
                         g2d.drawOval((int) thisPt.getX() - 3, (int) thisPt.getY() - 3, 6, 6);
 
                     }
-                    g2d.setColor(startPath.color);
-                    for (PathPoint keyPt : refPathKeyPoints) {
+                    g2d.setColor(color);
+                    for (PathPoint keyPt : pathKeyPoints) {
                         Point2D.Double thisPt = keyPt.screenPt;
                         g2d.drawOval((int) thisPt.getX() - 3, (int) thisPt.getY() - 3, 6, 6);
 
