@@ -19,6 +19,7 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
     JSlider forwardScaleSlider = null;
     JSlider strafeScaleSlider = null;
     JSlider phaseSlider = null;
+    JSlider offsetSlider = null;
 
     TuneSpeedCacheControls(TuneSpeedCacheCanvas canvas) {
         super(new BorderLayout(5, 5));
@@ -54,34 +55,23 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
         strafeScaleSlider = phgLoadAndAddSlider(controlPanel, 700, 1300,
                 (int)(1000.0 * canvas.speedCachedSwerve.getMaxForwardScale()),
                 100,25, labelTable );
-//        speedScaleSlider = new JSlider(JSlider.HORIZONTAL,
-//                900, 1100, 1000);
-//        speedScaleSlider.addChangeListener(this);
-//        //Turn on labels at major tick marks.
-//        speedScaleSlider.setMajorTickSpacing(100);
-//        speedScaleSlider.setMinorTickSpacing(10);
-//        speedScaleSlider.setPaintTicks(true);
-//        speedScaleSlider.setLabelTable( labelTable );
-//        speedScaleSlider.setPaintLabels(true);
-//        controlPanel.add(speedScaleSlider);
-        
+
         pkgLoadAndAddLabel(controlPanel, "Phase:");
-        phaseSlider = new JSlider(JSlider.HORIZONTAL,
-                0, 1000, (int)(500.0 * canvas.speedCachedSwerve.getPhase()));
-        phaseSlider.addChangeListener(this);
-        //Turn on labels at major tick marks.
-        phaseSlider.setMajorTickSpacing(500);
-        phaseSlider.setMinorTickSpacing(50);
-        phaseSlider.setPaintTicks(true);
         Hashtable<Integer, JLabel> phaseLabelTable = new Hashtable<>();
         phaseLabelTable.put(0, new JLabel("0.0") );
         phaseLabelTable.put(500, new JLabel("0.5") );
         phaseLabelTable.put(1000, new JLabel("1.0") );
-        phaseSlider.setLabelTable( phaseLabelTable );
-        phaseSlider.setPaintLabels(true);
-        controlPanel.add(phaseSlider);
+        phaseSlider = phgLoadAndAddSlider(controlPanel, 0, 1000,
+                (int)(500.0 * canvas.speedCachedSwerve.getPhase()),
+                500,50, phaseLabelTable );
 
-        
+        pkgLoadAndAddLabel(controlPanel, "April Offset:");
+        Hashtable<Integer, JLabel> offsetLabelTable = new Hashtable<>();
+        offsetLabelTable.put(-1000, new JLabel("-100ms") );
+        offsetLabelTable.put(0, new JLabel("0ms") );
+        offsetLabelTable.put(1000, new JLabel("100ms") );
+        offsetSlider = phgLoadAndAddSlider(controlPanel, -1000, 1000,
+                0,200,100, offsetLabelTable );
 
         add(controlPanel, BorderLayout.LINE_START);
     }
@@ -183,6 +173,15 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
                 reloadCalcPath = true;
             }
         }
+        else if (source == offsetSlider) {
+            if (source.getValueIsAdjusting()) {
+                double offset = (int) source.getValue() / 10000.0;
+                System.out.println("offset = " + offset + "sec");
+                canvas.selectedPointTimeOffset = offset;
+                canvas.loadPathFromSelectedPoint();
+                canvas.repaint();
+            }
+        }
 
         if (reloadCalcPath) {
             int testIndex = 0;
@@ -195,6 +194,7 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
                 path.transformPath(canvas.drawXfm);
                 testIndex++;
             }
+            canvas.loadPathFromSelectedPoint();
             canvas.repaint();
         }
 

@@ -2,6 +2,7 @@ package org.a05annex.frc.subsystems;
 
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
+import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
 import org.jetbrains.annotations.NotNull;
 
@@ -103,9 +104,70 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             }
             return null;
         }
+
+        PathPoint getPointAt (double time) {
+            // are we asking for a point on the path
+            if ((time > get(0).time) && (time <= get(size()-1).time)) {
+                // find the position and interpolate between the points before and after this time
+                PathPoint lastPt = null;
+                PathPoint nextPt = null;
+                for (PathPoint pathPt : this) {
+                    lastPt = nextPt;
+                    nextPt =  pathPt;
+                    if (time < nextPt.time) {
+                        // interpolate position between lastPt and nextPt
+                        double position = (time - lastPt.time) / (nextPt.time - lastPt.time);
+                        double distance = (position * nextPt.getDistance()) + ((1.0 -position) * lastPt.getDistance());
+                        double strafe = (position * nextPt.getStrafe()) + ((1.0 - position) * lastPt.getStrafe());
+                        AngleConstantD deltaHeading = new AngleConstantD(AngleUnit.RADIANS,
+                                (position * nextPt.deltaHeading.getRadians()) +
+                                        ((1.0 -position) * lastPt.getDistance()));
+                        return new PathPoint(time, distance, strafe, deltaHeading);
+                    }
+                }
+            }
+            // nope, outside this path
+            return null;
+        }
+
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * This is a path plotted from a specific point on the april tag path. It is a 0.5 second path that highlights
+     * the 100ms (0.1 second) points on both the projected path and the april path being projected from.
+     */
+    static class PlottedPathFromPoint extends PlottedPath {
+        PlottedTest startTest = null;
+        PlottedPath startPath = null;
+        PathPoint startPoint = null;
+        ArrayList<PathPoint> pathKeyPoints = new ArrayList<>();
+        ArrayList<PathPoint> refPathKeyPoints = new ArrayList<>();
+        PlottedPathFromPoint(int index, String name, Color color, boolean displayed) {
+            super(index, name, color, displayed);
+        }
+
+        void paintPath(Graphics2D g2d) {
+            if (displayed) {
+                if (null != startPath) {
+                    super.paintPath(g2d);
+                    g2d.setStroke(highlightStroke);
+                    for (PathPoint keyPt : pathKeyPoints) {
+                        Point2D.Double thisPt = keyPt.screenPt;
+                        g2d.drawOval((int) thisPt.getX() - 3, (int) thisPt.getY() - 3, 6, 6);
+
+                    }
+                    g2d.setColor(startPath.color);
+                    for (PathPoint keyPt : refPathKeyPoints) {
+                        Point2D.Double thisPt = keyPt.screenPt;
+                        g2d.drawOval((int) thisPt.getX() - 3, (int) thisPt.getY() - 3, 6, 6);
+
+                    }
+                }
+            }
+        }
+    }
+
+        // -----------------------------------------------------------------------------------------------------------------
     // These are the paths we are plotting
     static public final int APRIL_TAG_PATH = 0;
     static public final int HEADING_CORRECTED_APRIL_TAG_PATH = 1;
@@ -121,17 +183,29 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                 new PlottedPath(FILTERED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.MAGENTA, true),
                 new PlottedPath(SWERVE_PATH,"Projected Path at Test", Color.CYAN, true),
                 new PlottedPath(SPEED_CACHE_PATH,"Cache Computed Path", Color.ORANGE, true),
-                new PlottedPath(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected", Color.BLUE, true)
+                new PlottedPathFromPoint(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected",
+                        Color.GREEN, true)
         ));
         boolean isDisplayed = true;
+        final int index;
+
+        PlottedTest(int index) {
+            this.index = index;
+        }
+
     }
 
     List<PlottedTest> plottedPaths = new ArrayList<>();
 
+    double selectedPointTimeOffset = 0.0;
+    PlottedTest selectedTest = null;
+    PlottedPath selectedPath = null;
+    PathPoint selectedPoint = null;
+    PlottedTest hitTest = null;
     PlottedPath hitPath = null;
     PathPoint hitPoint = null;
-    private final Stroke normalStroke = new BasicStroke(1.0f);
-    private final Stroke highlightStroke = new BasicStroke(3.0f);
+    static final Stroke normalStroke = new BasicStroke(1.0f);
+    static final Stroke highlightStroke = new BasicStroke(3.0f);
 
     // This is the raw data
     AprilTagTestRuns aprilTagData;
@@ -177,7 +251,15 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         public void mouseClicked(MouseEvent e) {}
 
         @Override
-        public void mousePressed(MouseEvent e) {}
+        public void mousePressed(MouseEvent e) {
+            if (null != hitPoint) {
+                selectedTest = hitTest;
+                selectedPath = hitPath;
+                selectedPoint = hitPoint;
+                loadPathFromSelectedPoint();
+                repaint();
+            }
+        }
 
         @Override
         public void mouseReleased(MouseEvent e) {}
@@ -214,12 +296,14 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                     if (testPath.displayed) {
                         hitPoint = testPath.hitTestPath(pt, 2.0);
                         if (null != hitPoint) {
+                            hitTest = thisTest;
                             hitPath = testPath;
                             return;
                         }
                     }
                 }
             }
+            hitTest = null;
             hitPath = null;
             hitPoint = null;
         }
@@ -238,9 +322,11 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         this.aprilTagData = aprilTagData;
         this.swerveData = speedCacheData;
         this.speedCachedSwerve = speedCachedSwerve;
+        int testIndex = 0;
         for (AprilTagTest thisTest : aprilTagData.aprilPath) {
             // create the paths for this data set.
-            PlottedTest plottedTest = new PlottedTest();
+            PlottedTest plottedTest = new PlottedTest(testIndex);
+            testIndex++;
             plottedPaths.add(plottedTest);
             // This is the stuff that is logged about the april tag and projected position at each command cycle
             // that the target is visible.
@@ -358,6 +444,58 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         }
     }
 
+    /**
+     * The real question about future path projection is whether it is useful in the context of the completion
+     * of competition tasks. In general, we either have full view of the target during positioning (accuracy during
+     * camera latency is our only concern, typically less than 100ms); or, the desired final position is outside
+     * the target viewing range - usually short, so let's guess about 500ms (0.5 sec) is the maximum time the
+     * robot is outside the last seen target
+     * method loads a path for the next 500ms (.5 second, about 25 command cycles) the idea being that if the april
+     * image was lost at the selected point, how well would the speed cache project the future path.
+     */
+    void loadPathFromSelectedPoint() {
+        if (null != selectedPoint) {
+            PlottedPathFromPoint thisPath = (PlottedPathFromPoint)plottedPaths.get(selectedTest.index).plottedPaths.
+                    get(SPEED_CACHE_FROM_SELECTED);
+            thisPath.startTest = selectedTest;
+            thisPath.startPath = selectedPath;
+            thisPath.startPoint = selectedPoint;
+            thisPath.clear();
+            thisPath.pathKeyPoints.clear();
+            thisPath.refPathKeyPoints.clear();
+
+            double startTime = selectedPoint.time + selectedPointTimeOffset;
+            double endTime = startTime + 0.5;
+            if (speedCachedSwerve.getMostRecentControlRequest().timeStamp < endTime) {
+                endTime = speedCachedSwerve.getMostRecentControlRequest().timeStamp;
+            }
+            thisPath.add(selectedPoint);
+            int index = 0;
+            for (double nextTime = startTime + 0.02; nextTime <= endTime; nextTime += 0.02) {
+                SpeedCachedSwerve.RobotRelativePosition relPosition =
+                        speedCachedSwerve.getRobotRelativePositionSince(nextTime, startTime);
+                PathPoint thisPt = new PathPoint(nextTime,
+                        selectedPoint.fieldPt.getY() - relPosition.forward,
+                        selectedPoint.fieldPt.getX() - relPosition.strafe, AngleConstantD.ZERO);
+                thisPt.transform(drawXfm);
+                thisPath.add(thisPt);
+                if (0 == index % 5) {
+                    thisPath.pathKeyPoints.add(thisPt);
+                    PathPoint refKey = selectedPath.getPointAt(nextTime - selectedPointTimeOffset);
+                    if (null != refKey) {
+                        refKey.transform(drawXfm);
+                        thisPath.refPathKeyPoints.add(refKey);
+                    }
+                }
+                index++;
+            }
+         }
+    }
+
+    /**
+     *
+     * @param e the event to be processed
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
         System.out.println("action: " + e);
