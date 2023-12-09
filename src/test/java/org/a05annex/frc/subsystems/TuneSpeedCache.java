@@ -329,63 +329,6 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         return null;
     }
 
-//    List<List<Double>> readCsvFile(String filename, List<ColumnStats> columnStats, int timeIndex) {
-//        List<List<Double>> records = new ArrayList<>();
-//        int lineCt = -1;
-//        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-//            String line;
-//            List<Double> lastRecord = null;
-//            while ((line = br.readLine()) != null) {
-//                String[] values = line.split(",");
-//                if (-1 != lineCt) {
-//                    // skip the header, only save the data
-//                    List<Double> record =  new ArrayList<>();
-//                    int valueInd = 0;
-//                    for (String strValue : values) {
-//                        Double value = Double.valueOf(strValue);
-//                        record.add(value);
-//                        ColumnStats stats = columnStats.get(valueInd);
-//                        if (Double.isNaN(stats.min) || (value < stats.min)) {
-//                            stats.min = value;
-//                        }
-//                        if (Double.isNaN(stats.max) || (value > stats.max)) {
-//                            stats.max = value;
-//                        }
-//                        stats.ave += value;
-//                        if (null != lastRecord) {
-//                            Double delta = value - lastRecord.get(valueInd);
-//                            if (Double.isNaN(stats.minDelta) || (delta < stats.minDelta)) {
-//                                stats.minDelta = delta;
-//                            }
-//                            if (Double.isNaN(stats.maxDelta) || (delta > stats.maxDelta)) {
-//                                stats.maxDelta = delta;
-//                            }
-//                            stats.aveDelta += delta;
-//                        }
-//                        valueInd++;
-//                    }
-//                    records.add(record);
-//                    lastRecord = record;
-//                } else {
-//                    // create the stats for this data set
-//                    for (String name : values) {
-//                        columnStats.add(new ColumnStats(name));
-//                    }
-//                }
-//                lineCt++;
-//            }
-//            for (ColumnStats stats : columnStats) {
-//                stats.ave /= lineCt;
-//                stats.aveDelta /= lineCt;
-//            }
-//        } catch (IOException e) {
-//            System.out.println("Error reading file: \"" + filename + "\"");
-//            throw new RuntimeException(e);
-//        }
-//        System.out.println("\"" + filename + "\" read, " + lineCt + " lines of data.");
-//        return records;
-//    }
-
     private void exitTuneSpeedCache() {
         dispose();
     }

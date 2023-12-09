@@ -166,6 +166,14 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                 }
             }
         }
+        void transformPath(AffineTransform drawXfm) {
+            if (null != startPath) {
+                super.transformPath((drawXfm));
+                for (PathPoint keyPt : refPathKeyPoints) {
+                    keyPt.transform(drawXfm);
+                }
+            }
+        }
     }
 
         // -----------------------------------------------------------------------------------------------------------------
@@ -366,7 +374,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                                 (thisPt.getY() + lastPt.getY()) / 2.0);
                         thisAveTime = (thisTime + lastTime) / 2.0;
                     } else {
-//                      // This is an 0.2, 0.8, 0.2 filtering (a gaussian-like filter for running 3 points - looks
+                        // This is an 0.2, 0.6, 0.2 filtering (a gaussian-like filter for running 3 points - looks
                         // gretty good in the path plots.
                         thisAvePt = new Point2D.Double(
                                 (0.2 * thisPt.getX()) + (0.6 * lastPt.getX()) + (0.2 * lastLastPt.getX()),
@@ -379,7 +387,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                     }
                     plottedTest.plottedPaths.get(FILTERED_APRIL_TAG_PATH).add(new PathPoint(thisAveTime,
                             thisAvePt.getY(), thisAvePt.getX(), headingDelta));
-//                  lastLastPt = lastPt;
+                    lastLastPt = lastPt;
                     lastPt = thisPt;
                     lastLastTime = lastTime;
                     lastTime = thisTime;

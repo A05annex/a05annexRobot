@@ -31,7 +31,7 @@ april tags. We had no idea what to expect when we started this exercise. The res
 For this test we dragged in the carpet, tried to stretch it and put heavy desks/tables on it to anchor it, taped an
 april tag to the wall, and drove around a bit. Though we had some heavy furniture on the carpet, it was no stretched
 out, so it moved a bit. Our initial attempts to plot things showed us this:
-
+![alt text](./TuneCache_V1.jpg "Speed Cache Tuning, V1")
 In this plot, the test is quite long (like 50 seconds), and we mostly discovered we were not logging what we
 really needed to log to analyze the results of the test. In the image above, the april tag is at the top of the screen
 and we are looking at a view from above the field. The various traces are:
@@ -69,4 +69,38 @@ Subsequent thoughts on a test plan:
 
 A lot of other stuff happening during the summer - took a while to get back to this. Logging changes were made in
 the interim. Same carpet drill, ran a test, examined logs, fixed some logging errors, finally got a good test session
-that included a random test, a strafe test, and a forward-backward test.
+that included a random test, a strafe test, and a forward-backward test. A thing we noted in the last test data was
+that at times the robot was *stopped* (not moving in forward or strafe), the april tag position seemed to wander. This
+led us to suspect that the PID that holds heading constant had some heading oscillations that needed correction, so
+we added logging of robot expected and actual heading to assure heading information was available to investigate
+that possibility.
+
+#### Test Results and Analysis/Display
+
+
+
+#### Swerve Logging
+
+The <tt>SpeedCachedSwerve</tt> is now doing its own logging, so we can use the logged data to recreate the state of
+the cache during the tests in subsequent tuning exercises. The logging now includes *expected heading* and *actual
+heading* at every command cycle, so we can easily explore heading correction while tuning. NOTE: the
+<tt>SpeedCachedSwerve</tt> logs a single string to the "speedCache" entry in the log, so we know a new entry has
+been logged when the contents of that string change.
+
+#### April Tag Code and Logging
+
+
+
+#### PhotonVision April Tag Research/Readings
+
+So we've found our use of the PhotonVision software gives us suboptimal results. This could be because:
+* We are using the PhotonVision software incorrectly;
+* The PhotonVision software has issues.
+
+We suspect former is most likely. So let's review what we have programmed and how it correlates with the PhotonVision
+documentation. The first thing we notice is that we are using the 'best camera to target' transform the camera
+position into the space of the target. There are are a couple thing we notice in the documentation:
+* Similarly to retoreflective tape targeting, distance is best measured by [elevation angle from the camera to the
+  target](https://docs.photonvision.org/en/latest/docs/programming/photonlib/using-target-data.html) - they do not
+  recommend using the pose transformation to get the distance (what we are doing).
+

@@ -45,12 +45,12 @@ import org.jetbrains.annotations.Nullable;
  *     by the PID loop trying to hold the heading constant, and are ignored.</li>
  *     <li>Since the expected heading is locked, the relative position is with respect to the the position at
  *     {@code sinceTime} assuming the robot was in the expected heading, i.e. The
- *     {@link RobotRelativePosition#forward}</li> is along the expected heading; the
- *     {@link RobotRelativePosition#strafe}</li> is 90&deg; to the expected heading; the
- *     {@link RobotRelativePosition#heading}</li> will be set to the expected heading; and,
- *     {@link RobotRelativePosition#cacheOverrun}</li> will normally be {@code false}, but, if it is {@code true}
+ *     {@link RobotRelativePosition#forward} is along the expected heading; the
+ *     {@link RobotRelativePosition#strafe} is 90&deg; to the expected heading; the
+ *     {@link RobotRelativePosition#heading} will be set to the expected heading; and,
+ *     {@link RobotRelativePosition#cacheOverrun} will normally be {@code false}, but, if it is {@code true}
  *     it means the {@code sinceTime} is before the oldest entry in the cache, and anything else in
- *     {@link RobotRelativePosition} is invalid.
+ *     {@link RobotRelativePosition} is invalid.</li>
  * </ul>
  * <b>The Forward Projection Algorithm</b>
  * So the question is, now that we have cached all this data about robot heading and what we have asked to robot
