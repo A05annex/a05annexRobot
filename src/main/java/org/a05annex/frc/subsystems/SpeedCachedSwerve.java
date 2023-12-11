@@ -80,7 +80,8 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     // -----------------------------------------------------------------------------------------------------------------
 
     /**
-     *
+     * The record of a {@link ISwerveDrive#swerveDriveComponents(double, double, double)} function call annotated with
+     * the match timestamp, expected robot heading, and actual robot heading at the time the function was called.
      */
     public static class ControlRequest {
         double timeStamp;
@@ -100,37 +101,95 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             this.rotation = rotation;
         }
 
+        /**
+         * Get the timestamp at the time the {@link ISwerveDrive#swerveDriveComponents(double, double, double)}
+         * function was called.
+         *
+         * @return The timestamp.
+         */
         public double getTimeStamp() {
             return timeStamp;
         }
+
+        /**
+         * Get the actual heading at the time the {@link ISwerveDrive#swerveDriveComponents(double, double, double)}
+         * function was called.
+         *
+         * @return The actual heading.
+         */
 
         public AngleConstantD getActualHeading() {
             return actualHeading;
         }
 
+        /**
+         * Get the expected heading at the time the {@link ISwerveDrive#swerveDriveComponents(double, double, double)}
+         * function was called.
+         *
+         * @return The expected heading.
+         */
         public AngleConstantD getExpectedHeading() {
             return expectedHeading;
         }
 
+        /**
+         * Get the forward argument to the {@link ISwerveDrive#swerveDriveComponents(double, double, double)}
+         * function call.
+         *
+         * @return The forward argument.
+         */
         public double getForward() {
             return forward;
         }
 
+        /**
+         * Get the strafe argument to the {@link ISwerveDrive#swerveDriveComponents(double, double, double)}
+         * function call.
+         *
+         * @return The strafe argument.
+         */
         public double getStrafe() {
             return forward;
         }
 
+        /**
+         * Get the rotation argument to the {@link ISwerveDrive#swerveDriveComponents(double, double, double)}
+         * function call.
+         *
+         * @return The rotation argument.
+         */
         public double getRotation() {
             return forward;
         }
 
     }
 
+    /**
+     * This class specifies a robot position relative to a starting robot position defines the reference
+     * coordinate axis system origin and orientation.
+     */
     public static class RobotRelativePosition {
+        /**
+         * The distance forward in the reference axis system.
+         */
         public double forward;
+        /**
+         * The distance to the right in the reference axis system.
+         */
         public double strafe;
+        /**
+         * the heading relative to the reference axis system.
+         */
         public AngleD heading;
+        /**
+         * The match (field) timestamp for this position.
+         */
         public double timeStamp;
+        /**
+         * {@code true} if the requested position time is far enough into the future that there were not enough
+         * entries in the cache to predict the position, i.e. this position is invalid. {@code false} if this is
+         * a valid position prediction.
+         */
         public boolean cacheOverrun;
 
         RobotRelativePosition(double forward, double strafe, AngleD heading,
@@ -158,20 +217,38 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     private double maxRadiansPerSec = 3.136;
 
     // logging the cache data for analysis, testing, and tuning
+    /**
+     * The name of log entries from this component.
+     */
     public static final String SPEED_CACHE_LOG_NAME = "speedCache";
     boolean logSpeedCache = false;
     StringLogEntry speedCacheLog = null;
 
     // The factors for tuning the speed cache position projections
+    /**
+     * As we were investigating sources of error in the {@link SpeedCachedSwerve} predictions, we identified scaling
+     * as a possible source of error. This scaling factor was introduced so that we could explore whether scaling
+     * could be used to reduce errors.
+     */
     private double scaleForward = 1.0;
+    /**
+     * As we were investigating sources of error in the {@link SpeedCachedSwerve} predictions, we identified scaling
+     * as a possible source of error. This scaling factor was introduced so that we could explore whether scaling
+     * could be used to reduce errors.
+     */
     private double scaleStrafe = 1.0;
+    /**
+     * As we were investigating sources of error in the {@link SpeedCachedSwerve} predictions, we <i>phase</i> as
+     * a possible source of error. In this context, <i>phase</i> is where in a command cycle the drive gets to the
+     * newly assigned speeds. A phase of 0.0 is that the drive instantly sets to the newly assigned speeds as they
+     * are assigned. A phase of 1.0 is that they do not get to the newly assigned speeds until the next command cycle
+     * immediately before the new speeds are assigned.
+     */
     private double phase = 0.0;
 
-    /**
-     *
-     */
+
     private SpeedCachedSwerve() {
-        // the constructor does nothing, except setup a default 5 second cache.
+        // the constructor does nothing, except set up a default 5 second cache.
         setCacheLength(250);
     }
 
@@ -179,37 +256,78 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         return controlRequests[mostRecentControlRequest];
     }
 
+    /**
+     * <b>DO NOT CALL THIS METHOD UNLESS YOU ARE EXPLORING FUTURE POSITION PREDICTION ERRORS.</b> As we were
+     * investigating sources of error in the {@link SpeedCachedSwerve} predictions, we identified scaling
+     * as a possible source of error. This method resets both the forward and strafe scale.
+     *
+     * @param scale The scale by default is 1.0, This lets you specify an alternate forward and strafe scaling.
+     */
     public void setMaxVelocityScale(double scale) {
         this.scaleForward = scale;
         this.scaleStrafe = scale;
     }
 
+    /**
+     * <b>DO NOT CALL THIS METHOD UNLESS YOU ARE EXPLORING FUTURE POSITION PREDICTION ERRORS.</b> As we were
+     * investigating sources of error in the {@link SpeedCachedSwerve} predictions, we identified scaling
+     * as a possible source of error. This method resets both the forward and strafe scale.
+     *
+     * @param forwardScale The scale by default is 1.0, This lets you specify an alternate forward scaling.
+     */
     public void setMaxForwardScale(double forwardScale) {
         this.scaleForward = forwardScale;
     }
 
+    /**
+     * Get the current forward scale factor.
+     *
+     * @return The forward scale factor.
+     */
     public double getMaxForwardScale() {
         return scaleForward;
     }
 
+    /**
+     * <b>DO NOT CALL THIS METHOD UNLESS YOU ARE EXPLORING FUTURE POSITION PREDICTION ERRORS.</b> As we were
+     * investigating sources of error in the {@link SpeedCachedSwerve} predictions, we identified scaling
+     * as a possible source of error. This method resets both the forward and strafe scale.
+     *
+     * @param scaleStrafe The scale by default is 1.0, this lets you specify an alternate strafe scaling.
+     */
     public void setMaxStrafeScale(double scaleStrafe) {
         this.scaleStrafe = scaleStrafe;
     }
 
+    /**
+     * Get the current strafe scale factor.
+     *
+     * @return The strafe scale factor.
+     */
     public double getMaxStrafeScale() {
         return scaleStrafe;
     }
 
+    /**
+     * Set the phase for future position prediction.
+     *
+     * @param phase The phase, from 0.0 to 1.0
+     */
     public void setPhase(double phase) {
         this.phase = Utl.clip(phase,0.0,1.0);
     }
 
+    /**
+     * Gets the phase.
+     *
+     * @return The phase.
+     */
     public double getPhase() {
         return phase;
     }
 
     /**
-     * Get the robot position now, relative to where the robot was at the specified time. For example if the robot
+     * Get the robot position now, relative to where the robot was at the specified time. For example suppose the robot
      * were approaching a target, and the targeting software reported that the robot was 2.0m from the target and
      * 0.5m left of the target. Assume we want the robot to stay on its current heading and
      * the robot has been moving 1.0m/s forward, and 0.5m/s to its right with a rotation of 0.0rad/s. If the
@@ -387,7 +505,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     /**
      * Returns the delta between the expected robot heading and the actual robot heading at the requested time. The
      * use case is when the heading for some sensor (like vision) has a latency and requires information about the
-     * robot heading sometime in the past. This returned delta is an linear interpolation approximation between the
+     * robot heading sometime in the past. This returned delta is a linear interpolation approximation between the
      * cached heading in the command cycles before and after the requested time. <b>NOTE:</b> there are 2 conditions
      * where this method fails.
      * <ul>
@@ -442,8 +560,10 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     }
 
     /**
-     * @param currentIndex
-     * @return
+     * For the current index, get the index of the entry before the current one.
+     *
+     * @param currentIndex The current index
+     * @return returns the index of the entry before this one, or -1 if there is a cache overflow.
      */
     private int nextBackIndex(int currentIndex) {
         currentIndex--;
@@ -457,9 +577,10 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     }
 
     /**
+     * For the current index, get the index of the entry after the current one.
      *
-     * @param currentIndex
-     * @return
+     * @param currentIndex The current index
+     * @return returns the index of the entry after this one, or -1 if there is a cache overflow.
      */
     private int nextForwardIndex(int currentIndex) {
         if (currentIndex == mostRecentControlRequest) {
@@ -501,6 +622,13 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         }
     }
 
+    /**
+     * Set the cache length, which sets the maximum time interval for the cache to predict future positions. The
+     * command cycle is 20ms, or 50 command cycles per second. The default initialization is a cache of length 250,
+     * or about 5 seconds. When a new length is set all past cache contents are lost.
+     *
+     * @param cacheLength Set a new length for the cache.
+     */
     public void setCacheLength(int cacheLength) {
         this.cacheLength = cacheLength;
         mostRecentControlRequest = -1;
@@ -511,10 +639,20 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         }
     }
 
+    /**
+     * Report the length of the speed cache.
+     *
+     * @return The number of entries in the speed cache.
+     */
     public int getCacheLength() {
         return cacheLength;
     }
 
+    /**
+     * Set the logging state for the speed cache. By default, logging is off.
+     *
+     * @param on {@code true} if the speed cache should be logging, {@code false} if it should not log.
+     */
     public void setLogging(boolean on) {
         logSpeedCache = on;
         if (logSpeedCache) {
@@ -527,6 +665,12 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     // -----------------------------------------------------------------------------------------------------------------
     // The wrapping for the underlying swerve drive subsystem
     // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * Ste the swerve drive subsystem that is supporting the speed cache. All {@link ISwerveDrive} commands to the
+     * speed cache will be passed on to the {@code driveSubsystem}.
+     *
+     * @param driveSubsystem The underlying {@link DriveSubsystem}.
+     */
     public void setDriveSubsystem(DriveSubsystem driveSubsystem) {
         this.driveSubsystem = driveSubsystem;
         if (driveSubsystem != null) {

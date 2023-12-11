@@ -344,21 +344,21 @@ public class NavX {
         }
 
         /**
-         * Get the field heading that is closest to the current heading. This is useful if you have
-         * a driving or targeting operation that requires the robot heading to stay
-         * at a specific heading.
+         * Get the robot heading that is closest to current heading to achieve the specified field heading.
          *
-         * @return The closest field heading.
+         * @param fieldHeading The desired field heading.
+         * @return The closest robot heading.
          */
-        public AngleD getClosestHeading(double angleDegrees) {
-            return new AngleD(AngleUnit.DEGREES, angleDegrees + (360 * Math.round((heading.getDegrees() - angleDegrees) / 360.0)));
+        public AngleD getClosestHeading(AngleD fieldHeading) {
+            return new AngleD(AngleUnit.DEGREES, fieldHeading.getDegrees() +
+                    (360 * Math.round((heading.getDegrees() - fieldHeading.getDegrees()) / 360.0)));
         }
 
         /**
          * Get the down-field or up-field heading that is closest to the current heading. This is useful if you have
          * a driving mode allowing the driver to get the robot into a somewhat down-field or
-         * up-field heading and then lock opn to a directly down-field or up-field heading to
-         * thwart defense attempts to the robot while traversing the field.
+         * up-field heading and then lock on to a directly down-field or up-field heading to
+         * thwart defense attempts to disrupt the robot while traversing the field.
          *
          * @return The closest down-field or up-field heading.
          */

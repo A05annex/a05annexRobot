@@ -15,6 +15,14 @@ import org.jetbrains.annotations.NotNull;
  */
  public class SparkNeo550 extends SparkNeo{
 
+    /**
+     * The factory for {@link SparkNeo550} objects for the physical robot. When the robot is powered up and this
+     * object is first created, it will represent the SparkMax/Neo550 in its powered up configuration (i.e. it will
+     * have the configuration burned into the SparkMax).
+     *
+     * @param canId The CAN id of the Spark MAX controlling the Neo550 motor.
+     * @return The created {@link SparkNeo}
+     */
     @NotNull
     public static SparkNeo550 factory(int canId) {
         CANSparkMax sparkMax = new CANSparkMax(canId, CANSparkMaxLowLevel.MotorType.kBrushless);
@@ -40,6 +48,14 @@ import org.jetbrains.annotations.NotNull;
             {10, 20, 20, 20}    // 10, 20, 30, 40 Amp
     };
 
+    /**
+     * The constructor for a {@code SparkNeo}. Always use {@link #factory(int)} to create the {@code SparkNeo550}
+     * <i>unless</i> you are creating a mock {@code SparkNeo550} for testing.
+     *
+     * @param sparkMax The {@link CANSparkMax}.
+     * @param encoder The {@link RelativeEncoder} of the {@link CANSparkMax}.
+     * @param sparkMaxPID The {@link SparkMaxPIDController} of the {@link CANSparkMax}.
+     */
     public SparkNeo550(@NotNull CANSparkMax sparkMax, @NotNull RelativeEncoder encoder,
                        @NotNull SparkMaxPIDController sparkMaxPID) {
         super(sparkMax, encoder, sparkMaxPID);
@@ -47,7 +63,9 @@ import org.jetbrains.annotations.NotNull;
 
     /**
      * Get the maximum free RPM. This is published in the
-     * <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> summary as 11000RPM
+     * <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> summary as 11000RPM. Note that the actual
+     * achievable speed is dependent on the load (weight being lifted, friction, inertia, etc.) and is likely
+     * 0.8 to 0.9 times the maximum free speed depending on use.
      * @return Returns the maximum free RPM
      */
     static public double getMaxFreeRPM() {

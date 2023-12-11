@@ -215,7 +215,7 @@ public class SparkNeo {
      * object is first created, it will represent the SparkMax/Neo in its powered up configuration (i.e. it will
      * have the configuration burned into the SparkMax).
      *
-     * @param canId The CAN id of this Spark MAX
+     * @param canId The CAN id of the Spark MAX controlling the Neo motor.
      * @return The created {@link SparkNeo}
      */
     @NotNull
@@ -247,7 +247,7 @@ public class SparkNeo {
          */
         CUSTOM(3);
 
-        public final int slotId;
+        final int slotId;
 
         PIDtype(int slotId) {
             this.slotId = slotId;
@@ -290,10 +290,25 @@ public class SparkNeo {
         }
     }
 
+    /**
+     * The breakers that may be used in the PDP with this motor.
+     */
     public enum BreakerAmps {
+        /**
+         * A 10 amp breaker.
+         */
         Amps10(0),
+        /**
+         * A 20 amp breaker.
+         */
         Amps20(1),
+        /**
+         * A 30 amp breaker.
+         */
         Amps30(2),
+        /**
+         * A 40 amp breaker.
+         */
         Amps40(3);
 
         final int index;
@@ -303,8 +318,17 @@ public class SparkNeo {
         }
     }
 
+    /**
+     * The motor spin direction when positive power is applied.
+     */
     public enum Direction {
+        /**
+         * The default spin direction of the motor.
+         */
         DEFAULT(false),
+        /**
+         * The reverse of the default spin direction.
+         */
         REVERSE(true);
 
         final boolean reversed;
@@ -336,8 +360,18 @@ public class SparkNeo {
     boolean inConfig = false;
     boolean isConfigured = false;
     boolean currentLimitIsSet = false;
+    /**
+     * The low level REV code controlling the REV Spark MAX motor controller.
+     */
     public final CANSparkMax sparkMax;
+    /**
+     * The low level REV code controlling interacting with the encoder of the motor plugged into the
+     * REV Spark MAX controller.
+     */
     public final RelativeEncoder encoder;
+    /**
+     * The low level REV code controlling the PID loops in the REV Spark MAX controller.
+     */
     public final SparkMaxPIDController sparkMaxPID;
 
 
@@ -357,9 +391,11 @@ public class SparkNeo {
     }
 
     /**
-     *
-     * @param expectedInConfig
-     * @param method
+     * Verify this motor is currently <i>in</i>, or, <i>not in</i> configuration mode
+     * @param expectedInConfig {@code true} to verify the motor is <i>in</i> configuration mode, and {@code false}
+     *                                     to verify the motor is <i>not in</i> configuration mode.
+     * @param method The name of the method calling this function for use in error messaging.
+     * @throws IllegalStateException thrown if the motor is not in the expected mode.
      */
     protected void verifyInConfig(boolean expectedInConfig, @NotNull String method) {
         if (this.inConfig != expectedInConfig) {
@@ -377,8 +413,10 @@ public class SparkNeo {
     }
 
     /**
+     * Verify this motor has been configured.
      *
-     * @param method
+     * @param method The name of the method calling this function for use in error messaging.
+     * @throws IllegalStateException thrown if this motor has not been configured.
      */
     protected void verifyIsConfigured(@NotNull String method) {
         if (!this.isConfigured) {
@@ -395,9 +433,11 @@ public class SparkNeo {
 
     /**
      * Get the maximum free RPM. This is published in the
-     * <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> summary as 5676RPM
+     * <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> summary as 5676RPM. Note that the actual
+     * achievable speed is dependent on the load (weight being lifted, friction, inertia, etc.) and is likely
+     * 0.8 to 0.9 times the maximum free speed depending on use.
      *
-     * @return Returns the maximum free RPM
+     * @return Returns the maximum free RPM.
      */
     static public double getMaxFreeRPM() {
         // per REV Neo datasheet
@@ -405,25 +445,25 @@ public class SparkNeo {
     }
 
     /**
-     *
-     * @return
+     * Gets the motor velocity (RPM) reported by the encoder.
+     * @return The motor velocity (RPM) reported by the encoder.
      */
     public double getEncoderVelocity() {
         return encoder.getVelocity();
     }
 
     /**
-     *
-     * @return
+     * Gets the motor position (revolutions) reported by the encoder.
+     * @return The motor position (revolutions) reported by the encoder.
      */
     public double getEncoderPosition() {
         return encoder.getPosition();
     }
 
     /**
-     * The encoder position may only be set during configuration.
+     * Set the encoder position. The encoder position may only be set during configuration.
      *
-     * @param position
+     * @param position The encoder position.
      */
     public void setEncoderPosition(double position) {
         verifyInConfig(false, "setEncoderPosition");
@@ -492,16 +532,20 @@ public class SparkNeo {
 
 
     /**
+     * The most common setup for smart motion control of the motor.
+     *
      * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
      * @param kIZone         The PID loop will not include the integral component until the current position or speed is
      *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
-     * @param maxRPM
-     * @param maxRPMs
-     * @param minRPM
-     * @param allowableError
+     * @param maxRPM         The maximum forward RPM, typically 0.8 to 0.9 times the {@link #getMaxFreeRPM()}.
+     * @param maxRPMs        The maximum RPM acceleration per second, typically 1.0 to 4.0 times
+     *                       the {@link #getMaxFreeRPM()}.
+     * @param minRPM         The maximum backwards RPM, typically -0.8 to -0.9 times the {@link #getMaxFreeRPM()}.
+     * @param allowableError The allowable error in final distance or RPM at which smart motion will consider the goal
+     *                       achieved.
      */
     public void setSmartMotion(double kP, double kI, double kIZone, double kFF,
                                double maxRPM, double maxRPMs, double minRPM, double allowableError) {
@@ -515,13 +559,15 @@ public class SparkNeo {
      *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
-     * @param kD             The PID differential constant <i>K<sub>i</sub></i>.
+     * @param kD             The PID differential constant <i>K<sub>d</sub></i>.
      * @param min            The minimum RPM that will be requested, -1.0 is full reverse speed.
      * @param max            The maximum RPM that will be requested, 1.0 is full forward speed.
-     * @param maxRPM
-     * @param maxRPMs
-     * @param minRPM
-     * @param allowableError
+     * @param maxRPM         The maximum forward RPM, typically 0.8 to 0.9 times the {@link #getMaxFreeRPM()}.
+     * @param maxRPMs        The maximum RPM acceleration per second, typically 1.0 to 4.0 times
+     *                       the {@link #getMaxFreeRPM()}.
+     * @param minRPM         The maximum backwards RPM, typically -0.8 to -0.9 times the {@link #getMaxFreeRPM()}.
+     * @param allowableError The allowable error in final distance or RPM at which smart motion will consider the goal
+     *                       achieved.
      */
     public void setSmartMotion(double kP, double kI, double kIZone, double kFF, double kD, double min, double max,
                                double maxRPM, double maxRPMs, double minRPM, double allowableError) {
@@ -538,7 +584,7 @@ public class SparkNeo {
     }
 
     /**
-     * Sets the PID constants for RPM (speed) control.
+     * The most common configuration of the PID constants for RPM (speed) control.
      *
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
@@ -551,7 +597,7 @@ public class SparkNeo {
         setPID(PIDtype.RPM, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0);
     }
     /**
-     * Sets the PID constants for position control.
+     * The most common configuration of the PID constants for position control.
      *
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
@@ -565,7 +611,7 @@ public class SparkNeo {
     }
 
     /**
-     * Sets the PID constants for RPM (speed) control.
+     * The configuration for all PID constants for RPM (speed) control.
      *
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
@@ -573,7 +619,7 @@ public class SparkNeo {
      *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>.
-     * @param kD      The PID differential constant <i>K<sub>i</sub></i>.
+     * @param kD      The PID differential constant <i>K<sub>d</sub></i>.
      * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
      * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
      */
@@ -581,7 +627,7 @@ public class SparkNeo {
         setPID(PIDtype.RPM, kP, kI, kIZone, kFF, kD, min, max);
     }
     /**
-     * Sets the PID constants for position control.
+     * The configuration for all PID constants for position control.
      *
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
@@ -589,7 +635,7 @@ public class SparkNeo {
      *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
-     * @param kD      The PID differential constant <i>K<sub>i</sub></i>.
+     * @param kD      The PID differential constant <i>K<sub>d</sub></i>.
      * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
      * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
      */
@@ -598,7 +644,7 @@ public class SparkNeo {
     }
 
     /**
-     * Sets the PID constants for the specified PID control type..
+     * Sets the PID constants for the specified PID control type.
      *
      * @param pidType The PID control type.
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
@@ -607,7 +653,7 @@ public class SparkNeo {
      *                within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
      * @param kFF     The PID feed-forward constant <i>K<sub>ff</sub></i>
-     * @param kD      The PID differential constant <i>K<sub>i</sub></i>.
+     * @param kD      The PID differential constant <i>K<sub>d</sub></i>.
      * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
      * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
      */
@@ -678,14 +724,18 @@ public class SparkNeo {
         isConfigured = true;
     }
 
+    /**
+     * Stop this motor.
+     */
     public void stopMotor() {
         verifyInConfig(false, "stopMotor");
         sparkMax.stopMotor();
     }
 
     /**
+     * Set a target RPM for this motor. The velocity PID will be used to achieve this RPM.
      *
-     * @param targetRpm
+     * @param targetRpm The target RPM.
      */
     public void setTargetRPM(double targetRpm) {
         verifyIsConfigured("setTargetRPM");
@@ -693,8 +743,9 @@ public class SparkNeo {
     }
 
     /**
+     * Set a smart motion target position for this motor. The smart motion PID will be used to achieve this.
      *
-     * @param targetPosition
+     * @param targetPosition The target position.
      */
     public void setSmartMotionTarget(double targetPosition) {
         verifyIsConfigured("setSmartMotionTarget");
@@ -702,8 +753,9 @@ public class SparkNeo {
     }
 
     /**
+     * Set a target position for this motor. The position PID will be used to achieve this.
      *
-     * @param targetPosition
+     * @param targetPosition The target position.
      */
     public void setTargetPosition(double targetPosition) {
         verifyIsConfigured("setTargetPosition");

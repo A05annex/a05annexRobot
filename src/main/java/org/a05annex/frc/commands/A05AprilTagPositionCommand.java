@@ -223,10 +223,10 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
         // ------- Calculate Rotation --------
         // find HEADING at specified field angle closest to current HEADING
-        AngleD fieldHeading = navX.getHeadingInfo().getClosestHeading(HEADING.getDegrees());
+        AngleD fieldHeading = navX.getHeadingInfo().getClosestHeading(HEADING);
         navX.setExpectedHeading(fieldHeading);
-        conditionedRotate = new AngleD(navX.getHeadingInfo().expectedHeading).subtract(new AngleD(navX.getHeadingInfo().heading))
-                .getRadians() * ROTATION_KP;
+        conditionedRotate = new AngleD(navX.getHeadingInfo().expectedHeading).
+                subtract(new AngleD(navX.getHeadingInfo().heading)).getRadians() * ROTATION_KP;
 
 
         // ------- Calculate Direction -------
