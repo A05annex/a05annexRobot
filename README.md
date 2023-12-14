@@ -13,7 +13,7 @@ the robot response to their favorite game).
 ## Change Log
 
 <details>
-  <summary>version 0.0.1 to 0.0.17 (for <b>2023 Charged Up</b>):</summary>
+  <summary>version 0.0.1 to 0.0.31 (for <b>2023 Charged Up</b>):</summary>
 
   * 0.0.1 - Initial internal release;
   * 0.0.2 - Optional mirroring of autonomous for <b>2023 Charged Up</b>;
@@ -39,6 +39,7 @@ the robot response to their favorite game).
              a tested wrapper that formalizes our 95% use case into a sample and repeatable pattern.
   * 0.0.29 - Added SpeedCachedSwerve
   * 0.0.30 - Added A05AprilTagPositionCommand
+  * 0.0.31 - Cleanup and testing of SwerveSpeedCache phase adjustment.
 </details>
 
 ## Creating a Robot Project Using this Library
@@ -59,14 +60,21 @@ the [Swerve Programming paper](./resources/SwerveProgramming.pdf) that describes
 
 ## Drive Control and Driver Tuning
 
-Over multiple seasons we discovered that there are 2 driving modes for swerve drives that are critical:
-* **Field Relative** - The driver is in a fixed position watching the robot on the field, and there is often no
-  clear front/back to a robot. The speed-direction stick describes where the driver wants the robot to got relative
- to the field
-* **Robot Relative** - This is what we always did with a conventional tank drive (right and left banks of wheels
-  that here steered by setting some delta between right and left). The control is as though the driver is sitting
-  in the robot (which is backwards when the robot is moving towards the driver). However, when you are performing 
-  a precision task watching the screen display of the robot camera - you now need driver mode.
+<details>
+<summary>Over multiple seasons we discovered that there are 2 driving modes for swerve drives that are critical:
+<ul>
+    <li><b>Field Relative</b> - The driver is in a fixed position watching the robot on the field, and there is often
+     no clear front/back to a robot. The speed-direction stick describes where the driver wants the robot to go 
+     relative to the field/driver;</li>
+    <li><b>Robot Relative</b> - This is what we always did with a conventional tank drive (right and left banks of
+     wheels that here steered by setting some delta between right and left). The control is as though the driver is
+     sitting in the robot (which is backwards when the robot is moving towards the driver). However, when you are
+     performing a precision task watching the screen display of the robot camera - you now need driver mode.</li>
+</ul>
+We also discovered that the drive control should be tuned to the driver. Occasional drivers or drivers during robot
+demonstrations should be highly constrained so the robot doesn't smash things at high speeds. Competition drivers
+should tune control to match their favorite game.
+</summary>
 
 ### Field Relative
 
@@ -80,8 +88,25 @@ the camera is not facing directly forward, it is easy to change the robot-relati
 differencing the stick direction with the
 camera heading (relative to the robot) to transform the camera relative direction to a robot relative direction.
 
+### Driver Tuning
+
+The most important aspect of driver tuning is the realization that there are potentially many different drivers of
+the robot with very different driving skill sets and that it is desirable to be able to specify a specific driver
+or generalized driver skill set, and reset the robot control to reflect that. How do we do that? We save a variety
+of driver profiles and support loading the appropriate driver profile when the robot is powered-up.
+
+</details>
+
 ## NavX
 
-## Drive Calibtraion
+## Drive Calibration
+
+<details>
+<summary>Drive calibration is primarily focused on characterizing the performance of the <code>DriveSubsystem</code>
+and <code>NavX</code> so that the robot behaves as expected during driver control, and, so that autonomous paths and
+the <code>SwerveSpeedCache</code> can be accurately mapped to robot behaviour.
+</summary>
+
+</details>
 
 ## Autonomous Paths

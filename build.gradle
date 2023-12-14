@@ -3,7 +3,6 @@ import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
 plugins {
     id 'java-library'
     id 'maven-publish'
-    //id 'maven'
     id 'signing'
     id 'edu.wpi.first.GradleRIO' version '2023.4.3'
 }
@@ -11,7 +10,7 @@ plugins {
 def javaVersion = JavaVersion.VERSION_15
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
-version = '0.0.30'
+version = '0.0.31'
 group = 'org.a05annex'
 
 // Set to true to use debug for JNI.
@@ -59,20 +58,26 @@ test {
     }
 }
 
-artifacts {
-    archives jar, javadocJar, sourcesJar
-}
-
 signing {
     if (project.hasProperty("signing.keyId") &&
             project.hasProperty("signing.password") &&
             project.hasProperty("signing.secretKeyRingFile") )
     {
-        sign configurations.archives
+        sign publishing.publications
     }
 }
 
 publishing {
+    repositories {
+        maven {
+            name = "Sonatype"
+            url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username = project.hasProperty('ossrhUsername') ? ossrhUsername : "Unknown user"
+                password = project.hasProperty('ossrhPassword') ? ossrhPassword : "Unknown password"
+            }
+        }
+    }
     publications {
         mavenJava(MavenPublication) {
             artifactId = 'a05annexRobot'
@@ -101,8 +106,8 @@ publishing {
                 }
             }
         }
-
     }
+}
 
 // this is publishing to the github repository, which never really worked - might be time to revisit this
 //    repositories {
@@ -132,19 +137,20 @@ publishing {
 //                authentication(
 //                        userName: project.hasProperty("ossrhUsername") ?
 //                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
-//                        password:  project.hasProperty("ossrhPassword") ?
-//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN") )
+//                        password: project.hasProperty("ossrhPassword") ?
+//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN"))
 //            }
 //
 //            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
 //                authentication(
 //                        userName: project.hasProperty("ossrhUsername") ?
 //                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
-//                        password:  project.hasProperty("ossrhPassword") ?
-//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN") )
+//                        password: project.hasProperty("ossrhPassword") ?
+//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN"))
 //            }
 //            pom.project {
 //                name = 'A05annex Robot Library'
+//                packaging 'jar'
 //                description = 'A05annex robot base for swerve and NavX.'
 //                url = 'https://github.com/A05annex/a05annexRobot'
 //                licenses {
@@ -168,8 +174,9 @@ publishing {
 //            }
 //        }
 //    }
+//}
 
-}
+
 
 wpi.java.configureTestTasks(test)
 

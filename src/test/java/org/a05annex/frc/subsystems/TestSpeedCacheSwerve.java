@@ -117,6 +117,7 @@ public class TestSpeedCacheSwerve {
             SCS.addControlRequest(nextRequestTime, AngleConstantD.ZERO,
                     AngleConstantD.ZERO, 0.2, 0.1, 0.01);
         }
+        SCS.setPhase(0.5);
 
         // OK, do something in the cache range, (0.02 * (TEST_CACHE_LENGTH - 1)) - .001, the .001 is to get just past
         // the time of the last point to be included.

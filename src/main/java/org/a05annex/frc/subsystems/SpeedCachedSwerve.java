@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This is a layer that goes on top of the swerve drive to provide caching of past drive commands for some
  * period of time so that the motion from a previously known field position at a previous time can be projected
- * to a field position at the current time. The use case is with vision systems tha take some time (typically
+ * to a field position at the current time. The use case is with vision systems that take some time (typically
  * 20 to 120ms) to analyze the field targets and report their position relative the the target, and it follows
  * that if we know the field position of the target we can compute the field position of the robot. Unfortunately,
  * that position is 20-120ms old, so running a PID loop to put the robot at a specific point on the field requires
@@ -252,7 +252,11 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         setCacheLength(250);
     }
 
-    public ControlRequest getMostRecentControlRequest() {
+    /**
+     * Get the most recent control request.
+     * @return (readonly) the most recent control request.
+     */
+    ControlRequest getMostRecentControlRequest() {
         return controlRequests[mostRecentControlRequest];
     }
 
@@ -362,15 +366,16 @@ public class SpeedCachedSwerve implements ISwerveDrive {
     RobotRelativePosition getRobotRelativePositionSince(double targetTime, double sinceTime) {
         int backIndex = mostRecentControlRequest;
         ControlRequest lastControlRequest = controlRequests[backIndex];
-        double lastTime = controlRequests[backIndex].timeStamp;
-        if (targetTime > lastTime) {
-            // a strange situation where the requested time is after (more recent) than the most recently
+        double lastTime = lastControlRequest.timeStamp;
+        if (targetTime > (lastTime + 0.045)) {
+            // a strange situation where the requested time is far after (more than 40ms or 2 control cycles
+            // more recent) than the most recently
             // recorded request (i.e. the time we are looking for is after our last recorded request). This
             // is a handling conundrum - if you want the current heading, talk to the NavX, you can't get it
             // here.
-            throw new IllegalArgumentException("You are asking for a position projected into the future," +
-                    " which this cache cannot do. If you want to know where the robot is now, you need a" +
-                    " different strategy.");
+            throw new IllegalArgumentException("You are asking for a position projected more than 2 control" +
+                    " cycles (40ms) into the future, which this cache cannot do. If you want to know where the" +
+                    " robot is now, you need a different strategy.");
         }
         double nextTime;
         ControlRequest nextControlRequest;
@@ -398,7 +403,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
                 // So we are now at the point where the lastTime is before the requested time. Depending on phase,
                 // we may need info from the next point back.
                 sinceTimePositionInStep = ((sinceTime - lastTime) / (nextTime - lastTime));
-                if (sinceTimePositionInStep > phase) {
+                if (sinceTimePositionInStep >= phase) {
                     // since position in the interval is after the phase which shifts the velocities of the swerve to
                     // the newly set velocities.
                     break;
@@ -475,7 +480,14 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             nextControlRequest = forwardControlRequest;
             nextTime = forwardTime;
             forwardIndex = nextForwardIndex(forwardIndex);
-            forwardControlRequest = controlRequests[forwardIndex];
+            if (forwardIndex == -1) {
+                // got to the most recently reported command - projecting from there
+                forwardControlRequest = null;
+                forwardTime = nextTime + 0.02;  // 20 ms (one control cycle) out
+                break;
+            } else {
+                forwardControlRequest = controlRequests[forwardIndex];
+            }
             forwardTime = forwardControlRequest.timeStamp;
         }
 
@@ -494,7 +506,10 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             timeAtSpeed = (targetTimePositionInStep - phase) * (forwardTime - nextTime);
             deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
             deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
-            headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
+            if (null != forwardControlRequest) {
+                headingDelta = new AngleD(forwardControlRequest.actualHeading).
+                        subtract(forwardControlRequest.expectedHeading);
+            }
             position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
             position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
         }
