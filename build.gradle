@@ -1,16 +1,14 @@
-import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
-
 plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id 'edu.wpi.first.GradleRIO' version '2023.4.3'
+    id "edu.wpi.first.GradleRIO" version "2024.1.1-beta-4"
 }
 
-def javaVersion = JavaVersion.VERSION_15
+def javaVersion = JavaVersion.VERSION_17
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
-version = '0.0.31'
+version = '0.0.32'
 group = 'org.a05annex'
 
 // Set to true to use debug for JNI.
@@ -108,74 +106,6 @@ publishing {
         }
     }
 }
-
-// this is publishing to the github repository, which never really worked - might be time to revisit this
-//    repositories {
-//        maven {
-//            name = "GitHubPackages"
-//            url = "https://maven.pkg.github.com/A05annex/a05annexRobot"
-//            credentials {
-//                username = project.hasProperty("githubActor") ?
-//                        project.property("githubActor") : System.getenv("GITHUB_ACTOR")
-//                password = project.hasProperty("githubToken") ?
-//                        project.property("githubToken") : System.getenv("GITHUB_TOKEN")
-//            }
-//        }
-//    }
-
-
-// This was the publishing to the sonatype repository. This worked in gradle 6, but needs an update for
-// gradle 7.
-//
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            // beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-//            beforeDeployment { sign(publishing.publications["maven"]) }
-//
-//            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-//                authentication(
-//                        userName: project.hasProperty("ossrhUsername") ?
-//                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
-//                        password: project.hasProperty("ossrhPassword") ?
-//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN"))
-//            }
-//
-//            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-//                authentication(
-//                        userName: project.hasProperty("ossrhUsername") ?
-//                                project.property("ossrhUsername") : System.getenv("OSSRH_USERNAME"),
-//                        password: project.hasProperty("ossrhPassword") ?
-//                                project.property("ossrhPassword") : System.getenv("OSSRH_TOKEN"))
-//            }
-//            pom.project {
-//                name = 'A05annex Robot Library'
-//                packaging 'jar'
-//                description = 'A05annex robot base for swerve and NavX.'
-//                url = 'https://github.com/A05annex/a05annexRobot'
-//                licenses {
-//                    license {
-//                        name = 'The Apache License, Version 2.0'
-//                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-//                    }
-//                }
-//                developers {
-//                    developer {
-//                        id = 'A05annex'
-//                        name = 'A05annex'
-//                        email = 'a05annexrobotics@gmail.com'
-//                    }
-//                }
-//                scm {
-//                    connection = 'scm:git:git://github.com/A05annex/a05annexRobot.git'
-//                    developerConnection = 'scm:git:ssh://github.com/A05annex/a05annexRobot.git'
-//                    url = 'https://github.com/A05annex/a05annexRobot'
-//                }
-//            }
-//        }
-//    }
-//}
-
 
 
 wpi.java.configureTestTasks(test)

@@ -1,4 +1,4 @@
-* **version:** 0.0.31
+* **version:** 0.0.32
 * **status:** first used for FRC **2023 Charged Up**
 * **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
   base to jump start future years.
@@ -40,6 +40,13 @@ the robot response to their favorite game).
   * 0.0.29 - Added SpeedCachedSwerve
   * 0.0.30 - Added A05AprilTagPositionCommand
   * 0.0.31 - Cleanup and testing of SwerveSpeedCache phase adjustment.
+</details>
+<details>
+  <summary>version 0.0.31 to 0.0.?? (for <b>2024 Crescendo</b>):</summary>
+  * 0.0.32 - 2024 WPIlib beta version 2024.1.1-beta-4 integration:
+    * update build to gradle 8.4
+    * Java support to Java 17
+    * update all vendor dependencies
 </details>
 
 ## Creating a Robot Project Using this Library
