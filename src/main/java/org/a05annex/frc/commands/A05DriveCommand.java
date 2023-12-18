@@ -1,7 +1,7 @@
 package org.a05annex.frc.commands;
 
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.ISwerveDrive;
@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
  *     or rotation per command cycle to try to minimize skidding.</li>
  * </ul>
  */
-public class A05DriveCommand extends CommandBase {
+public class A05DriveCommand extends Command {
 
     /**
      * The swerve drive implementation this command is driving to.
@@ -137,15 +137,6 @@ public class A05DriveCommand extends CommandBase {
 
         // now ask the drive subsystem to do that.
         iSwerveDrive.swerveDrive(conditionedDirection, conditionedSpeed, conditionedRotate);
-    }
-
-    @Override
-    public boolean isFinished() {
-        return false;
-    }
-
-    @Override
-    public void end(boolean interrupted) {
     }
 
     /**

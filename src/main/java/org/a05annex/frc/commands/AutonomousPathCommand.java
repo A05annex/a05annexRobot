@@ -1,7 +1,6 @@
 package org.a05annex.frc.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.a05annex.frc.A05Constants;
@@ -26,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * real physical devise.
  */
 @SuppressWarnings("unused")
-public class AutonomousPathCommand extends CommandBase {
+public class AutonomousPathCommand extends Command {
 
 
     /**
@@ -34,7 +33,7 @@ public class AutonomousPathCommand extends CommandBase {
      * It provides getter functions for the parameters in the {@link KochanekBartelsSpline.PathPoint} and performs
      * the mirroring functionality as required.
      */
-    static class PathPoint {
+    protected static class PathPoint {
 
         /**
          * This is the {@link KochanekBartelsSpline.PathPoint} returned by the

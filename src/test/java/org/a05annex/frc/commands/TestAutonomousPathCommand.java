@@ -1,6 +1,5 @@
 package org.a05annex.frc.commands;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.DummyScheduledCommand;
@@ -17,7 +16,8 @@ import org.junit.platform.suite.api.Suite;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -134,6 +134,7 @@ public class TestAutonomousPathCommand {
             try {
                 long msSleep = nextTime-System.currentTimeMillis();
                 if (msSleep > 0) {
+                    //noinspection BusyWait
                     Thread.sleep(nextTime - System.currentTimeMillis());
                 }
             } catch (InterruptedException e) {

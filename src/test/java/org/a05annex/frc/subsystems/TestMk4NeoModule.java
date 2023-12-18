@@ -1,8 +1,10 @@
 package org.a05annex.frc.subsystems;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.sensors.CANCoder;
-import com.ctre.phoenix.sensors.CANCoderConfiguration;
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CANcoderConfigurator;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
@@ -33,7 +35,8 @@ public class TestMk4NeoModule {
      */
     private class InitializedMk4NeoModule {
         // mocked representations for physical hardware
-        final CANCoder analogEncoder = mock(CANCoder.class);
+        final CANcoder analogEncoder = mock(CANcoder.class);
+        final CANcoderConfigurator configurator = mock(CANcoderConfigurator.class);
         // mocked derived representations of components embedded in the physical hardware (i.e. the
         // PID controllers and encoders embedded in the neo motor and spark controller pair)
         final CANSparkMax driveMotor = mock(CANSparkMax.class);
@@ -51,19 +54,21 @@ public class TestMk4NeoModule {
          * objects that were touched in initialization before exiting this instantiation.
          */
         public InitializedMk4NeoModule() {
-            when(analogEncoder.getAbsolutePosition()).thenReturn(Math.PI / 2.0);
-            CANCoderConfiguration config = new CANCoderConfiguration();
-            config.sensorCoefficient = 2 * Math.PI / 4096.0;
-            config.unitString = "rad";
-            config.sensorDirection = true;
-            when(analogEncoder.configAllSettings(config)).thenReturn(ErrorCode.OK);
+            final String modulePosition = "test-mk4";
+            final StatusSignal<Double> position = mock(StatusSignal.class);
+            when(position.getValue()).thenReturn(0.25);
+            when(analogEncoder.getConfigurator()).thenReturn(configurator);
+            when(configurator.refresh(any(CANcoderConfiguration.class))).thenReturn(StatusCode.OK);
+            when(configurator.apply(any(CANcoderConfiguration.class))).thenReturn(StatusCode.OK);
+            when(analogEncoder.getAbsolutePosition()).thenReturn(position);
             when(driveMotor.restoreFactoryDefaults()).thenReturn(REVLibError.kOk);
             when(spinMotor.restoreFactoryDefaults()).thenReturn(REVLibError.kOk);
-            driveModule = new Mk4NeoModule("test-mk4", driveSparkNeo,
+            driveModule = new Mk4NeoModule(modulePosition, driveSparkNeo,
                     spinSparkNeo, analogEncoder);
             driveModule.setCalibrationOffset(-(Math.PI / 2.0));
             driveModule.calibrate();
             assertEquals(Math.PI / 2.0, driveModule.getCalibrationPosition());
+            assertEquals(modulePosition, driveModule.getModulePosition());
             // In this test example, the wheel is facing directly backwards, so the position should be set to
             // half a direction revolution.
             TestSparkNeo.verifyPid(drivePID, SparkNeo.PIDtype.RPM.slotId,Mk4NeoModule.DRIVE_kP,

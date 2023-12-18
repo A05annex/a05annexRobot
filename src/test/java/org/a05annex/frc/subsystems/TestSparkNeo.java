@@ -8,10 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.platform.suite.api.Suite;
 
 import static org.a05annex.frc.subsystems.SparkNeo.maxCurrentMatrix;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
 
 @Suite
 public class TestSparkNeo {
@@ -36,7 +34,7 @@ public class TestSparkNeo {
      * @param kI        (double, readonly) The expected integral multiplier.
      * @param kIZone    (double, readonly) The expected integral zone.
      * @param kFF       (double, readonly) The expected forward multiplier.
-     * @param resetMock
+     * @param resetMock (boolean) {@code true} to reset the mock function call cache, {@code false} otherwise.
      */
     static void verifyPid(@NotNull SparkMaxPIDController pid, int slotId, final double kP, final double kI,
                           final double kIZone, final double kFF, double kD, double min, double max, boolean resetMock) {
@@ -85,13 +83,13 @@ public class TestSparkNeo {
     }
 
     private void verifySetDirection(@NotNull CANSparkMax spark, SparkNeo.Direction direction) {
-        assertEquals(true,SparkNeo.Direction.REVERSE.reversed);
+        assertTrue(SparkNeo.Direction.REVERSE.reversed);
         verify(spark, times(1)).setInverted(direction.reversed);
         reset(spark);
     }
 
     private void verifyIdleMode(@NotNull CANSparkMax spark, CANSparkMax.IdleMode idleMode) {
-        REVLibError revLibError = verify(spark, times(1)).setIdleMode(idleMode);
+        verify(spark, times(1)).setIdleMode(idleMode);
         reset(spark);
     }
 
@@ -213,7 +211,7 @@ public class TestSparkNeo {
         SparkNeo sparkNeo = newSparkNeo();
         sparkNeo.startConfig();
         assertThrows(IllegalStateException.class,
-                () -> sparkNeo.startConfig());
+                sparkNeo::startConfig);
         assertThrows(IllegalStateException.class,
                 () -> sparkNeo.setEncoderPosition(5.0));
         assertThrows(IllegalStateException.class,
@@ -230,7 +228,7 @@ public class TestSparkNeo {
         A05Constants.setSparkConfig(false,false);
         SparkNeo sparkNeo = newSparkNeo();
         assertThrows(IllegalStateException.class,
-                () -> sparkNeo.endConfig());
+                sparkNeo::endConfig);
         assertThrows(IllegalStateException.class,
                 () -> sparkNeo.setCurrentLimit(SparkNeo.UseType.FREE_SPINNING, SparkNeo.BreakerAmps.Amps40));
     }

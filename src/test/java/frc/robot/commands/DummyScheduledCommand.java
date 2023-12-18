@@ -1,6 +1,6 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
 /**
  * This is a dummy scheduled command. It is a dummy in the sense that it does not actually do anything except
@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
  * times {@link #execute()} runs> This is for post-test verification that this command was instantiated the
  * expected number of times and ran the expected number of command cycles.
  */
-public class DummyScheduledCommand extends CommandBase {
+public class DummyScheduledCommand extends Command {
 
     public static final int EXECUTES_PER_SCHEDULED_RUN = 10;
     public static int instantiationCt = 0;

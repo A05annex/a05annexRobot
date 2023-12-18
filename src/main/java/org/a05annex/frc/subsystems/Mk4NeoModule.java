@@ -1,9 +1,11 @@
 package org.a05annex.frc.subsystems;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.sensors.CANCoderConfiguration;
+import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.revrobotics.*;
-import com.ctre.phoenix.sensors.CANCoder;
 import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
@@ -105,7 +107,7 @@ public class Mk4NeoModule {
     // This is the physical hardware wired to the roborio
     private final SparkNeo driveMotor;
     private final SparkNeo directionMotor;
-    private final CANCoder calibrationEncoder;
+    private final CANcoder calibrationEncoder;
 
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical state
@@ -163,7 +165,7 @@ public class Mk4NeoModule {
         // basic code representations for physical hardware
         SparkNeo driveMotor = SparkNeo.factory(driveCAN);
         SparkNeo directionMotor = SparkNeo.factory(spinCAN);
-        CANCoder calibrationEncoder = new CANCoder(calibrationCAN);
+        CANcoder calibrationEncoder = new CANcoder(calibrationCAN);
         // derived representations of components embedded in the physical hardware
         return new Mk4NeoModule(swerveDrivePosition, driveMotor, directionMotor, calibrationEncoder);
     }
@@ -180,7 +182,7 @@ public class Mk4NeoModule {
      *                            the absolute spin position of the module.
      */
     public Mk4NeoModule(@NotNull String swerveDrivePosition, @NotNull SparkNeo driveMotor,
-                        @NotNull SparkNeo directionMotor, @NotNull CANCoder calibrationEncoder) {
+                        @NotNull SparkNeo directionMotor, @NotNull CANcoder calibrationEncoder) {
         this.swerveDrivePosition = swerveDrivePosition;
 
         this.driveMotor = driveMotor;
@@ -188,19 +190,36 @@ public class Mk4NeoModule {
         this.calibrationEncoder = calibrationEncoder;
 
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            // Initialize the calibration CANcoder
-            CANCoderConfiguration config = new CANCoderConfiguration();
-            config.sensorCoefficient = 2 * Math.PI / 4096.0;
-            config.unitString = "rad";
-            config.sensorDirection = true;
+            // Initialize the calibration CANcoder - our Phoenix5 initialization is that the CANcoder reads from 0 to
+            // 2pi - NOTE that CTRE decided that the previous defaults like having the range go from 0.0 to 1.0 should
+            // change (now going from -0.5 to 0.5), so this is a operational remapping rather than a simple change of
+            // signatures. Thanks CTRE.
+            //
+            // SO, oou configuration is to have the range go from 0 to 2pi with the sensor positive direction being
+            // clockwise when we are looking down at the sensor from above the robot.
+            var config = new CANcoderConfiguration();
             while (true) {
-                ErrorCode errorCode = calibrationEncoder.configAllSettings(config);
-                if ((ErrorCode.OK == errorCode) || (/*In Testing*/null == errorCode)) {
+                var statusCode = calibrationEncoder.getConfigurator().refresh(config);
+                if (StatusCode.OK != statusCode) {
+                    DriverStation.reportWarning(
+                            String.format("Swerve (%s) CANCoder read config error: CAN id = %d; error =  %d",
+                                    swerveDrivePosition, calibrationEncoder.getDeviceID(),
+                                    statusCode.value), false);
+                    // repeat until this is successful
+                    continue;
+                }
+                config.MagnetSensor.withSensorDirection(SensorDirectionValue.Clockwise_Positive);
+                config.MagnetSensor.withMagnetOffset(0.0);
+                config.MagnetSensor.withAbsoluteSensorRange(AbsoluteSensorRangeValue.Unsigned_0To1);
+                statusCode = calibrationEncoder.getConfigurator().apply(config);
+                if (StatusCode.OK == statusCode) {
                     break;
                 }
+                // repeat until the apply is also successful
                 DriverStation.reportWarning(
-                        String.format("Swerve (%s) CANCoder config error: CAN id = %d; error =  %d", swerveDrivePosition,
-                                calibrationEncoder.getDeviceID(), errorCode.value), false);
+                        String.format("Swerve (%s) CANCoder set config error: CAN id = %d; error =  %d",
+                                swerveDrivePosition, calibrationEncoder.getDeviceID(),
+                                statusCode.value), false);
             }
         }
 
@@ -216,11 +235,8 @@ public class Mk4NeoModule {
 
         // configure the direction motor
         directionMotor.startConfig();
-        // invert the direction motor so positive is a clockwise spin
         directionMotor.setDirection(Direction.REVERSE);
-        // current limit the motor to prevent popping breakers
         directionMotor.setCurrentLimit(UseType.POSITION, BreakerAmps.Amps30);
-        // initialize the PIDs for the direction controller
         directionMotor.setPositionPID(SPIN_kP, SPIN_kI, SPIN_IZONE, 0.0);
         directionMotor.endConfig();
     }
@@ -241,6 +257,13 @@ public class Mk4NeoModule {
     // -----------------------------------------------------------------------------------------------------------------
     // Methods to question the module about its state and what its doing.
     // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * Get the module position in the swerve drive, used primarily in debugging or information formatting.
+     * @return The module position in the swerve drive.
+     */
+    public String getModulePosition() {
+        return swerveDrivePosition;
+    }
 
     /**
      * Returns the drive motor velocity (RPM) as read from the encoder
@@ -286,7 +309,15 @@ public class Mk4NeoModule {
      * @return The analog direction encoder position.
      */
     public double getCalibrationPosition() {
-        return calibrationEncoder.getAbsolutePosition();
+        double absolutePosition;
+        // get the absolute position of the calibration CANcoder. Note, this loop
+        // is here because it occasionally takes a bit for the CANcoder to correctly initialize, and
+        // out of range values may be reported.
+        do {
+            absolutePosition = calibrationEncoder.getAbsolutePosition().getValue();
+        } while (absolutePosition < 0.0 || absolutePosition > 1.0);
+        // convert 0 to 1.0 revolutions to and angle of 0 to 2pi
+        return absolutePosition * 2.0 * Math.PI;
     }
 
     /**
@@ -321,31 +352,19 @@ public class Mk4NeoModule {
     // -----------------------------------------------------------------------------------------------------------------
 
     /**
-     * This should be calledSet the NEO direction encoder value using the absolute direction encoder, so that
+     * This should be called to set the NEO direction encoder value using the absolute direction encoder, so that
      * forward is an encoder reading of 0 tics.
      */
     void calibrate() {
-        // --------------------------------------------------------
-        // make, sure the motor setup is correct
-        // --------------------------------------------------------
-        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-        }
-
-
-        double absolutePosition;
         // get the absolute position of the calibration CANcoder. The difference between this and the
-        // calibration offset is the change indirection required to set the direction to 0. Note, this loop
-        // is here because it occasionally takes a bit for the CANcoder to correctly initialize, and
-        // out of range values may be reported.
-        do {
-            absolutePosition = calibrationEncoder.getAbsolutePosition();
-        } while (absolutePosition < 0.0 || absolutePosition > Math.PI * 2);
+        // calibration offset is the change in direction required to set the direction to 0.
+        double absolutePosition = getCalibrationPosition();
         // Now we know where the wheel actually is pointing, initialize the direction encoder on direction
         // motor controller to reflect the actual position of the wheel.
         directionMotor.setEncoderPosition(
-                (calibrationEncoder.getAbsolutePosition() - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
-        // set the wheel direction to 0.0 (son the wheel is now facing forward), and setup the remembered
-        // last wheel direction and last direction encoder  position.
+                (absolutePosition - calibrationOffset) * RADIANS_TO_SPIN_ENCODER);
+        // set the wheel direction to 0.0 (so the wheel is now facing forward), and setup the remembered
+        // last wheel direction and last direction encoder position.
         directionMotor.setTargetPosition(0.0);
         lastDirection.setValue(AngleUnit.RADIANS, 0.0);
         driveMode = CANSparkMax.ControlType.kVelocity;

@@ -1,12 +1,12 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
 
 /**
  *
  */
-public class DummyStopAndRunCommand extends CommandBase {
+public class DummyStopAndRunCommand extends Command {
 
     public static final long STOP_AND_RUN_DURATION = 2000;
     public static int instantiationCt = 0;

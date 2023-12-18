@@ -1,20 +1,17 @@
 package org.a05annex.frc.subsystems;
 
-import edu.wpi.first.wpilibj.Timer;
 import org.a05annex.frc.A05Constants;
+import org.a05annex.frc.subsystems.SpeedCachedSwerve.RobotRelativePosition;
 import org.a05annex.util.AngleConstantD;
-import org.a05annex.util.AngleUnit;
-import org.a05annex.util.Utl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.a05annex.frc.subsystems.SpeedCachedSwerve.RobotRelativePosition;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * So we had this question about the time it takes for the drice subsystem to get to the requested speed -
- * specifically, do the motors get to the new settings sistantly, does it take until the next commandis executed
- * (about 20ms) or does it happen somewhere inbetween? We think that inbetween is most likely, that it depends on
+ * So we had this question about the time it takes for the drive subsystem to get to the requested speed -
+ * specifically, do the motors get to the new settings instantly, does it take until the next command is executed
+ * (about 20ms) or does it happen somewhere in between? We think that in between is most likely, that it depends on
  * the magnitude of the requested change, but that there is some <i>phase</i> which will give us a reasonable
  * approximation. We imagined a phase from 0.0 (happens immediately at the beginning of the command cycle) to 1.0,
  * happens about time time the next request happens (at the end of the command cycle - or by the beginning of
@@ -30,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * </ul>
  *
  */
-public class TestPssedCacheSwervePhase {
+public class TestSpeedCacheSwervePhase {
     /**
      * These are the setting for the calibrated competition robot from '2023 Charged Up' used in testing
      */
@@ -38,6 +35,7 @@ public class TestPssedCacheSwervePhase {
             0.5461, 0.5461, 2.700, 1.161,
             2.723, 2.448, 1.026,1.0/Mk4NeoModule.MAX_METERS_PER_SEC);
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final int TEST_CACHE_LENGTH = 10;
 
     SpeedCachedSwerve initializeAndLoadSCS() {
@@ -65,10 +63,10 @@ public class TestPssedCacheSwervePhase {
         SCS.setPhase(0.0);
         RobotRelativePosition rrp = SCS.getRobotRelativePositionSince(0.0, -0.02);
         assertEquals(0.0, rrp.forward);
-        assertEquals(false, rrp.cacheOverrun);
+        assertFalse(rrp.cacheOverrun);
         rrp = SCS.getRobotRelativePositionSince(0.0, 0.0);
         assertEquals(0.0, rrp.forward);
-        assertEquals(false, rrp.cacheOverrun);
+        assertFalse(rrp.cacheOverrun);
         rrp = SCS.getRobotRelativePositionSince(0.02, 0.0);
         assertEquals(0.0, rrp.forward);
         rrp = SCS.getRobotRelativePositionSince(0.04, 0.0);
@@ -93,10 +91,10 @@ public class TestPssedCacheSwervePhase {
     void TestPhase_0x5() {
         SCS.setPhase(0.5);
         RobotRelativePosition rrp = SCS.getRobotRelativePositionSince(0.0, -0.02);
-        assertEquals(true, rrp.cacheOverrun);
+        assertTrue(rrp.cacheOverrun);
         rrp = SCS.getRobotRelativePositionSince(0.0, 0.0);
         assertEquals(0.0, rrp.forward);
-        assertEquals(false, rrp.cacheOverrun);
+        assertFalse(rrp.cacheOverrun);
         rrp = SCS.getRobotRelativePositionSince(0.02, 0.0);
         assertEquals(0.0, rrp.forward);
         rrp = SCS.getRobotRelativePositionSince(0.04, 0.0);

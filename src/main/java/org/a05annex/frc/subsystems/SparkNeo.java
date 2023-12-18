@@ -47,7 +47,7 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  *     the {@link #setRpmPID(double, double, double, double)},
  *     {@link #setSmartMotion(double, double, double, double, double, double, double, double)},
  *     {@link #setPositionPID(double, double, double, double)}, and
- *
+ *     {@link #setPID(PIDtype, double, double, double, double, double, double, double)}
  *     </li>
  *     <li>
  *
@@ -183,7 +183,6 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  *         Current limiting uses the SparkMAX to control the current to the motor. This can protect both the motor
  *         from currents that would cause damage, and the breaker to prevent conditions that would cause the breaker
  *         to trip and disable the motor.
- * <p>
  *         </li>
  *         <li>Unnecessary CAN activity</li>
  *     </ul>
@@ -402,8 +401,8 @@ public class SparkNeo {
             System.out.println();
             System.out.println("**********************************************************************");
             System.out.println("**********************************************************************");
-            System.out.println("***** %s() may only be called %s configuration".formatted(method,
-                    expectedInConfig ? "during" : "outside of"));
+            System.out.printf("***** %s() may only be called %s configuration%n", method,
+                    expectedInConfig ? "during" : "outside of");
             System.out.println("**********************************************************************");
             System.out.println("**********************************************************************");
             System.out.println();
@@ -423,7 +422,7 @@ public class SparkNeo {
             System.out.println();
             System.out.println("**********************************************************************");
             System.out.println("**********************************************************************");
-            System.out.println("***** %s() may only be called after configuration".formatted(method));
+            System.out.printf("***** %s() may only be called after configuration%n", method);
             System.out.println("**********************************************************************");
             System.out.println("**********************************************************************");
             System.out.println();

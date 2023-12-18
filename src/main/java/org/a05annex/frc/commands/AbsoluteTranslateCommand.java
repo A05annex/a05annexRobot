@@ -1,6 +1,6 @@
 package org.a05annex.frc.commands;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.DriveSubsystem;
 import org.a05annex.util.AngleConstantD;
@@ -11,7 +11,7 @@ import org.a05annex.util.AngleConstantD;
  * <i>april tag</i>. The absolute translation is expressed as meters forward and left strafe of the and
  * is set in the constructor.
  */
-public class AbsoluteTranslateCommand extends CommandBase {
+public class AbsoluteTranslateCommand extends Command {
     private final DriveSubsystem driveSubsystem = DriveSubsystem.getInstance();
     private final double distanceForward;
     private final double distanceStrafe;
