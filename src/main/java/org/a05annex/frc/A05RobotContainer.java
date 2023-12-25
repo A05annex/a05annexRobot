@@ -94,8 +94,10 @@ public abstract class A05RobotContainer {
      * </ul>
      */
     public A05RobotContainer() {
+        // setup the driver profile - read the configuration switches 0 and 1 to get the driver id (0 to 3)
         int driverId = A05Constants.readDriverID();
         try {
+            // load the driver profile file
             driver = A05Constants.DRIVER_SETTINGS_LIST.get(driverId);
             driver.load();
             driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), driveXbox, driver);
@@ -109,18 +111,17 @@ public abstract class A05RobotContainer {
             throw e;
         }
 
+        // Which robot is this? competition or spare/prototype
         int robotId = A05Constants.readRobotID();
         robotSettings = A05Constants.ROBOT_SETTINGS_LIST.get(robotId);
 
-        // autonomous
+        // setup the chosen autonomous path
         int autoId = A05Constants.readAutoID();
         A05Constants.AutonomousPath autonomousPath = null;
         try {
             autonomousPath = A05Constants.AUTONOMOUS_PATH_LIST.get(autoId);
             autonomousPath.load();
             autoCommand = new AutonomousPathCommand(autonomousPath, driveSubsystem);
-
-
             SmartDashboard.putString("Autonomous", autonomousPath.getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Autonomous", String.format("Path ID %d does not exist", autoId));

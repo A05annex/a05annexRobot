@@ -49,9 +49,6 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  *     {@link #setPositionPID(double, double, double, double)}, and
  *     {@link #setPID(PIDtype, double, double, double, double, double, double, double)}
  *     </li>
- *     <li>
- *
- *     </li>
  * </ul>
  * <p>
  * <b>Detail:</b>
