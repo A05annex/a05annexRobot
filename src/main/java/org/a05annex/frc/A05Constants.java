@@ -233,7 +233,7 @@ public abstract class A05Constants {
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-    // This is the auto path stuff
+    // This is the autonomous path stuff
     // -----------------------------------------------------------------------------------------------------------------
 
     /**
@@ -842,6 +842,9 @@ public abstract class A05Constants {
     public static final List<RobotSettings> ROBOT_SETTINGS_LIST = new ArrayList<>();
 
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // This is the data class for april tag positioning support
+    // -----------------------------------------------------------------------------------------------------------------
     /**
      * This class is used to contain the drive parameters used to do april tag positioning
      */

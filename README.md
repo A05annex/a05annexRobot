@@ -63,6 +63,31 @@ the robot response to their favorite game).
 
 We have already done this for you. see [a05annexTemplate](https://github.com/A05annex/a05annexTemplate)
 
+## The Design Pattern for Competition-Specific Constants
+
+It was an interesting coding pattern exercise to decide how to define and use 'constants' representing the year's
+robots, drivers, and autonomous paths populated by the competition code built on top of the <tt>a05annexRobot</tt>
+library. At issue is that constants defined in the competition code are not accessible to the library, so they need
+to be declared in the <tt>a05annexRobot</tt>, but populated in the competition code. The pattern is:
+* To define the data
+  classes in the <tt>[A05Constants](
+  https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05Constants.java)</tt> file, so
+  you will see we have the classes <tt>RobotSettings</tt>, <tt>DriverSettings</tt>, and <tt>AutonomousPath</tt> for
+  describing s robot profile, a driver profile, or an autonomous path respectively;
+* To define a list For each of the data classes as <tt>List<RobotSettings> ROBOT_SETTINGS_LIST</tt>,
+  <tt>List<DriverSettings> DRIVER_SETTINGS_LIST</tt>, and <tt>List\<AutonomousPath\> AUTONOMOUS_PATH_LIST</tt> for
+  robot profiles, driver profiles, nd autonomous paths respectively;
+* To populate the previously lists in the competition project code in the <tt>
+  [Robot](https://github.com/A05annex/a05annexTemplate/blob/main/src/main/java/frc/robot/Robot.java).RobotInit()</tt>
+  method by loading arrays defined in the <tt>
+  [Constants](https://github.com/A05annex/a05annexTemplate/blob/main/src/main/java/frc/robot/Constants.java)</tt>;
+* And finally, the <tt>[A05RobotContainer](https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05RobotContainer.java)
+  </tt> constructor reads the configuration selection switches for robot profile, driver profile, and autonomous path
+  and loads/initializes the those values for the match. NOTE: our use of switches on the robot for configuration
+  comes from a time where there was a lot of chatter billing SmartDashboard as unreliable and not up to the task.
+  Current WPIlib documentation is very explicit about how to do this correctly, i.e.
+ [Choosing and Autonomous Program](https://docs.wpilib.org/en/stable/docs/software/dashboards/smartdashboard/choosing-an-autonomous-program-from-smartdashboard.html),
+ so we will be revising this for the 2024 season.
 
 ## Robot Swerve Drive
 
@@ -74,6 +99,79 @@ control the drive, and the motor controllers and encoders must have the CAN bus 
 
 We spent a lot of time working on optimal module performance, and this is
 the [Swerve Programming paper](./resources/SwerveProgramming.pdf) that describes the details.
+
+## Characterizing Your Team's Robot(s)
+
+Every robot base will probably be slightly different in terms of geometry, swerve modules, Roborio, and NavX; so we
+wanted a way we could setup the parameters for both our competition and practice/prototype robot so that we did not
+maintain different code branches for each. We want to be able to run the same code on both robots. To satisfy this
+we introduce an
+<tt>[A05Constants](
+https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05Constants.java).RobotSettings
+</tt> class to represent a physical robot, and the
+<tt>[A05Constants](
+https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05Constants.java).ROBOT_SETTINGS_LIST
+</tt> to represent your team's robots.
+<details><summary>
+What follows are the details of robot representation and calibration:
+</summary>
+
+### Representing Your Robot(s)
+
+We generally have 2 similar swerve drive robots. The first is test/prototype robot,usually the robot from last season
+with the competition-specific appendages removed. The second is this season's competition robot. While these robots
+are generally very similar, there are generally some differences in geometry, electronics (different navX2 boards),
+physical state (how new are the wheel treads), etc.
+
+See the <tt>[A05Constants](
+https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05Constants.java).ROBOT_SETTINGS_LIST
+</tt> documentation for a description of all of the parameters in this class, all set in the
+constructor. The [ao5annexTemplate
+<tt>Constants</tt>](https://github.com/A05annex/a05annexTemplate/blob/main/src/main/java/frc/robot/Constants.java)
+defines 2 robots: a "Competition" robot at index 0; and a "Practice" robot at index 1.
+We use the roborio DIO input port 5 for our robot (since we only have 2, if you have more robots, you might
+want to use 5 and 6). The "Competition" robot is the index 0 entry in the list, so it does not require any
+changes to the Roborio (i.e. with nothing connected to DIO port 5 it will report a state of 0). The "Practice" robot
+requires a jumper on DIO port 5 that connects the signal
+pin to ground. This convention was chosen to minimize the things that could go wrong on the competition robot.
+
+### Robot Settings Detail
+
+Drive calibration is primarily focused on characterizing the performance of the <tt>DriveSubsystem</tt>
+and <tt>NavX</tt> so that the robot behaves as expected during driver control, and, so that autonomous paths and
+the <tt>SwerveSpeedCache</tt> can be accurately mapped to robot behaviour.
+
+* *id* and *name*: The *id* is used to confirms that the robot settings entry is at the index you expect it to be
+  so it is consistent with your robot selection UI. The *name* is for UI display of which robot
+  configuration is selected.
+* *length* and *width*: The should be measured from the center of the rotation shaft (analog position encoder). This
+  library currently supports ***ONLY*** a rectangular arrangement of swerve modules. If you are doing something
+  different, this library is not for your robot(s).
+* *swerve module calibration constants*: These are the readings of the analog swerve module encoders when the drives
+  are facing forward. We send the analog encoder readings to the smart dashboard regardless of the enable/disabled
+  state; disable the robot; manually spin each wheel until it is facing forward; then use a straightedge on the right
+  and left sides to force the front and rear wheels into alignment. The values we read for the analog encoders at
+  that time are saved as our calibration constants.
+* *navxYawCalibration*: this is a correction for the drift-per-spin that we have measured for the navX2 board that
+  is on this robot. This calibration is vital for having the robot maintain up-field and down-field orientation
+  regardless of the direction and number of spins the robot has made. See the next section for notes on measuring
+  and setting this value.
+* *maxSpeedCalibration*: this is a correction between the calculated maximum module speed (using module gear
+  ratio, and motor specifications) and the measured maximum speed along a a well specified control path. This
+  calibration is vital for having the robot track autonomous paths correctly.
+
+### Robot Drive/NavX Calibration
+
+Drive calibration is primarily focused on characterizing the performance of the <tt>DriveSubsystem</tt>
+and <tt>NavX</tt> so that the robot behaves as expected during driver control, and, so that autonomous paths and
+the <tt>SwerveSpeedCache</tt> can be accurately mapped to robot behaviour. In and ideal world, these calibrations
+would be performed at each competition, and, if warranted, multiple times during a competition. The reason for
+this is that in addition to robot changes over time, each competition venue presents a different field
+surface - which is a primary factor in calibration.
+
+***TODO - finish this.***
+
+</details>
 
 ## Drive Control and Driver Tuning
 
@@ -88,7 +186,6 @@ the [Swerve Programming paper](./resources/SwerveProgramming.pdf) that describes
      sitting in the robot (which is backwards when the robot is moving towards the driver). However, when you are
      performing a precision task watching the screen display of the robot camera - you now need driver mode.</li>
 </ul>
-We use the
 We also discovered that the drive control should be tuned to the driver. Occasional drivers or guest drivers during
 robot demonstrations should be highly constrained so the robot doesn't smash things at high speeds. Competition
 drivers should tune control to match their favorite game.
@@ -230,14 +327,14 @@ The steps in making the driver profile configurable are:
   driver's first name;
 * Put the profile in the *./src/main/deploy/drivers* directory;
 * Assuming you have used the [a05annexTemplate](https://github.com/A05annex/a05annexTemplate) as a starting point for
-  your project (or are just referring to that templete in *github*) - in <code>frc.robot.Constants.java</code> find the
-  <code>A05Constants.DriverSettings[] DRIVER_SETTINGS</code> array, and add an entry for your driver. The
-  <code>id</code> is the driver selection switch value for that driver, and is used to make sure switches are being
+  your project (or are just referring to that templete in *github*) - in <tt>frc.robot.Constants.java</tt> find the
+  <tt>A05Constants.DriverSettings[] DRIVER_SETTINGS</tt> array, and add an entry for your driver. The
+  <tt>id</tt> is the driver selection switch value for that driver, and is used to make sure switches are being
   mapped to the correct driver file.
 * We configure the driver by setting switches during robot setup on the field (really, while we are in the match queue),
   to select the driver profile. This means the driver profile is loaded at robot power-up, regardless of the driver
   station state or the field control system state. This has been 100% reliable for us (barring human failure to throw
-  the correct switches) during competition. Inspecting <code>A05RobotContainer</code> constructor, you will see that
+  the correct switches) during competition. Inspecting <tt>A05RobotContainer</tt> constructor, you will see that
   the first thing that happens is reading the configuration switches (switches 1 and 2, 1 being the first switch which
   is wired to the Roborio DIO 0 port, and 2 being the second switch which is wired to the Roborio DIO 1 port) and
   loading the corresponding driver profile.
@@ -245,14 +342,70 @@ The steps in making the driver profile configurable are:
 
 ## NavX
 
-## Drive Calibration
-
 <details>
-<summary>Drive calibration is primarily focused on characterizing the performance of the <code>DriveSubsystem</code>
-and <code>NavX</code> so that the robot behaves as expected during driver control, and, so that autonomous paths and
-the <code>SwerveSpeedCache</code> can be accurately mapped to robot behaviour.
+<summary>This section discusses our <tt>
+<a href="https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/NavX.java">NavX</a></tt>
+class wrapping the navX inertial navigation board and why
+we created it. We have used the Kauai Labs navX boards since our inception and recently switched to the
+<a href="https://www.kauailabs.com/navx-mxp/">navX2<sup>MXP</sup></a>. This is an inertial navigation board that
+senses the navX2 board position at startup and then reports changes to the board orientation relative to that
+start position as the match progresses. During the entire match we use the navX2 to heading correct during autonomous
+path following, align the robot up-field and down-field during driver control, as well as maintaining heading during
+driver control when the driver is not providing a rotation input.
 </summary>
 
+The primary issue with the naX2 library, and having it be a really useful robot navigation aid, is the -180&deg;(-&pi;)
+to +180&deg;(+&pi;) heading boundary. Very simply, suppose my robot is oriented downfield at the start of a match,
+i.e., the heading is +0&deg;(+0.0&pi;); my robot will go down-field 2m picking up a game piece on its way. Now my
+robot will turn +180&deg;(+&pi;) to the right and come back and deliver the game piece, then my robot will
+turn +90&deg;(+&pi;/2.0), go 1m, and turn to the right +90&deg;(+&pi;/2.0) and head up-field to collect
+my next game piece. The problem here has several manifestations:
+* After picking up the first piece and turning +180&deg;(+&pi;), the robot is riding the +180&deg;(+&pi;) to
+  -180&deg;(-&pi;) navX boundary, so writing the PID loop to maintain heading needs to account for the
+  boundary - which is special purpose code.
+* Once the first piece is delivered, the robot turns from +180&deg;(+&pi;) to -90&deg;(-&pi;/2.0) using the navX
+  heading. While we are trying to make a +90&deg;(+&pi;/2) turn, normal PID code would have us spin the robot
+  -270&deg;(-3&pi;/2) instead of +90&deg;(+&pi;/2), which is clearly suboptimal.
+
+The real problem here is that, from a navX perspective, if the robot makes a complete rotation to the right or left,
+it is back at +0&deg;(+0&pi;), rather than +360&deg;(+2&pi;) or -360&deg;(-2&pi;) - which reflects a complete
+rotation. The <tt>NavX</tt> heading counts the rotations and reports a true relative heading from the initial
+heading, including all rotations - so if
+the robot has spun 2 rotations to the right and is now headed down-field, the heading will be +720&deg;(+4&pi;),
+and likewise, if the robot has spun 2 rotations to the left and is now headed down-field, the heading will be
+-720&deg;(-4&pi;).
+
+### Convenience Functionality and Methods
+
+This is a summary of features provided by the <tt>NavX</tt> wrapper:
+* **initial heading** - The robot may not be positioned facing downfield so the initial heading will not
+  be +0&deg;(+0.0&pi;). The <tt>NavX.initializeHeadingAndNav(AngleConstantD)</tt> method initializes for any initial
+  heading of the robot so that a <tt>NavX</tt> heading of +0&deg;(+0.0&pi;) will actually be down-field.
+* **expected heading** - the <tt>NavX</tt> class formalizes the idea of an expected heading, which is the heading
+  the robot is expected to maintain if no rotation commands are sent to the robot.
+* **closest up-field/down-field headings** - we found it common that a driver would want to orient the robot either
+  directly up-field or directly down-field, but the driver was so focused on getting the robot through the field
+  traffic that driving heading at the same time was just too much to think about. This lead to up-field and
+  down-field driver control buttons that would automatically face the robot up-field or down-field while the driver
+  focused on driving a path through the field traffic. The buttons <tt>NavX.HeadingInfo.getClosestDownField()</tt> or
+  <tt>NavX.HeadingInfo.getClosestUpField()</tt> and then <tt>NavX.setExpectedHeading(AngleConstantD)</tt> to that
+  heading.
+* **closest heading to an arbitrary heading** - because sometimes pickup and/or delivery stations are not
+  up-field/down-field oriented, but at some arbitrary (competition-specific) field heading and you want to be
+  able to find the closest heading as <tt>NavX.HeadingInfo.getClosestHeading(AngleD)</tt>, and
+  then set that as the <tt>NavX.setExpectedHeading(AngleConstantD)</tt>.
+* **drift error correction** - We found that the navX2<sup>MXP</sup> had board-specific per rotation drift. i.e.
+  after 1 rotation, the heading reading would not be +360&deg;(+2&pi;) or -360&deg;(-2&pi;), see the next section for
+  a discussion of this.
+
+### navX Drift Error Correction
+
+In the 2022 and 2023 seasons the programming team received repeated complaints that the robot down-field heading was
+drifting throughout the match, requiring re-initialization of the downfield heading during the match. We spent some
+time trying to diagnose this and discovered that when the robot made a full revolution, the robot heading when facing
+downfield was no longer zero (a multiple of 360&deg;(2&pi;)). The more revolutions in the same direction, the further
+the drift. If the rotations were unwound (the same number of spins in the opposite direction), then downfield would
+return to very near zero.
 </details>
 
 ## Autonomous Paths
