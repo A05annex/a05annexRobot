@@ -51,7 +51,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
     protected A05AprilTagPositionCommand(PhotonCameraWrapper camera,
                                       double xPosition, double yPosition, String tagSetKey) {
         // NOTE: the super adds the drive subsystem requirement
-        super(SpeedCachedSwerve.getInstance(), A05Constants.DRIVE_XBOX, A05Constants.getDriver());
+        super(SpeedCachedSwerve.getInstance());
 
         this.camera = camera;
 
