@@ -35,22 +35,17 @@ public abstract class A05RobotContainer {
     /**
      * This is the robot driver Xbox controller typically used to control the drive.
      */
-    protected final XboxController driveXbox = new XboxController(A05Constants.DRIVE_XBOX_PORT);
+    protected final XboxController driveXbox = A05Constants.DRIVE_XBOX;
+
     /**
      * This is the alternate Xbox controller typically used to control non-drive subsystems.
      */
-    protected final XboxController altXbox = new XboxController(A05Constants.ALT_XBOX_PORT);
+    protected final XboxController altXbox = A05Constants.ALT_XBOX;
     /**
      * This is the autonomous path following command initialized for the path specified
      * by the autonomous path selection switches.
      */
     protected AutonomousPathCommand autoCommand = null;
-
-    /**
-     * These are the driver-specific controller settings (gain, sensitivity, deadband, etc.) for
-     * the driver selected by the driver selection switches.
-     */
-    protected A05Constants.DriverSettings driver = null;
 
     /**
      * This is the robot-specific description of this robot geometry, drive  initialization,
@@ -98,16 +93,16 @@ public abstract class A05RobotContainer {
         int driverId = A05Constants.readDriverID();
         try {
             // load the driver profile file
-            driver = A05Constants.DRIVER_SETTINGS_LIST.get(driverId);
-            driver.load();
-            driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), driveXbox, driver);
-            SmartDashboard.putString("Driver", driver.getName());
+            A05Constants.setDriver(A05Constants.DRIVER_SETTINGS_LIST.get(driverId));
+            A05Constants.getDriver().load();
+            driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), driveXbox, A05Constants.getDriver());
+            SmartDashboard.putString("Driver", A05Constants.getDriver().getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Driver", String.format("Driver ID %d does not exist", driverId));
             throw e;
         } catch (RuntimeException e) {
             SmartDashboard.putString("Driver",
-                    String.format("Could not load driver: '%s'", driver.getName()));
+                    String.format("Could not load driver: '%s'", A05Constants.getDriver().getName()));
             throw e;
         }
 

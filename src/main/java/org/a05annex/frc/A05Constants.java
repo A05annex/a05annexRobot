@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.a05annex.util.AngleD;
-import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,7 +70,21 @@ public abstract class A05Constants {
         return HAS_LIMELIGHT;
     }
 
-    public static final Dictionary<String, AprilTagPositionParameters> aprilTagPositionParametersDictionary = new Hashtable<>();
+    /**
+     * These are the driver-specific controller settings (gain, sensitivity, deadband, etc.) for
+     * the driver selected by the driver selection switches.
+     */
+    private static DriverSettings driver = null;
+
+    public static DriverSettings getDriver() {
+        return driver;
+    }
+
+    static void setDriver(DriverSettings driver) {
+        A05Constants.driver = driver;
+    }
+
+    public static final Dictionary<String, AprilTagSet> aprilTagSetDictionary = new Hashtable<>();
 
     /**
      * {@code true} if CAN devices should be set to factory defaults and fully configured from
@@ -79,6 +92,7 @@ public abstract class A05Constants {
      * and should be skipped. Defaults to {@code true}.
      */
     private static boolean SPARK_CONFIG_FROM_FACTORY_DEFAULTS = true;
+
     /**
      * {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise. Defaults
      * to {@code false}.
@@ -128,8 +142,16 @@ public abstract class A05Constants {
         return SPARK_BURN_CONFIG;
     }
     // ---------------------
-    public static final int DRIVE_XBOX_PORT = 0;
-    public static final int ALT_XBOX_PORT = 1;
+
+    /**
+     * This is the robot driver Xbox controller typically used to control the drive.
+     */
+    public static final XboxController DRIVE_XBOX = new XboxController(0);
+
+    /**
+     * This is the alternate Xbox controller typically used to control non-drive subsystems.
+     */
+    public static final XboxController ALT_XBOX = new XboxController(1);
 
     private static double DRIVE_ORIENTATION_kP;
 
