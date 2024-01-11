@@ -870,22 +870,11 @@ public abstract class A05Constants {
     /**
      * This class is used to contain the drive parameters used to do april tag positioning
      */
-    public static class AprilTagPositionParameters {
-        /**
-         * The maximum speed (0 - 1) that the robot can go while targeting
-         */
-        public final double maxSpeed;
-
-        /**
-         * Makes the robot speed to distance graph curved instead of linear. If the value is between 0 and 1 the robot
-         * will start to slow down later. If value is greater than 1, the robot will slow down sooner.
-         */
-        public final double speedSmoothingMultiplier;
-
+    public static class AprilTagSet {
         /**
          * Values that essentially control how sensitive the forward and strafe is
          */
-        public final double X_MAX, X_MIN = 0.0, Y_MAX, Y_MIN;
+        public final double X_MAX = 3.0, X_MIN = 0.0, Y_MAX = 1.5, Y_MIN = -1.5;
 
         /**
          * Array of april tag ids to perform the targeting on
@@ -898,28 +887,46 @@ public abstract class A05Constants {
         public final AngleD heading;
 
         /**
-         * @param maxSpeed The maximum speed (0 - 1) that the robot can go while targeting
-         * @param speedSmoothingMultiplier Makes the robot speed to distance graph curved instead of linear. If the
-         *                                 value is between 0 and 1 the robot will start to slow down later. If value
-         *                                 is greater than 1, the robot will slow down sooner.
-         * @param xSensitivity Controls how sensitive and how quickly the robot will try to get the right position on
-         *                     the X axis (forward/backward)
-         * @param ySensitivity Controls how sensitive and how quickly the robot will try to get the right position on
-         *                     the Y axis (side to side)
+         * True: Face the robot towards the target
+         * False: Make the robot face a set field heading
+         */
+        public final boolean useTargetForHeading;
+
+        /**
+         * The target's height above the carpet
+         */
+        public final double height;
+
+        /**
          * @param tagIDs Array of april tag ids to perform the targeting on
          * @param heading The field relative heading of the robot when facing the AprilTag
+         * @param useTargetForHeading False to use field heading for heading control, true to use target for heading control
+         * @param height the height, in meters of the target above the carpet
          */
-        public AprilTagPositionParameters(double maxSpeed, double speedSmoothingMultiplier, double xSensitivity,
-                                             double ySensitivity, int[] tagIDs, AngleD heading) {
-            this.maxSpeed = maxSpeed;
-            this.speedSmoothingMultiplier = speedSmoothingMultiplier;
-            double clippedXSensitivity = Utl.clip(xSensitivity, 0.1, 3.0);
-            double clippedYSensitivity = Utl.clip(ySensitivity, 0.1, 3.0);
-            this.X_MAX = 3.0 * clippedXSensitivity;
-            this.Y_MIN = -1.5 * clippedYSensitivity;
-            this.Y_MAX = 1.5 * clippedYSensitivity;
+        private AprilTagSet(int[] tagIDs, AngleD heading, boolean useTargetForHeading, double height) {
             this.tagIDs = tagIDs;
             this.heading = heading;
+            this.useTargetForHeading = useTargetForHeading;
+            this.height = height;
+        }
+
+        /**
+         * This will make the robot face a set field heading, not do heading based on the target
+         * @param tagIDs Array of april tag ids to perform the targeting on
+         * @param heading The field relative heading of the robot when facing the AprilTag
+         * @param height the height, in meters of the target above the carpet
+         */
+        public AprilTagSet(int[] tagIDs, AngleD heading, double height) {
+            this(tagIDs, heading, false, height);
+        }
+
+        /**
+         * This will make the robot face the target, not be controlled based on field heading
+         * @param tagIDs Array of april tag ids to perform the targeting on
+         * @param height The height, in meters of the target above the carpet
+         */
+        public AprilTagSet(int[] tagIDs, double height) {
+            this(tagIDs, new AngleD(), true, height);
         }
     }
 }
