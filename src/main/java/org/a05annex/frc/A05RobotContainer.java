@@ -95,7 +95,7 @@ public abstract class A05RobotContainer {
             // load the driver profile file
             A05Constants.setDriver(A05Constants.DRIVER_SETTINGS_LIST.get(driverId));
             A05Constants.getDriver().load();
-            driveCommand = new A05DriveCommand(DriveSubsystem.getInstance(), driveXbox, A05Constants.getDriver());
+            driveCommand = new A05DriveCommand(DriveSubsystem.getInstance());
             SmartDashboard.putString("Driver", A05Constants.getDriver().getName());
         } catch (IndexOutOfBoundsException e) {
             SmartDashboard.putString("Driver", String.format("Driver ID %d does not exist", driverId));

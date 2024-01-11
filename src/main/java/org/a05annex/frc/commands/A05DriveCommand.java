@@ -112,15 +112,12 @@ public class A05DriveCommand extends Command {
      * @param swerveDrive The swerve drive. Note, this is passed into the drive command so that projects using
      *                    the a05annexRobot library can add functional layers implementing {@link ISwerveDrive}
      *                    for additional functionality.
-     * @param xbox The driver xbox controller.
-     * @param driver The custom driver settings for the current driver.
      */
-    public A05DriveCommand(@NotNull ISwerveDrive swerveDrive, @NotNull XboxController xbox,
-                           @NotNull A05Constants.DriverSettings driver) {
+    public A05DriveCommand(@NotNull ISwerveDrive swerveDrive) {
         iSwerveDrive = swerveDrive;
         addRequirements(iSwerveDrive.getDriveSubsystem());
-        driveXbox = xbox;
-        this.driver = driver;
+        driveXbox = A05Constants.DRIVE_XBOX;
+        this.driver = A05Constants.getDriver();
     }
 
     /**
