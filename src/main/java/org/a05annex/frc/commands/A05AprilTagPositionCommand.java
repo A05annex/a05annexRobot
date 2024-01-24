@@ -1,7 +1,6 @@
 package org.a05annex.frc.commands;
 
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.XboxController;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.subsystems.PhotonCameraWrapper;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
@@ -42,7 +41,6 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
     // Drive and control constants
     protected final double MAX_SPEED_DELTA = 0.075, HEADING_ROTATION_KP = 0.9, TARGET_ROTATION_KP = 0.9;
     protected final double X_POSITION, Y_POSITION, MAX_SPEED = 1.0, SPEED_SMOOTHING_MULTIPLIER = 0.8;
-    protected final int[] aprilTagIds;
     protected final AngleD HEADING;
     protected final double X_MAX, X_MIN, Y_MAX, Y_MIN;
 
@@ -59,8 +57,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
         this.X_POSITION = xPosition;
         this.Y_POSITION = -yPosition;
-        this.HEADING = tagSet.heading;
-        this.aprilTagIds = tagSet.tagIDs;
+        this.HEADING = tagSet.heading();
         this.X_MIN = tagSet.X_MIN;
         this.X_MAX = tagSet.X_MAX;
         this.Y_MIN = tagSet.Y_MIN;
@@ -136,7 +133,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
         return Utl.clip((camera.getYFromLastTarget(tagSet) - positionAtFrame.strafe - center) / scale - (Y_POSITION - center) / scale, -1.0, 1.0);
     }
 
-    protected boolean isValidTargetID() {;
+    protected boolean isValidTargetID() {
         return camera.getTarget(tagSet) != null;
     }
 
@@ -231,7 +228,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
             return 0.0;
         }
 
-        return camera.getTarget(tagSet).getYaw() / 100.0 * TARGET_ROTATION_KP;
+        // 35.0 used because the camera FOV is approx. 70°, divided by 2 to be positive and negative
+        return camera.getTarget(tagSet).getYaw() / 35.0 * TARGET_ROTATION_KP;
     }
 
     protected boolean checkInZone() {
@@ -253,7 +251,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
 
         // ------- Calculate Rotation --------
-        calcRotation();
+        conditionedRotate = calcRotation();
 
 
         // ------- Calculate Direction -------

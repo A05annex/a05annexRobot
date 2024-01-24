@@ -8,7 +8,8 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A wrapper around a PhotonCamera object that provides convenient access to the latest frame and target information.
@@ -84,8 +85,8 @@ public class PhotonCameraWrapper {
      */
     private PhotonTrackedTarget filterForTarget(A05Constants.AprilTagSet tagSet) {
         for(PhotonTrackedTarget target : targetList) {
-            for(int i = 0; i < tagSet.tagIDs.length; i++) {
-                if(target.getFiducialId() == tagSet.tagIDs[i]) {
+            for(int i = 0; i < tagSet.tagIDs().length; i++) {
+                if(target.getFiducialId() == tagSet.tagIDs()[i]) {
                     return target;
                 }
             }
@@ -148,6 +149,7 @@ public class PhotonCameraWrapper {
      * Returns the X coordinate (forward/backward) of the last detected target relative to the camera.
      * @return the X coordinate (forward/backward) of the last detected target relative to the camera.
      */
+
     public double getXFromLastTarget(A05Constants.AprilTagSet tagSet) {
         if(filterForTarget(tagSet) == null) {
             throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");

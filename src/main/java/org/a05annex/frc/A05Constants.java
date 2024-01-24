@@ -1,5 +1,6 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
@@ -877,14 +878,32 @@ public abstract class A05Constants {
         public final double X_MAX = 3.0, X_MIN = 0.0, Y_MAX = 1.5, Y_MIN = -1.5;
 
         /**
-         * Array of april tag ids to perform the targeting on
+         * Array of red alliance april tag ids to perform the targeting on
          */
-        public final int[] tagIDs;
+        private final int[] redTagIDs;
+        
+        /**
+         * Array of blue alliance april tag ids to perform the targeting on
+         */
+        private final int[] blueTagIDs;
+
+        public int[] tagIDs() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
+        }
+        
+        /**
+         * The field relative heading of the robot when facing the red AprilTag(s)
+         */
+        private final AngleD redHeading;
 
         /**
-         * The field relative heading of the robot when facing the AprilTag
+         * The field relative heading of the robot when facing the blue AprilTag(s)
          */
-        public final AngleD heading;
+        private final AngleD blueHeading;
+
+        public AngleD heading() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redHeading : blueHeading;
+        }
 
         /**
          * True: Face the robot towards the target
@@ -898,35 +917,28 @@ public abstract class A05Constants {
         public final double height;
 
         /**
-         * @param tagIDs Array of april tag ids to perform the targeting on
-         * @param heading The field relative heading of the robot when facing the AprilTag
          * @param useTargetForHeading False to use field heading for heading control, true to use target for heading control
          * @param height the height, in meters of the target above the carpet
          */
-        private AprilTagSet(int[] tagIDs, AngleD heading, boolean useTargetForHeading, double height) {
-            this.tagIDs = tagIDs;
-            this.heading = heading;
+        private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading) {
+            this.redTagIDs = redTagIDs;
+            this.blueTagIDs = blueTagIDs;
+            this.redHeading = redHeading;
+            this.blueHeading = blueHeading;
             this.useTargetForHeading = useTargetForHeading;
             this.height = height;
         }
 
-        /**
-         * This will make the robot face a set field heading, not do heading based on the target
-         * @param tagIDs Array of april tag ids to perform the targeting on
-         * @param heading The field relative heading of the robot when facing the AprilTag
-         * @param height the height, in meters of the target above the carpet
-         */
-        public AprilTagSet(int[] tagIDs, AngleD heading, double height) {
-            this(tagIDs, heading, false, height);
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
+            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false);
         }
 
-        /**
-         * This will make the robot face the target, not be controlled based on field heading
-         * @param tagIDs Array of april tag ids to perform the targeting on
-         * @param height The height, in meters of the target above the carpet
-         */
-        public AprilTagSet(int[] tagIDs, double height) {
-            this(tagIDs, new AngleD(), true, height);
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
+            this(redTagIDs, blueTagIDs, height, heading, heading, false);
+        }
+
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
+            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true);
         }
     }
 }
