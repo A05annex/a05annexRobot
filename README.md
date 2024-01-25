@@ -56,6 +56,8 @@ the robot response to their favorite game).
       modules (a painful change in the programming model and the initialization defaults for the
       CANcoder).</li>
     </ul>
+  <li>0.0.33 - 2024 WPIlib release version 2024.2.1 integration, updated all vendor deps, fixed some minor issues
+    introduced by the new photonvision library.</li>
   </ul>
 </details>
 
@@ -67,7 +69,7 @@ We have already done this for you. see [a05annexTemplate](https://github.com/A05
 
 It was an interesting coding pattern exercise to decide how to define and use 'constants' representing the year's
 robots, drivers, and autonomous paths populated by the competition code built on top of the <tt>a05annexRobot</tt>
-library. At issue is that constants defined in the competition code are not accessible to the library, so they need
+library. At issue is that constants declared in the competition code are not accessible to the library, so they need
 to be declared in the <tt>a05annexRobot</tt>, but populated in the competition code. The pattern is:
 * To define the data
   classes in the <tt>[A05Constants](
@@ -343,8 +345,8 @@ The steps in making the driver profile configurable are:
 ## NavX
 
 <details>
-<summary>This section discusses our <tt>
-<a href="https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/NavX.java">NavX</a></tt>
+<summary>This section discusses our
+<a href="https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/NavX.java"><tt>NavX</tt></a>
 class wrapping the navX inertial navigation board and why
 we created it. We have used the Kauai Labs navX boards since our inception and recently switched to the
 <a href="https://www.kauailabs.com/navx-mxp/">navX2<sup>MXP</sup></a>. This is an inertial navigation board that

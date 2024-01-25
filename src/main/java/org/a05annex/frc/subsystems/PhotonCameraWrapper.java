@@ -1,5 +1,6 @@
 package org.a05annex.frc.subsystems;
 
+import org.jetbrains.annotations.Nullable;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -16,7 +17,7 @@ public class PhotonCameraWrapper {
 
     // Latest frame, target, and frame with target
     private PhotonPipelineResult latestFrame = new PhotonPipelineResult();
-    private PhotonTrackedTarget latestTarget = new PhotonTrackedTarget();
+    private PhotonTrackedTarget latestTarget = null;
     private PhotonPipelineResult latestFrameWithTarget = new PhotonPipelineResult();
 
     // ID and time of last target seen
@@ -74,8 +75,9 @@ public class PhotonCameraWrapper {
     /**
      * Returns the latest tracked target.
      *
-     * @return The latest tracked target.
+     * @return The latest tracked target. {@code null} if there is no latest tracked target.
      */
+    @Nullable
     public PhotonTrackedTarget getLatestTarget() {
         return latestTarget;
     }
@@ -161,8 +163,8 @@ public class PhotonCameraWrapper {
      *
      * @return The distance from the camera to the last detected target, in meters.
      */
-    public double getDistanceFromLastTarget() {
-        return latestTarget.getBestCameraToTarget().getTranslation().getNorm();
+    public Double getDistanceFromLastTarget() {
+        return (null == latestTarget) ? null : latestTarget.getBestCameraToTarget().getTranslation().getNorm();
     }
 
 
@@ -171,8 +173,8 @@ public class PhotonCameraWrapper {
      * Returns the X coordinate of the last detected target relative to the camera.
      * @return the X coordinate of the last detected target relative to the camera.
      */
-    public double getXFromLastTarget() {
-        return latestTarget.getBestCameraToTarget().getX();
+    public Double getXFromLastTarget() {
+        return (null == latestTarget) ? null : latestTarget.getBestCameraToTarget().getX();
     }
 
     /**
@@ -181,16 +183,16 @@ public class PhotonCameraWrapper {
      * is inverted with respect to the Y axis of the camera coordinate system.
      * @return the Y coordinate of the last detected target relative to the camera.
      */
-    public double getYFromLastTarget() {
-        return -latestTarget.getBestCameraToTarget().getY();
+    public Double getYFromLastTarget() {
+        return (null == latestTarget) ? null : -latestTarget.getBestCameraToTarget().getY();
     }
 
     /**
      * Returns the Z coordinate of the last detected target relative to the camera.
      * @return the Z coordinate of the last detected target relative to the camera.
      */
-    public double getZFromLastTarget() {
-        return latestTarget.getBestCameraToTarget().getZ();
+    public Double getZFromLastTarget() {
+        return (null == latestTarget) ? null : latestTarget.getBestCameraToTarget().getZ();
     }
 
     /**
@@ -198,7 +200,7 @@ public class PhotonCameraWrapper {
      * The result is obtained using the atan2 function with the X and Y coordinates of the last detected target.
      * @return The horizontal angle offset in radians between the robot heading and the last detected target.
      */
-    public double getHorizontalOffsetRadians() {
-        return Math.atan2(getXFromLastTarget(), getYFromLastTarget());
+    public Double getHorizontalOffsetRadians() {
+        return  (null == latestTarget) ? null : Math.atan2(getXFromLastTarget(), getYFromLastTarget());
     }
 }
