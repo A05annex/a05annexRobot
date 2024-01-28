@@ -5,10 +5,8 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CANcoderConfigurator;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.REVLibError;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.*;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
@@ -41,11 +39,11 @@ public class TestMk4NeoModule {
         // PID controllers and encoders embedded in the neo motor and spark controller pair)
         final CANSparkMax driveMotor = mock(CANSparkMax.class);
         final RelativeEncoder driveEncoder = mock(RelativeEncoder.class);
-        final SparkMaxPIDController drivePID = mock(SparkMaxPIDController.class);
+        final SparkPIDController drivePID = mock(SparkPIDController.class);
         final SparkNeo driveSparkNeo = new SparkNeo(driveMotor, driveEncoder, drivePID);
         final CANSparkMax spinMotor = mock(CANSparkMax.class);
         final RelativeEncoder spinEncoder = mock(RelativeEncoder.class);
-        final SparkMaxPIDController spinPID = mock(SparkMaxPIDController.class);
+        final SparkPIDController spinPID = mock(SparkPIDController.class);
         final SparkNeo spinSparkNeo = new SparkNeo(spinMotor, spinEncoder, spinPID);
         final Mk4NeoModule driveModule;
 
