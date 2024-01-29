@@ -1,4 +1,4 @@
-* **version:** 2024.0.1
+* **version:** 2024.2.2
 * **status:** first used for FRC **2023 Charged Up**
 * **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
   base to jump start future years.
@@ -15,6 +15,8 @@ the robot response to their favorite game).
 <details>
   <summary>version 0.0.31 to 2024.??.?? (for <b>2024 Crescendo</b>):</summary>
   <ul>
+   <li>2024.2.2 - Cleanup of REV deprications. Improved documentation in <tt>A05Constants</tt>. Improved driver
+     initialization if configuration switches cannot be read.</li>
    <li>2024.0.1 - Revised the versioning scheme to be more consistent with WPIlib and vendor dep
      versioning scheme.</li>
    <li>0.0.33 - 2024 WPIlib release version 2024.2.1 integration, updated all vendor deps, fixed some minor issues
