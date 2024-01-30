@@ -1,4 +1,4 @@
-* **version:** 0.0.33
+* **version:** 2024.0.1
 * **status:** first used for FRC **2023 Charged Up**
 * **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
   base to jump start future years.
@@ -13,39 +13,12 @@ the robot response to their favorite game).
 ## Change Log
 
 <details>
-  <summary>version 0.0.1 to 0.0.31 (for <b>2023 Charged Up</b>):</summary>
-  <ul>
-  <li>0.0.1 - Initial internal release;</li>
-  <li>0.0.2 - Optional mirroring of autonomous for <b>2023 Charged Up</b>;</li>
-  <li>0.0.4 - AbsoluteTranslateCommand - move by position;</li>
-  <li>0.0.8 - Added getClosestDownField(), getClosestUpField(), getClosestDownOrUpField() to
-            NavX.HeadingInfo;</li>
-  <li>0.0.9 - Added max speed and heading correction at end of translate;</li>
-  <li>0.0.10 - AbsoluteSmartTranslateCommand - first smart motion implementation;</li>
-  <li>0.0.11 - Tuned smart motion coefficients;</li>
-  <li>0.0.12 - Made heading correction after translate optional;</li>
-  <li>0.0.13 - Added a NavX calibration factor to minimize rotational drift;</li>
-  <li>0.0.15 - Current limited swerve drive and spin motors;</li>
-  <li>0.0.16 - Changed ordering of swerves in translate commands to try to reduce rotational drift;</li>
-  <li>0.0.17 - ISwerveDrive can be set for the A05DriveCommand allowing extension of the DriveSubsystem
-             that add game-specific functionality;</li>
-  <li>0.0.18 - Added a recalibrate method for the swerve so it could be recalibrated prior to any enable, this was
-             a band-aid to not burning configuration into the Spark and having occasional configuration
-             issues;</li>
-  <li>0.0.19 - Fixed a burning configuration state into the Sparks problem introduced in 0.0.18;</li>
-  <li>0.0.20 - Added a methods to IServeDrive to get the actual underlying subsystem;</li>
-  <li>0.0.21 - Code to burn default configuration into the Sparks;</li>
-  <li>0.0.23 - Post-competition cleanup. Moving common Spark-NEO and Spark-NOE550 combination into
-             a tested wrapper that formalizes our 95% use case into a sample and repeatable pattern;</li>
-  <li>0.0.29 - Added SpeedCachedSwerve;</li>
-  <li>0.0.30 - Added A05AprilTagPositionCommand;</li>
-  <li>0.0.31 - Cleanup and testing of SwerveSpeedCache phase adjustment.</li>
-  </ul>
-</details>
-<details>
   <summary>version 0.0.31 to 0.0.?? (for <b>2024 Crescendo</b>):</summary>
   <ul>
-  <li>0.0.32 - 2024 WPIlib beta version 2024.1.1-beta-4 integration:</li>
+   <li>2024.0.1 - Revised versioning scheme to be more consistent with WPIlib and vendor dep versioning scheme.</li>
+   <li>0.0.33 - 2024 WPIlib release version 2024.2.1 integration, updated all vendor deps, fixed some minor issues
+     introduced by the new photonvision library;</li>
+   <li>0.0.32 - 2024 WPIlib beta version 2024.1.1-beta-4 integration:</li>
     <ul>
     <li>update build to gradle 8.4;</li>
     <li>Java support to Java 17;</li>
@@ -56,10 +29,38 @@ the robot response to their favorite game).
       modules (a painful change in the programming model and the initialization defaults for the
       CANcoder).</li>
     </ul>
-  <li>0.0.33 - 2024 WPIlib release version 2024.2.1 integration, updated all vendor deps, fixed some minor issues
-    introduced by the new photonvision library.</li>
+  </ul>
+</details><details>
+  <summary>version 0.0.1 to 0.0.31 (for <b>2023 Charged Up</b>):</summary>
+  <ul>
+    <li>0.0.31 - Cleanup and testing of SwerveSpeedCache phase adjustment;</li>
+    <li>0.0.30 - Added A05AprilTagPositionCommand;</li>
+    <li>0.0.29 - Added SpeedCachedSwerve;</li>
+    <li>0.0.23 - Post-competition cleanup. Moving common Spark-NEO and Spark-NOE550 combination into
+             a tested wrapper that formalizes our 95% use case into a simple and repeatable pattern;</li>
+    <li>0.0.21 - Code to burn default configuration into the Sparks;</li>
+    <li>0.0.20 - Added a methods to IServeDrive to get the actual underlying subsystem;</li>
+    <li>0.0.19 - Fixed a problem burning configuration state into the Sparks introduced in 0.0.18;</li>
+    <li>0.0.18 - Added a recalibrate method for the swerve so it could be recalibrated prior to any enable, this was
+             a band-aid to not burning configuration into the Spark and having occasional configuration
+             issues;</li>
+    <li>0.0.17 - ISwerveDrive can be set for the A05DriveCommand allowing extensions of the DriveSubsystem
+             that add game-specific functionality;</li>
+    <li>0.0.16 - Changed ordering of swerves in translate commands to try to reduce rotational drift;</li>
+    <li>0.0.15 - Current limited swerve drive and spin motors;</li>
+    <li>0.0.13 - Added a NavX calibration factor to minimize rotational drift;</li>
+    <li>0.0.12 - Made heading correction after translate optional;</li>
+    <li>0.0.11 - Tuned smart motion coefficients;</li>
+    <li>0.0.10 - AbsoluteSmartTranslateCommand - first smart motion implementation;</li>
+    <li>0.0.9 - Added max speed and heading correction at end of translate;</li>
+    <li>0.0.8 - Added getClosestDownField(), getClosestUpField(), getClosestDownOrUpField() to
+            NavX.HeadingInfo;</li>
+    <li>0.0.4 - AbsoluteTranslateCommand - move by position;</li>
+    <li>0.0.2 - Optional mirroring of autonomous for <b>2023 Charged Up</b>;</li>
+    <li>0.0.1 - Initial internal release.</li>
   </ul>
 </details>
+
 
 ## Creating a Robot Project Using this Library
 
