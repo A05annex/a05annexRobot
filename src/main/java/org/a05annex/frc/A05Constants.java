@@ -1,11 +1,11 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.a05annex.util.AngleD;
-import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,14 +71,13 @@ public abstract class A05Constants {
         return HAS_LIMELIGHT;
     }
 
-    public static final Dictionary<String, AprilTagPositionParameters> aprilTagPositionParametersDictionary = new Hashtable<>();
-
     /**
      * {@code true} if CAN devices should be set to factory defaults and fully configured from
      * there, {@code false} if it should be assumed configuration is burned into the CAN devices
      * and should be skipped. Defaults to {@code true}.
      */
     private static boolean SPARK_CONFIG_FROM_FACTORY_DEFAULTS = true;
+
     /**
      * {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise. Defaults
      * to {@code false}.
@@ -127,14 +126,23 @@ public abstract class A05Constants {
     public static boolean getSparkBurnConfig() {
         return SPARK_BURN_CONFIG;
     }
-    // ---------------------
-    public static final int DRIVE_XBOX_PORT = 0;
-    public static final int ALT_XBOX_PORT = 1;
 
-    private static double DRIVE_ORIENTATION_kP;
+    // -----------------------------------------------------------------------------------------------------------------
+    //
+    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * This is the robot driver Xbox controller typically used to control the drive.
+     */
+    public static final XboxController DRIVE_XBOX = new XboxController(0);
 
-    // ---------------------
+    /**
+     * This is the alternate Xbox controller typically used to control non-drive subsystems.
+     */
+    public static final XboxController ALT_XBOX = new XboxController(1);
+
+    // -----------------------------------------------------------------------------------------------------------------
     // Controlling whether there is debugging logging of this library in the console file for the run.
+    // -----------------------------------------------------------------------------------------------------------------
     /**
      * {@code true} if this a05annexRobot classes should add debugging output to the console,
      * {@code false} otherwise (and by default).
@@ -159,7 +167,22 @@ public abstract class A05Constants {
     public static void setPrintDebug(boolean print) {
         PRINT_DEBUG = print;
     }
-    // ---------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Drive Orientation Kp:
+    //  When the driver is not applying rotation during drive, we assume the driver wants the robot heading to remain
+    //  constant regardless of field obstacles (cable races - 2023 Charged Up; structural elements on the field on
+    //  the driving surface - 2020 Infinite Recharge); or un/intentional robot collisions, or collisions with game
+    //  elements. There is a PID loop in the swerve DriveSubsystem that maintains current heading if the driver is
+    //  not applying rotation. This PID only uses the Kp as perturbations are usually instantaneous and there are
+    // not enough command cycles at any current heading to build up an integral correction.
+    // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * This is the Kp used to maintain heading in the {@link org.a05annex.frc.subsystems.DriveSubsystem} when the
+     * driver is not applying any rotation command. It is also used during autonomous path following to maintain
+     * the expected path heading. This default value has worked well for our robot the last several years.
+     */
+    private static double DRIVE_ORIENTATION_kP = 1.2;;
 
     /**
      * Get the drive orientation Kp, which is the Kp for the PID loop that keeps the robot on the expected heading
@@ -345,12 +368,41 @@ public abstract class A05Constants {
     // -----------------------------------------------------------------------------------------------------------------
     // This is the driver selection stuff
     // -----------------------------------------------------------------------------------------------------------------
+    /**
+     * These are the driver-specific controller profile (gain, sensitivity, deadband, etc.) for the driver selected
+     * by the  driver selection switches. This initializes to a default <i>safe</i> configuration (i.e. reduced
+     * speeds - the programmer's configuration) in the event the actual robot code does not set a driver.
+     */
+    private static DriverSettings driver = new DriverSettings("uninitialized", -1);
+
+    /**
+     * Get the current driver profile.
+     *
+     * @return The current driver profile.
+     */
+    @Nullable
+    public static DriverSettings getDriver() {
+        return driver;
+    }
+
+    /**
+     * Set the driver profile that should be used for this driving/competition session.
+     *
+     * @param driver The driver profile.
+     */
+    static void setDriver(@NotNull DriverSettings driver) {
+        A05Constants.driver = driver;
+    }
 
     /**
      * This class is the description of customized driver settings for a specific driver. A list of driver
      * descriptions is loaded into {@link #DRIVER_SETTINGS_LIST}. The driver switches select the driver settings
      * JSON file that will be loaded into the {@link org.a05annex.frc.commands.A05DriveCommand} by
      * the {@link A05RobotContainer} constructor.
+     * <p>
+     * NOTE: The default initialization is to a <i>safe</i> configuration we use for programmers - who are
+     * generally not very good drivers. So a drivable configuration will be in place even if the specified
+     * profile file cannot be read.
      */
     public static class DriverSettings {
         /**
@@ -428,7 +480,7 @@ public abstract class A05Constants {
          * {@code 0.0}. This accounts for failure of the stick to reliably recenter to {@code 0.0} as well as minor
          * unintentional pressure on the stick.
          */
-        protected double driveDeadband;
+        protected double driveDeadband = 0.05;
         /**
          * The linearity (sensitivity) of the speed control. At {@code 1.0}, the stick reading is proportional to the
          * distance from {@code 0.0}. a value greater than {@code 1.0} raises the stick distance to that power,
@@ -437,11 +489,11 @@ public abstract class A05Constants {
          * to a distance of {@code 0.5}, the actual requested speed is {@code 0.5 ^ 2} or {@code 0.25}. Practically,
          * a greater sensitivity means there is more fine control for subtle movements.
          */
-        protected double driveSpeedSensitivity;
+        protected double driveSpeedSensitivity = 2.0;
         /**
          * The maximum speed that will be sent to the drive subsystem during normal driving.
          */
-        protected double driveSpeedGain;
+        protected double driveSpeedGain = 0.5;
         /**
          * The maximum change im speed that can happen in one command cycle (20ms). This is analogous to anti-lock
          * braking systems (ABS) in cars to minimize skidding that generally causes loss of driver control and slower
@@ -449,13 +501,13 @@ public abstract class A05Constants {
          * skidding helps us predict robot position on the field with greater accuracy. Also, reducing skidding
          * helps minimize damage to the field surface.
          */
-        protected double driveSpeedMaxInc;
+        protected double driveSpeedMaxInc = 0.75;
         /**
          * The deadband of the rotate joystick. This is the distance from {@code 0.0} that is considered to be
          * {@code 0.0}. This accounts for failure of the stick to reliably recenter to {@code 0.0} as well as minor
          * unintentional pressure on the stick.
          */
-        protected double rotateDeadband;
+        protected double rotateDeadband = 0.05;
         /**
          * The linearity (sensitivity) of the rotation control. At {@code 1.0}, the stick reading is proportional to
          * the distance from {@code 0.0}. a value greater than {@code 1.0} raises the stick distance to that power,
@@ -464,11 +516,11 @@ public abstract class A05Constants {
          * to a distance of {@code 0.5}, the actual requested rotation is {@code 0.5 ^ 2} or {@code 0.25}. Practically,
          * a greater sensitivity means there is more fine control for subtle movements.
          */
-        protected double rotateSensitivity;
+        protected double rotateSensitivity = 1.5;
         /**
          * The maximum rotation that will be sent to the drive subsystem during normal driving.
          */
-        protected double rotateGain;
+        protected double rotateGain = 0.4;
         /**
          * The maximum change im rotation that can happen in one command cycle (20ms). This is analogous to anti-lock
          * braking systems (ABS) in cars to minimize skidding that generally causes loss of driver control and slower
@@ -476,30 +528,31 @@ public abstract class A05Constants {
          * skidding helps us predict robot position on the field with greater accuracy. Also, reducing skidding
          * helps minimize damage to the field surface.
          */
-        protected double rotateMaxInc;
+        protected double rotateMaxInc = 0.075;
         /**
          * The trigger (right or left) that initiates a boost in gain. Analogous to a <i>turbo*</i> button. Useful
          * when the robot is doing something really simple, like heading down field, and you just need fast speed
          * with minimal control. {@code null} if boost gain is not enabled.
          */
-        protected XboxController.Axis boostTrigger;
+        protected XboxController.Axis boostTrigger = XboxController.Axis.kRightTrigger;
         /**
          * The maximum speed that will be sent to the drive subsystem when boost is activated.
          */
-        protected double boostGain;
+        protected double boostGain = 1.0;
         /**
          * The trigger (right or left) that initiates a reduction in gain. Analogous to a <i>fine control</i> button.
          * Useful when the robot is doing a fine adjustment, and you need fine control of the robot. {@code null}
          * if slow gain is not enabled.
          */
-        protected XboxController.Axis slowTrigger;
+        protected XboxController.Axis slowTrigger = XboxController.Axis.kLeftTrigger;
         /**
          * The maximum speed that will be sent to the drive subsystem when slow is activated.
          */
-        protected double slowGain;
+        protected double slowGain = 0.3;
 
         /**
-         * Construct a driver settings description.
+         * Construct a driver settings description. This is an empty description that will be populated when
+         * the driver data file is read.
          *
          * @param driverName The driver name (no spaces please).
          * @param id         The driver index in the {@link #DRIVER_SETTINGS_LIST}.
@@ -539,12 +592,18 @@ public abstract class A05Constants {
                     this.boostTrigger = boostTrigger.equals(LEFT_TRIGGER) ?
                             XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
                     boostGain = (double) dict.get(BOOST_GAIN);
+                } else {
+                    this.boostTrigger = null;
+                    boostGain = 0.0;
                 }
                 String slowTrigger = (String) dict.get(SLOW_TRIGGER);
                 if (null != slowTrigger) {
                     this.slowTrigger = slowTrigger.equals(LEFT_TRIGGER) ?
                             XboxController.Axis.kLeftTrigger : XboxController.Axis.kRightTrigger;
                     slowGain = (double) dict.get(SLOW_GAIN);
+                } else {
+                    this.slowTrigger = null;
+                    slowGain = 0.0;
                 }
 
             } catch (IOException | ParseException e) {
@@ -564,7 +623,7 @@ public abstract class A05Constants {
         }
 
         /**
-         * Save the driver settings to the specified path.
+         * Save the driver settings to the specified file path.
          *
          * @param filePath The path to the settings file.
          */
@@ -846,58 +905,82 @@ public abstract class A05Constants {
     // This is the data class for april tag positioning support
     // -----------------------------------------------------------------------------------------------------------------
     /**
+     *
+     */
+    public static final Dictionary<String, AprilTagSet> aprilTagSetDictionary = new Hashtable<>();
+
+
+    /**
      * This class is used to contain the drive parameters used to do april tag positioning
      */
-    public static class AprilTagPositionParameters {
-        /**
-         * The maximum speed (0 - 1) that the robot can go while targeting
-         */
-        public final double maxSpeed;
-
-        /**
-         * Makes the robot speed to distance graph curved instead of linear. If the value is between 0 and 1 the robot
-         * will start to slow down later. If value is greater than 1, the robot will slow down sooner.
-         */
-        public final double speedSmoothingMultiplier;
-
+    public static class AprilTagSet {
         /**
          * Values that essentially control how sensitive the forward and strafe is
          */
-        public final double X_MAX, X_MIN = 0.0, Y_MAX, Y_MIN;
+        public final double X_MAX = 3.0, X_MIN = 0.0, Y_MAX = 1.5, Y_MIN = -1.5;
 
         /**
-         * Array of april tag ids to perform the targeting on
+         * Array of red alliance april tag ids to perform the targeting on
          */
-        public final int[] tagIDs;
+        private final int[] redTagIDs;
+        
+        /**
+         * Array of blue alliance april tag ids to perform the targeting on
+         */
+        private final int[] blueTagIDs;
+
+        public int[] tagIDs() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
+        }
+        
+        /**
+         * The field relative heading of the robot when facing the red AprilTag(s)
+         */
+        private final AngleD redHeading;
 
         /**
-         * The field relative heading of the robot when facing the AprilTag
+         * The field relative heading of the robot when facing the blue AprilTag(s)
          */
-        public final AngleD heading;
+        private final AngleD blueHeading;
+
+        public AngleD heading() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redHeading : blueHeading;
+        }
 
         /**
-         * @param maxSpeed The maximum speed (0 - 1) that the robot can go while targeting
-         * @param speedSmoothingMultiplier Makes the robot speed to distance graph curved instead of linear. If the
-         *                                 value is between 0 and 1 the robot will start to slow down later. If value
-         *                                 is greater than 1, the robot will slow down sooner.
-         * @param xSensitivity Controls how sensitive and how quickly the robot will try to get the right position on
-         *                     the X axis (forward/backward)
-         * @param ySensitivity Controls how sensitive and how quickly the robot will try to get the right position on
-         *                     the Y axis (side to side)
-         * @param tagIDs Array of april tag ids to perform the targeting on
-         * @param heading The field relative heading of the robot when facing the AprilTag
+         * True: Face the robot towards the target
+         * False: Make the robot face a set field heading
          */
-        public AprilTagPositionParameters(double maxSpeed, double speedSmoothingMultiplier, double xSensitivity,
-                                             double ySensitivity, int[] tagIDs, AngleD heading) {
-            this.maxSpeed = maxSpeed;
-            this.speedSmoothingMultiplier = speedSmoothingMultiplier;
-            double clippedXSensitivity = Utl.clip(xSensitivity, 0.1, 3.0);
-            double clippedYSensitivity = Utl.clip(ySensitivity, 0.1, 3.0);
-            this.X_MAX = 3.0 * clippedXSensitivity;
-            this.Y_MIN = -1.5 * clippedYSensitivity;
-            this.Y_MAX = 1.5 * clippedYSensitivity;
-            this.tagIDs = tagIDs;
-            this.heading = heading;
+        public final boolean useTargetForHeading;
+
+        /**
+         * The target's height above the carpet
+         */
+        public final double height;
+
+        /**
+         * @param useTargetForHeading False to use field heading for heading control, true to use target for heading control
+         * @param height the height, in meters of the target above the carpet
+         */
+        private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading) {
+            this.redTagIDs = redTagIDs;
+            this.blueTagIDs = blueTagIDs;
+            this.redHeading = redHeading;
+            this.blueHeading = blueHeading;
+            this.useTargetForHeading = useTargetForHeading;
+            this.height = height;
+        }
+
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
+            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false);
+        }
+
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
+            this(redTagIDs, blueTagIDs, height, heading, heading, false);
+        }
+
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
+            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true);
         }
     }
 }

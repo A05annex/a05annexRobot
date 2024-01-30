@@ -11,7 +11,7 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  * This class is the packaging for a <a href="https://www.revrobotics.com/rev-21-1650/">REV Neo</a> motor
  * powered by a <a href="https://www.revrobotics.com/rev-11-2158/">REV Spark MAX</a> motor controller. It binds
  * together the {@link com.revrobotics.CANSparkMax}, {@link com.revrobotics.RelativeEncoder}, and
- * {@link com.revrobotics.SparkMaxPIDController} into a single object.
+ * {@link com.revrobotics.SparkPIDController} into a single object.
  * <p>
  * <b>Motivation:</b>
  * <p>
@@ -37,7 +37,7 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  *     This lets the {@code SparkNeo} handle all the details of how the configuration is handled and burned into the
  *     controllers. It helps you do configuration in the right place in code. NOTE: sometimes you have special
  *     needs - like during PID tuning. You can get to any of the wrapped {@link com.revrobotics.CANSparkMax},
- *     {@link com.revrobotics.RelativeEncoder}, and {@link com.revrobotics.SparkMaxPIDController} classes
+ *     {@link com.revrobotics.RelativeEncoder}, and {@link com.revrobotics.SparkPIDController} classes
  *     through the {@link SparkNeo#sparkMax}, {@link SparkNeo#encoder}, and {@link SparkNeo#sparkMaxPID} if
  *     you need to bypass the restrictions of the {@code SparkNeo} implementation - for example, in code that
  *     tunes PID settings.</li>
@@ -216,7 +216,7 @@ public class SparkNeo {
      */
     @NotNull
     public static SparkNeo factory(int canId) {
-        CANSparkMax sparkMax = new CANSparkMax(canId, CANSparkMaxLowLevel.MotorType.kBrushless);
+        CANSparkMax sparkMax = new CANSparkMax(canId, CANSparkLowLevel.MotorType.kBrushless);
         return new SparkNeo(sparkMax, sparkMax.getEncoder(), sparkMax.getPIDController());
     }
 
@@ -368,7 +368,7 @@ public class SparkNeo {
     /**
      * The low level REV code controlling the PID loops in the REV Spark MAX controller.
      */
-    public final SparkMaxPIDController sparkMaxPID;
+    public final SparkPIDController  sparkMaxPID;
 
 
     /**
@@ -377,10 +377,10 @@ public class SparkNeo {
      *
      * @param sparkMax The {@link CANSparkMax}.
      * @param encoder The {@link RelativeEncoder} of the {@link CANSparkMax}.
-     * @param sparkMaxPID The {@link SparkMaxPIDController} of the {@link CANSparkMax}.
+     * @param sparkMaxPID The {@link SparkPIDController} of the {@link CANSparkMax}.
      */
     protected SparkNeo(@NotNull CANSparkMax sparkMax, @NotNull RelativeEncoder encoder,
-                    @NotNull SparkMaxPIDController sparkMaxPID) {
+                    @NotNull SparkPIDController sparkMaxPID) {
         this.sparkMax = sparkMax;
         this.encoder = encoder;
         this.sparkMaxPID = sparkMaxPID;
@@ -571,7 +571,7 @@ public class SparkNeo {
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
             setPID(PIDtype.SMART_MOTION, kP, kI, kIZone, kFF, kD, min, max);
             int slotId = PIDtype.SMART_MOTION.slotId;
-            sparkMaxPID.setSmartMotionAccelStrategy(SparkMaxPIDController.AccelStrategy.kTrapezoidal, slotId);
+            sparkMaxPID.setSmartMotionAccelStrategy(SparkPIDController.AccelStrategy.kTrapezoidal, slotId);
             sparkMaxPID.setSmartMotionMaxVelocity(maxRPM, slotId);
             sparkMaxPID.setSmartMotionMaxAccel(maxRPMs, slotId);
             sparkMaxPID.setSmartMotionMinOutputVelocity(minRPM, slotId);
@@ -706,10 +706,10 @@ public class SparkNeo {
             sparkMax.burnFlash();
         }
         // These cannot be burned into the configuration - so they must be set at configuration
-        sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus3, 500);
-        sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus4, 500);
-        sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus5, 500);
-        sparkMax.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus6, 500);
+        sparkMax.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus3, 500);
+        sparkMax.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus4, 500);
+        sparkMax.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus5, 500);
+        sparkMax.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus6, 500);
         // current limit configuration IS REQUIRED. If the current limit has not been set - pick the safest, and
         // of course, the lowest possible breaker amperage.
         if (!currentLimitIsSet) {

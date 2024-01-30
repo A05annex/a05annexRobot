@@ -1,6 +1,9 @@
 package org.a05annex.frc.subsystems;
 
-import org.jetbrains.annotations.Nullable;
+import org.a05annex.frc.A05Constants;
+import org.a05annex.util.AngleD;
+import org.a05annex.util.AngleUnit;
+import org.jetbrains.annotations.NotNull;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
@@ -14,72 +17,81 @@ import java.util.List;
 public class PhotonCameraWrapper {
 
     private final PhotonCamera camera;
+    private final double height;
+    private final AngleD angle;
 
     // Latest frame, target, and frame with target
-    private PhotonPipelineResult latestFrame = new PhotonPipelineResult();
-    private PhotonTrackedTarget latestTarget = null;
-    private PhotonPipelineResult latestFrameWithTarget = new PhotonPipelineResult();
-
-    // ID and time of last target seen
-    private double lastTargetId = -1;
+    private PhotonPipelineResult newestFrame = new PhotonPipelineResult();
+    private List<PhotonTrackedTarget> targetList = null;
+    private PhotonPipelineResult frameWithTargets = null;
 
     // Whether the latest pipeline result and latest target match
-    private boolean latestPipelineResultAndLatestTargetMatch;
+    private boolean targetsAreNew = false;
 
     /**
      * Creates a new PhotonCameraWrapper with the specified PhotonCamera object.
      *
      * @param camera The PhotonCamera object to wrap.
+     * @param height The height of the camera above the target
+     * @param angle The angle above the horizon of the camera
      */
-    public PhotonCameraWrapper(PhotonCamera camera) {
-        if(camera == null) {
-            throw new IllegalArgumentException("PhotonCamera object cannot be null.");
-        }
+    public PhotonCameraWrapper(@NotNull PhotonCamera camera, double height, AngleD angle) {
         this.camera = camera;
+        this.height = height;
+        this.angle = angle;
     }
-
 
     /**
      * Updates the latest frame and target information.
      */
-    public void updateLatestFrameAndTarget() {
-        latestFrame = camera.getLatestResult();
-        if(latestFrame == null) {
-            throw new NullPointerException("Latest frame or target data is null.");
+    public void updateTrackingData() {
+        newestFrame = camera.getLatestResult();
+        if(newestFrame == null) {
+            throw new NullPointerException("Newest frame was null");
         }
-        if(latestFrame.hasTargets()) {
-            latestFrameWithTarget = latestFrame;
-            latestTarget = latestFrameWithTarget.getBestTarget();
-            if(lastTargetId == latestTarget.getFiducialId()) {
-                // The same target was seen again, so the latest pipeline result and latest target match
-                latestPipelineResultAndLatestTargetMatch = true;
-            } else {
-                // A different target is now the best target
-                lastTargetId = latestTarget.getFiducialId();
-            }
+        if(newestFrame.hasTargets()) {
+            frameWithTargets = newestFrame;
+            targetList = frameWithTargets.getTargets();
+            targetsAreNew = true;
         } else {
-            latestPipelineResultAndLatestTargetMatch = false;
+            targetsAreNew = false;
         }
     }
-
 
     /**
      * Returns the latest pipeline result.
      *
      * @return The latest pipeline result.
      */
-    public PhotonPipelineResult getLatestFrame() {
-        return latestFrame;
+    public PhotonPipelineResult getNewestFrame() {
+        return newestFrame;
     }
 
     /**
-     * Returns the latest tracked target.
+     * Returns the target with one of the specified IDs from the newest frame with targets.
      *
-     * @return The latest tracked target. {@code null} if there is no latest tracked target.
+     * @param tagSet The AprilTagSet containing the IDs of targets to retrieve.
+     * @return The target with one of the specified IDs, or null if the target was not found.
      */
-    @Nullable
-    public PhotonTrackedTarget getLatestTarget() {
-        return latestTarget;
+    public PhotonTrackedTarget getTarget(A05Constants.AprilTagSet tagSet) {
+        return filterForTarget(tagSet);
+    }
+
+    /**
+     * Get the PhotonTrackedTarget with a matching ID from the id set contained in an AprilTagSet
+     *
+     * @param tagSet the AprilTagSet containing the IDs you want
+     * @return a PhotonTrackedTarget matching the IDs in tagSet or null if the correct target was not present
+     */
+    private PhotonTrackedTarget filterForTarget(A05Constants.AprilTagSet tagSet) {
+        for(PhotonTrackedTarget target : targetList) {
+            for(int i = 0; i < tagSet.tagIDs().length; i++) {
+                if(target.getFiducialId() == tagSet.tagIDs()[i]) {
+                    return target;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -88,36 +100,36 @@ public class PhotonCameraWrapper {
      * @return The timestamp of the last target seen.
      */
     public double getLatestTargetTime() {
-        return latestFrameWithTarget.getTimestampSeconds();
+        return frameWithTargets.getTimestampSeconds();
     }
 
     /**
-     * Returns whether the latest pipeline result and latest target match.
+     * Returns whether the most recent target data was from the most recent PhotonPipelineResult
      *
      * @return Whether the latest pipeline result and latest target match.
      */
-    public boolean doesLatestFrameAndTargetMatch() {
-        return latestPipelineResultAndLatestTargetMatch;
+    public boolean isTargetDataNew() {
+        return targetsAreNew;
     }
 
     /**
-     * Returns whether the last frame and target match the specified target ID.
+     * Returns whether the last frame and target match the specified target IDs.
      *
-     * @param targetId The target ID to check.
-     * @return Whether the last frame and target match the specified target ID.
+     * @param tagSet The target IDs to check.
+     * @return Whether the last frame and target match the specified target IDs.
      */
-    public boolean doesLatestFrameAndTargetMatch(int targetId) {
-        return latestFrame.hasTargets() && (lastTargetId == targetId);
+    public boolean isTargetDataNew(A05Constants.AprilTagSet tagSet) {
+        return targetsAreNew && filterForTarget(tagSet) != null;
     }
 
     /**
      * Returns all targets detected in the latest frame.
      *
-     * @return All targets detected in the latest frame.
+     * @return List of all targets detected in the latest frame.
      */
     public List<PhotonTrackedTarget> getLatestTargets() {
-        if (latestFrameWithTarget.hasTargets()) {
-            return latestFrameWithTarget.getTargets();
+        if (frameWithTargets.hasTargets()) {
+            return targetList;
         } else {
             return Collections.emptyList();
         }
@@ -128,79 +140,54 @@ public class PhotonCameraWrapper {
      *
      * @return The latest frame that has at least one target detected.
      */
-    public PhotonPipelineResult getLatestFrameWithTarget() {
-        return latestFrameWithTarget;
+    public PhotonPipelineResult getNewestFrameWithTarget() {
+        return frameWithTargets;
     }
 
+
     /**
-     * Returns the target with the specified ID from the latest frame.
-     *
-     * @param id The ID of the target to retrieve.
-     * @return The target with the specified ID from the latest frame, or null if the target was not found.
+     * Returns the X coordinate (forward/backward) of the last detected target relative to the camera.
+     * @return the X coordinate (forward/backward) of the last detected target relative to the camera.
      */
-    public PhotonTrackedTarget getTargetById(int id) {
-        for (PhotonTrackedTarget target : getLatestTargets()) {
-            if (target.getFiducialId() == id) {
-                return target;
-            }
+
+    public double getXFromLastTarget(A05Constants.AprilTagSet tagSet) {
+        if(filterForTarget(tagSet) == null) {
+            throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
         }
-        return null;
+
+        return (tagSet.height - height) / angle.cloneAngleD().add(AngleUnit.DEGREES, filterForTarget(tagSet).getPitch()).tan();
     }
 
     /**
-     * Returns whether the target with the specified ID is currently visible in the camera frame.
-     *
-     * @param id The ID of the target to check.
-     * @return Whether the target with the specified ID is currently visible in the camera frame.
-     */
-    public boolean isTargetVisible(int id) {
-        PhotonTrackedTarget target = getTargetById(id);
-        return target != null;
-    }
-
-    /**
-     * Returns the distance from the camera to the last detected target.
-     *
-     * @return The distance from the camera to the last detected target, in meters.
-     */
-    public Double getDistanceFromLastTarget() {
-        return (null == latestTarget) ? null : latestTarget.getBestCameraToTarget().getTranslation().getNorm();
-    }
-
-
-
-    /**
-     * Returns the X coordinate of the last detected target relative to the camera.
-     * @return the X coordinate of the last detected target relative to the camera.
-     */
-    public Double getXFromLastTarget() {
-        return (null == latestTarget) ? null : latestTarget.getBestCameraToTarget().getX();
-    }
-
-    /**
-     * Returns the Y coordinate of the last detected target relative to the camera.
+     * Returns the Y coordinate (left/right) of the last detected target relative to the camera.
      * Note that this method returns the negative Y coordinate, as the Y axis of the image
      * is inverted with respect to the Y axis of the camera coordinate system.
-     * @return the Y coordinate of the last detected target relative to the camera.
+     * @return the Y coordinate (left/right) of the last detected target relative to the camera.
      */
-    public Double getYFromLastTarget() {
-        return (null == latestTarget) ? null : -latestTarget.getBestCameraToTarget().getY();
+    public double getYFromLastTarget(A05Constants.AprilTagSet tagSet) {
+        if(filterForTarget(tagSet) == null) {
+            throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
+        }
+
+        return -filterForTarget(tagSet).getBestCameraToTarget().getY();
     }
 
-    /**
-     * Returns the Z coordinate of the last detected target relative to the camera.
-     * @return the Z coordinate of the last detected target relative to the camera.
-     */
-    public Double getZFromLastTarget() {
-        return (null == latestTarget) ? null : latestTarget.getBestCameraToTarget().getZ();
-    }
+//    /**
+//     * Returns the Z coordinate of the last detected target relative to the camera.
+//     * @return the Z coordinate of the last detected target relative to the camera.
+//     */
+//    public double getZFromLastTarget() {
+//        return newestTarget.getBestCameraToTarget().getZ();
+//    }
+//
+//    /**
+//     * Calculates the horizontal angle offset in radians between the robot heading and the last detected target.
+//     * The result is obtained using the atan2 function with the X and Y coordinates of the last detected target.
+//     * @return The horizontal angle offset in radians between the robot heading and the last detected target.
+//     */
+//    public double getHorizontalOffsetRadians() {
+//        return Math.atan2(getXFromLastTarget(), getYFromLastTarget());
+//    }
 
-    /**
-     * Calculates the horizontal angle offset in radians between the robot heading and the last detected target.
-     * The result is obtained using the atan2 function with the X and Y coordinates of the last detected target.
-     * @return The horizontal angle offset in radians between the robot heading and the last detected target.
-     */
-    public Double getHorizontalOffsetRadians() {
-        return  (null == latestTarget) ? null : Math.atan2(getXFromLastTarget(), getYFromLastTarget());
-    }
+
 }

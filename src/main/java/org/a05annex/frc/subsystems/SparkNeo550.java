@@ -1,9 +1,6 @@
 package org.a05annex.frc.subsystems;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.*;
 import org.a05annex.frc.A05Constants;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * This class is the packaging for a <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> motor
  * powered by a <a href="https://www.revrobotics.com/rev-11-2158/">REV Spark Max</a> motor controller. It binds
  * together the {@link com.revrobotics.CANSparkMax}, {@link com.revrobotics.RelativeEncoder}, and
- * {@link com.revrobotics.SparkMaxPIDController} into a single object. See {@link SparkNeo} for details.
+ * {@link com.revrobotics.SparkPIDController} into a single object. See {@link SparkNeo} for details.
  */
  public class SparkNeo550 extends SparkNeo{
 
@@ -25,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
      */
     @NotNull
     public static SparkNeo550 factory(int canId) {
-        CANSparkMax sparkMax = new CANSparkMax(canId, CANSparkMaxLowLevel.MotorType.kBrushless);
+        CANSparkMax sparkMax = new CANSparkMax(canId, CANSparkLowLevel.MotorType.kBrushless);
         return new SparkNeo550(sparkMax, sparkMax.getEncoder(), sparkMax.getPIDController());
     }
 
@@ -54,10 +51,10 @@ import org.jetbrains.annotations.NotNull;
      *
      * @param sparkMax The {@link CANSparkMax}.
      * @param encoder The {@link RelativeEncoder} of the {@link CANSparkMax}.
-     * @param sparkMaxPID The {@link SparkMaxPIDController} of the {@link CANSparkMax}.
+     * @param sparkMaxPID The {@link com.revrobotics.SparkPIDController} of the {@link CANSparkMax}.
      */
     public SparkNeo550(@NotNull CANSparkMax sparkMax, @NotNull RelativeEncoder encoder,
-                       @NotNull SparkMaxPIDController sparkMaxPID) {
+                       @NotNull SparkPIDController sparkMaxPID) {
         super(sparkMax, encoder, sparkMaxPID);
     }
 
