@@ -54,7 +54,7 @@ public abstract class A05RobotContainer {
     protected A05Constants.RobotSettings robotSettings = null;
 
     // drive controller button declarations
-    protected JoystickButton driveA = new JoystickButton(driveXbox, 1),
+    protected final JoystickButton driveA = new JoystickButton(driveXbox, 1),
                    driveB = new JoystickButton(driveXbox, 2),
                    driveX = new JoystickButton(driveXbox, 3),
                    driveY = new JoystickButton(driveXbox, 4),
@@ -66,7 +66,7 @@ public abstract class A05RobotContainer {
                    driveRightStickPress = new JoystickButton(driveXbox, 10);
 
     // alternate controller button declarations
-    protected JoystickButton altA = new JoystickButton(altXbox, 1),
+    protected final JoystickButton altA = new JoystickButton(altXbox, 1),
                    altB = new JoystickButton(altXbox, 2),
                    altX = new JoystickButton(altXbox, 3),
                    altXY = new JoystickButton(altXbox, 4),
