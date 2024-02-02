@@ -69,7 +69,7 @@ public abstract class A05RobotContainer {
     protected final JoystickButton altA = new JoystickButton(altXbox, 1),
                    altB = new JoystickButton(altXbox, 2),
                    altX = new JoystickButton(altXbox, 3),
-                   altXY = new JoystickButton(altXbox, 4),
+                   altY = new JoystickButton(altXbox, 4),
                    altLeftBumper = new JoystickButton(altXbox, 5),
                    altRightBumper = new JoystickButton(altXbox, 6),
                    altBack = new JoystickButton(altXbox, 7),
