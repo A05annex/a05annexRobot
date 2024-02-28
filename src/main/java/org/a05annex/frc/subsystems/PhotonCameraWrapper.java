@@ -2,7 +2,6 @@ package org.a05annex.frc.subsystems;
 
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleD;
-import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
@@ -155,7 +154,7 @@ public class PhotonCameraWrapper {
             throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
         }
 
-        return (tagSet.height - height) / angle.cloneAngleD().add(AngleUnit.DEGREES, filterForTarget(tagSet).getPitch()).tan();
+        return filterForTarget(tagSet).getBestCameraToTarget().getX();
     }
 
     /**

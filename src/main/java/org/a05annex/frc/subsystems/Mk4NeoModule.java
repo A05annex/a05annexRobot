@@ -225,6 +225,7 @@ public class Mk4NeoModule {
 
         // Configure the drive motor
         driveMotor.startConfig();
+        driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
         driveMotor.setCurrentLimit(UseType.RPM_PROLONGED_STALL, BreakerAmps.Amps40);
         driveMotor.setRpmPID(DRIVE_kP, DRIVE_kI, DRIVE_IZONE, DRIVE_kFF);
         driveMotor.setSmartMotion(SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE,
@@ -235,6 +236,7 @@ public class Mk4NeoModule {
 
         // configure the direction motor
         directionMotor.startConfig();
+        directionMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
         directionMotor.setDirection(Direction.REVERSE);
         directionMotor.setCurrentLimit(UseType.POSITION, BreakerAmps.Amps30);
         directionMotor.setPositionPID(SPIN_kP, SPIN_kI, SPIN_IZONE, 0.0);
