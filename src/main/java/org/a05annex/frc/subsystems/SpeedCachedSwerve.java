@@ -367,6 +367,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         int backIndex = mostRecentControlRequest;
         ControlRequest lastControlRequest = controlRequests[backIndex];
         double lastTime = lastControlRequest.timeStamp;
+        System.out.println(String.format("Target time: %.3f, Since time: %.3f, Last time: %.3f", targetTime, sinceTime, lastTime));
         if (targetTime > (lastTime + 0.045)) {
             // a strange situation where the requested time is far after (more than 40ms or 2 control cycles
             // more recent) than the most recently
@@ -413,6 +414,9 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         // OK, we have the start index and we will start accumulating from there
         AngleD headingDelta;
         forwardIndex = nextForwardIndex(forwardIndex);
+        if (forwardIndex < 0) {
+            return position;
+        }
         forwardControlRequest = controlRequests[forwardIndex];
         forwardTime = forwardControlRequest.timeStamp;
         // the first step is the special case where the sineTime happens sometime within an interval between

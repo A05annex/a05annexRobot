@@ -27,7 +27,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
     protected int ticksWithoutTarget = 0;
 
     // Maximum number of ticks where the robot hasn't had a valid target before resuming normal driving
-    protected final int resumeDrivingTickThreshold = 50;
+    protected final int resumeDrivingTickThreshold = 100;
 
     // The size of the "box" in which the robot is considered in the right position
     protected final double inZoneThreshold;
