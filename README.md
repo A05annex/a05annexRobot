@@ -15,7 +15,7 @@ the robot response to their favorite game).
 <details>
   <summary>version 0.0.31 to 2024.2.4 (for <b>2024 Crescendo</b>):</summary>
   <ul>
-   <li>2024.2.3 - Fixed an error in <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code>
+   <li>2024.2.4 - Fixed an error in <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code>
      introduced in the last version where target times more than 1 command cycle into the future would report
      an incorrect projection. With more complete tests for phase in the cache.</li>
    <li>2024.2.3 - Fixed a problem in the <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code> with

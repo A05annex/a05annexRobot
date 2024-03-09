@@ -15,7 +15,7 @@ import org.a05annex.frc.subsystems.ISwerveDrive;
  */
 public abstract class A05Robot extends TimedRobot {
 
-    private A05RobotContainer a05RobotContainer;
+    protected A05RobotContainer a05RobotContainer;
 
     private Command autonomousCommand = null;
 

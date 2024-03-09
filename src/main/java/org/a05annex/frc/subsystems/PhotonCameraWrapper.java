@@ -73,6 +73,9 @@ public class PhotonCameraWrapper {
      * @return The target with one of the specified IDs, or null if the target was not found.
      */
     public PhotonTrackedTarget getTarget(A05Constants.AprilTagSet tagSet) {
+        if(targetList == null) {
+            return null;
+        }
         return filterForTarget(tagSet);
     }
 
@@ -118,7 +121,7 @@ public class PhotonCameraWrapper {
      * @return Whether the last frame and target match the specified target IDs.
      */
     public boolean isTargetDataNew(A05Constants.AprilTagSet tagSet) {
-        return targetsAreNew && filterForTarget(tagSet) != null;
+        return targetsAreNew && getTarget(tagSet) != null;
     }
 
     /**
