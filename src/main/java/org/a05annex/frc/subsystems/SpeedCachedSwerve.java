@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * This is a layer that goes on top of the swerve drive to provide caching of past drive commands for some
  * period of time so that the motion from a previously known field position at a previous time can be projected
  * to a field position at the current time. The use case is with vision systems that take some time (typically
- * 20 to 120ms) to analyze the field targets and report their position relative the the target, and it follows
+ * 20 to 120ms) to analyze the field targets and report their position relative to the target, and it follows
  * that if we know the field position of the target we can compute the field position of the robot. Unfortunately,
  * that position is 20-120ms old, so running a PID loop to put the robot at a specific point on the field requires
  * very low gains to prevent oscillation around the target position. In addition to the processing latency issue,
@@ -500,7 +500,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
                 nextTime = forwardTime;
                 if (forwardIndex == -1) {
                     forwardControlRequest = null;
-                    forwardTime = targetTime;
+                    forwardTime = (targetTime > (nextTime + 0.02)) ? (nextTime + 0.02) : targetTime;
                     break;
                 }
                 forwardControlRequest = controlRequests[forwardIndex];
