@@ -8,7 +8,7 @@
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/test/resources/test_data" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="org.a05annex.frc.subsystems.*" />
+        <option name="PATTERN" value="frc.robot.subsystems.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
