@@ -10,6 +10,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * These are tests of the basic functionality of the {@code SpeedCacheSwerve}, a cache of commands to the swerve
+ * drive with telemetry calculations that let us predict robot position from a known past position (usually from some
+ * visual target) in the past (because of the latency of the targeting pipeline).
+ */
 public class TestSpeedCacheSwerve {
 
     /**
@@ -21,6 +26,10 @@ public class TestSpeedCacheSwerve {
 
     private final int TEST_CACHE_LENGTH = 10;
 
+    /**
+     * Standard initialization of the {@code SpeedCacheSwerve} (SCS) for these tests.
+     * @return The initialized {@code SpeedCacheSwerve} (SCS).
+     */
     SpeedCachedSwerve getInitializedSCS() {
         SpeedCachedSwerve SCS = SpeedCachedSwerve.getInstance();
         A05Constants.RobotSettings cc = robotSettings;
@@ -142,6 +151,60 @@ public class TestSpeedCacheSwerve {
         assertEquals(0.0,position.heading.getRadians(), 0.0000001);
     }
 
+
+    @Test
+    @DisplayName("test getExpectedHeadingDeltaAt() for a very low latency camera")
+    void TestLowLatencyCamera() {
+        // So, the deal here is that when we started to use the orange pi 5, the latency was very low (less
+        // than the 20ms command cycle) asa result the 'since time' might be after the last recorded command
+        // time - which caused the cache to crash - so let's test and fix that.
+        SpeedCachedSwerve SCS = getInitializedSCS();
+        // lets populate the cache with some constant speed profile
+        double nextCommandTime = 2.0;
+        for (int i = 0; i < .5 * TEST_CACHE_LENGTH; i++) {
+            nextCommandTime += 0.02;
+            SCS.addControlRequest(nextCommandTime, AngleConstantD.ZERO,
+                    AngleConstantD.ZERO, 0.2, 0.1, 0.00);
+        }
+        // So we've populated the cache, and we will look at what happens if the last visual target time is after
+        // the last command - yeah failed - fixed that, let's test if the returned position is correct.
+        nextCommandTime += 0.02;
+        SpeedCachedSwerve.RobotRelativePosition position =
+                SCS.getRobotRelativePositionSince(nextCommandTime,  nextCommandTime - 0.01);
+        // OK, so the robot is moving at a constant velocity of forward 0.2 and strafe 0.1, the interval between the
+        // last recorded position and now is 0.01 seconds - so the robot should have gone
+        assertEquals(false, position.cacheOverrun);
+        assertEquals(0.2 * 0.01 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
+        assertEquals(0.1 * 0.01 * SCS.getMaxMetersPerSec(), position.strafe, 0.0000001);
+    }
+
+    @Test
+    @DisplayName("test getExpectedHeadingDeltaAt() for a pretty low latency camera")
+    void TestPrettyLowLatencyCamera() {
+        // So, the deal here is that when we started to use the orange pi 5, the latency was very low (less
+        // than the 20ms command cycle) asa result the 'since time' might be after the last recorded command
+        // time - which caused the cache to crash - so let's test and fix that.
+        SpeedCachedSwerve SCS = getInitializedSCS();
+        // lets populate the cache with some constant speed profile
+        double nextCommandTime = 2.0;
+        for (int i = 0; i < .5 * TEST_CACHE_LENGTH; i++) {
+            nextCommandTime += 0.02;
+            SCS.addControlRequest(nextCommandTime, AngleConstantD.ZERO,
+                    AngleConstantD.ZERO, 0.2, 0.1, 0.00);
+        }
+        // So we've populated the cache, and we will look at what happens if the last visual target time is after
+        // the last command - yeah failed - fixed that, let's test if the returned position is correct.
+        nextCommandTime += 0.02;
+        SpeedCachedSwerve.RobotRelativePosition position =
+                SCS.getRobotRelativePositionSince(nextCommandTime,  nextCommandTime - 0.03);
+        // OK, so the robot is moving at a constant velocity of forward 0.2 and strafe 0.1, the interval between the
+        // last recorded position and now is 0.03 seconds - so the robot should have gone
+        assertEquals(false, position.cacheOverrun);
+        assertEquals(0.2 * 0.03 * SCS.getMaxMetersPerSec(), position.forward, 0.0000001);
+        assertEquals(0.1 * 0.03 * SCS.getMaxMetersPerSec(), position.strafe, 0.0000001);
+    }
+
+
     @Test
     @DisplayName("test getExpectedHeadingDeltaAt()")
     void TestGetExpectedHeadingDelta() {
@@ -173,8 +236,9 @@ public class TestSpeedCacheSwerve {
         SCS.addControlRequest(0.04, AngleConstantD.ZERO, AngleConstantD.ZERO, 0.2, 0.1, 0.3);
         SCS.addControlRequest(0.06, smallActual, AngleConstantD.ZERO, 0.2, 0.1, 0.3);
         SCS.addControlRequest(0.08, smallActual, AngleConstantD.ZERO, 0.2, 0.1, 0.3);
-        // test the interpolated values between 0.04 and 0.06 are correct.
+        // Ask for the heading delta at a time before the start of the cache. This is a cache overrun that generates
+        // an IllegalArgumentException
         assertEquals(null, SCS.getExpectedHeadingDeltaAt(0.00));
         assertThrows(IllegalArgumentException.class, () -> SCS.getExpectedHeadingDeltaAt(0.10));
     }
-}
+ }

@@ -1,4 +1,4 @@
-* **version:** 2024.2.2
+* **version:** 2024.2.4
 * **status:** first used for FRC **2023 Charged Up**
 * **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
   base to jump start future years.
@@ -13,9 +13,15 @@ the robot response to their favorite game).
 ## Change Log
 
 <details>
-  <summary>version 0.0.31 to 2024.??.?? (for <b>2024 Crescendo</b>):</summary>
+  <summary>version 0.0.31 to 2024.2.4 (for <b>2024 Crescendo</b>):</summary>
   <ul>
-   <li>2024.2.2 - Cleanup of REV deprications. Improved documentation in <tt>A05Constants</tt>. Improved driver
+   <li>2024.2.3 - Fixed an error in <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code>
+     introduced in the last version where target times more than 1 command cycle into the future would report
+     an incorrect projection. With more complete tests for phase in the cache.</li>
+   <li>2024.2.3 - Fixed a problem in the <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code> with
+     requests when the most recent april tag position is after the last logged request (a condition we had never
+     seen before, but see now because the orange pi 5 can process upwards of 100fps)</li>
+   <li>2024.2.2 - Cleanup of REV deprecations. Improved documentation in <code>A05Constants</code>. Improved driver
      initialization if configuration switches cannot be read.</li>
    <li>2024.0.1 - Revised the versioning scheme to be more consistent with WPIlib and vendor dep
      versioning scheme.</li>
@@ -63,7 +69,6 @@ the robot response to their favorite game).
     <li>0.0.1 - Initial internal release.</li>
   </ul>
 </details>
-
 
 ## Creating a Robot Project Using this Library
 

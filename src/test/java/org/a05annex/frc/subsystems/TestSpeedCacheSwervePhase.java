@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * (about 20ms) or does it happen somewhere in between? We think that in between is most likely, that it depends on
  * the magnitude of the requested change, but that there is some <i>phase</i> which will give us a reasonable
  * approximation. We imagined a phase from 0.0 (happens immediately at the beginning of the command cycle) to 1.0,
- * happens about time time the next request happens (at the end of the command cycle - or by the beginning of
+ * happens about time the next request happens (at the end of the command cycle - or by the beginning of
  * the next command cycle). So we built a test set that would let us test this.
  * <p/>
  * The test is a short set 6 drive requests at time 0.0, 0.02, 0.04, 0.06, 0.08, and 0.10 seconds with forward speeds
@@ -87,6 +87,26 @@ public class TestSpeedCacheSwervePhase {
     }
 
     @Test
+    @DisplayName("test phase = 0.0; since = 0.05")
+    void TestPhase_0x0_since_0x05() {
+        SCS.setPhase(0.0);
+        RobotRelativePosition rrp = SCS.getRobotRelativePositionSince(0.06, 0.05);
+        assertEquals(0.001, rrp.forward,0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.08, 0.05);
+        assertEquals(0.005, rrp.forward,0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.10, 0.05);
+        assertEquals(0.011, rrp.forward,0.00001);
+        // 1 & 2 cycles into the future
+        rrp = SCS.getRobotRelativePositionSince(0.12, 0.05);
+        assertEquals(0.019, rrp.forward, 0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.14, 0.05);
+        assertEquals(0.027, rrp.forward, 0.00001);
+        // should fail at 3 cycles into the future
+        assertThrows(IllegalArgumentException.class, () -> SCS.getRobotRelativePositionSince(0.18, 0.0));
+    }
+
+
+    @Test
     @DisplayName("test phase = 0.5")
     void TestPhase_0x5() {
         SCS.setPhase(0.5);
@@ -112,6 +132,25 @@ public class TestSpeedCacheSwervePhase {
         assertEquals(0.024, rrp.forward, 0.00001);
         assertThrows(IllegalArgumentException.class, () -> SCS.getRobotRelativePositionSince(0.18, 0.0));
     }
+
+    @Test
+    @DisplayName("test phase = 0.5, since = 0.05")
+    void TestPhase_0x5_since_0x05() {
+        SCS.setPhase(0.5);
+        RobotRelativePosition rrp = SCS.getRobotRelativePositionSince(0.06, 0.05);
+        assertEquals(0.001, rrp.forward, 0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.08, 0.05);
+        assertEquals(0.004, rrp.forward, 0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.10, 0.05);
+        assertEquals(0.009, rrp.forward, 0.00001);
+        // 1 & 2 cycles into the future
+        rrp = SCS.getRobotRelativePositionSince(0.12, 0.05);
+        assertEquals(0.016, rrp.forward, 0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.14, 0.05);
+        assertEquals(0.024, rrp.forward, 0.00001);
+        assertThrows(IllegalArgumentException.class, () -> SCS.getRobotRelativePositionSince(0.18, 0.0));
+    }
+
     @Test
     @DisplayName("test phase = 1.0")
     void TestPhase_1x0() {
@@ -132,6 +171,25 @@ public class TestSpeedCacheSwervePhase {
         rrp = SCS.getRobotRelativePositionSince(0.12, 0.0);
         assertEquals(0.012, rrp.forward, 0.00001);
         rrp = SCS.getRobotRelativePositionSince(0.14, 0.0);
+        assertEquals(0.020, rrp.forward, 0.00001);
+        // should fail at 3 cycles into the future
+        assertThrows(IllegalArgumentException.class, () -> SCS.getRobotRelativePositionSince(0.18, 0.0));
+    }
+
+    @Test
+    @DisplayName("test phase = 1.0, since = 0.05")
+    void TestPhase_1x0_since_0x05() {
+        SCS.setPhase(1.0);
+        RobotRelativePosition rrp = SCS.getRobotRelativePositionSince(0.06, 0.05);
+        assertEquals(0.0, rrp.forward);
+        rrp = SCS.getRobotRelativePositionSince(0.08, 0.05);
+        assertEquals(0.002, rrp.forward, 0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.10, 0.05);
+        assertEquals(0.006, rrp.forward, 0.00001);
+        // 1 & 2 cycles into the future
+        rrp = SCS.getRobotRelativePositionSince(0.12, 0.05);
+        assertEquals(0.012, rrp.forward, 0.00001);
+        rrp = SCS.getRobotRelativePositionSince(0.14, 0.05);
         assertEquals(0.020, rrp.forward, 0.00001);
         // should fail at 3 cycles into the future
         assertThrows(IllegalArgumentException.class, () -> SCS.getRobotRelativePositionSince(0.18, 0.0));

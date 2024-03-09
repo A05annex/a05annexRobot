@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * This is a layer that goes on top of the swerve drive to provide caching of past drive commands for some
  * period of time so that the motion from a previously known field position at a previous time can be projected
  * to a field position at the current time. The use case is with vision systems that take some time (typically
- * 20 to 120ms) to analyze the field targets and report their position relative the the target, and it follows
+ * 20 to 120ms) to analyze the field targets and report their position relative to the target, and it follows
  * that if we know the field position of the target we can compute the field position of the robot. Unfortunately,
  * that position is 20-120ms old, so running a PID loop to put the robot at a specific point on the field requires
  * very low gains to prevent oscillation around the target position. In addition to the processing latency issue,
@@ -359,7 +359,9 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      *
      * @param targetTime The <i>current time</i>, which is the FPGA timestamp (in seconds) during match play,
      *                   but will be assigned as required for testing.
-     * @param sinceTime  The time (FPGA timestamp in seconds) from which you want to know the robot's new position.
+     * @param sinceTime  The time (FPGA timestamp in seconds) from which you want to know the robot's new
+     *                   position. This is typically the time of the last known position through an april tag
+     *                   or similar position sensor.
      * @return The estimated robot position at {@code sinceTime}
      */
     @NotNull
@@ -367,7 +369,6 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         int backIndex = mostRecentControlRequest;
         ControlRequest lastControlRequest = controlRequests[backIndex];
         double lastTime = lastControlRequest.timeStamp;
-        System.out.println(String.format("Target time: %.3f, Since time: %.3f, Last time: %.3f", targetTime, sinceTime, lastTime));
         if (targetTime > (lastTime + 0.045)) {
             // a strange situation where the requested time is far after (more than 40ms or 2 control cycles
             // more recent) than the most recently
@@ -411,16 +412,22 @@ public class SpeedCachedSwerve implements ISwerveDrive {
                 }
             }
         }
-        // OK, we have the start index and we will start accumulating from there
+        // OK, we have the start index and we will start accumulating from there - make sure there is a next forward
+        // index. It not, the camera latency is really low, and the 'sinceTime' is after the last recorded
+        // swerve command. Specifically, a command was recorded, and a new April Tag location comes in after that
+        // command and before the next
         AngleD headingDelta;
         forwardIndex = nextForwardIndex(forwardIndex);
-        if (forwardIndex < 0) {
-            return position;
+        if (forwardIndex == -1) {
+            forwardControlRequest = null;
+            forwardTime = targetTime;
+        } else {
+            forwardControlRequest = controlRequests[forwardIndex];
+            forwardTime = forwardControlRequest.timeStamp;
         }
-        forwardControlRequest = controlRequests[forwardIndex];
-        forwardTime = forwardControlRequest.timeStamp;
-        // the first step is the special case where the sineTime happens sometime within an interval between
-        // so we need to determine  the speed profile (based on phase) for the fist step and get things started.
+        // the first step is the special case where the sinceTime happens sometime within an interval between
+        // two recorded commands and we want to accumulate just the part after the since time.
+        // so we need to determine the speed profile (based on phase) for the fist step and get things started.
         if (sinceTimePositionInStep < 1.0) {
             // sinceTimePositionInStep is greater than phase, so the robot is traveling from backIndex to the
             // next forward index, and it has reached the backIndex speeds
@@ -438,18 +445,22 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             //
             // this is the part before the phase, where the velocity targets were set at the beginning of the
             // previous interval.
-            double timeAtSpeed = (phase - (sinceTimePositionInStep-1.0)) * (forwardTime - nextTime);
-            double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
-            double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
-            headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
-            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            double timeAtSpeed = (phase - (sinceTimePositionInStep - 1.0)) * (forwardTime - nextTime);
+            double deltaForward, deltaStrafe;
+            if (timeAtSpeed > 0.0) {
+                deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
+                deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
+                headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
+                position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+                position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            }
             // this is the part after the phase where the velocities have reached those set at the start of the
             // interval and the heading delta from the forward
-            timeAtSpeed = (1.0 - phase) * (forwardTime - nextTime);
+            timeAtSpeed = (1.0 - (((sinceTimePositionInStep - 1.0) > phase) ? (sinceTimePositionInStep - 1.0) : phase)) * (forwardTime - nextTime);
             deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
             deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
-            headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
+            headingDelta = (null == forwardControlRequest) ? new AngleD(AngleUnit.RADIANS, 0.0) :
+                    new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
             position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
             position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
             // now move an interval forward
@@ -457,65 +468,69 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             lastTime = nextTime;
             nextControlRequest = forwardControlRequest;
             nextTime = forwardTime;
-            forwardIndex = nextForwardIndex(forwardIndex);
-            forwardControlRequest = controlRequests[forwardIndex];
-            forwardTime = forwardControlRequest.timeStamp;
+            if (forwardIndex != -1) {
+                forwardIndex = nextForwardIndex(forwardIndex);
+                forwardControlRequest = controlRequests[forwardIndex];
+                forwardTime = forwardControlRequest.timeStamp;
+            }
         }
 
-        // now step through until the end of the next interval is
-        while (forwardTime < targetTime) {
-            double timeAtSpeed = phase * (forwardTime - nextTime);
-            double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
-            double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
-            headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
-            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
-            // this is the part after the phase where the velocities have reached those set at the start of the
-            // interval and the heading delta from the forward
-            timeAtSpeed = (1.0-phase) * (forwardTime - nextTime);
-            deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
-            deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
-            headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
-            position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-            position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
-            // now move an interval forward
-            lastControlRequest = nextControlRequest;
-            lastTime = nextTime;
-            nextControlRequest = forwardControlRequest;
-            nextTime = forwardTime;
-            forwardIndex = nextForwardIndex(forwardIndex);
-            if (forwardIndex == -1) {
-                // got to the most recently reported command - projecting from there
-                forwardControlRequest = null;
-                forwardTime = nextTime + 0.02;  // 20 ms (one control cycle) out
-                break;
-            } else {
+        if (forwardIndex != -1) {
+            // now step through until the end of the next interval is
+            while (forwardTime < targetTime) {
+                double timeAtSpeed = phase * (forwardTime - nextTime);
+                double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
+                double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
+                headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
+                position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+                position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+                // this is the part after the phase where the velocities have reached those set at the start of the
+                // interval and the heading delta from the forward
+                timeAtSpeed = (1.0 - phase) * (forwardTime - nextTime);
+                deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
+                deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
+                headingDelta = new AngleD(forwardControlRequest.actualHeading).subtract(forwardControlRequest.expectedHeading);
+                position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+                position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+                // now move an interval forward
+                forwardIndex = nextForwardIndex(forwardIndex);
+                lastControlRequest = nextControlRequest;
+                lastTime = nextTime;
+                nextControlRequest = forwardControlRequest;
+                nextTime = forwardTime;
+                if (forwardIndex == -1) {
+                    forwardControlRequest = null;
+                    forwardTime = (targetTime > (nextTime + 0.02)) ? (nextTime + 0.02) : targetTime;
+                    break;
+                }
                 forwardControlRequest = controlRequests[forwardIndex];
+                forwardTime = forwardControlRequest.timeStamp;
             }
-            forwardTime = forwardControlRequest.timeStamp;
         }
 
         // OK, the forward point is ahead of (at a newer time than) the target time
-        double targetTimePositionInStep = (targetTime - nextTime) / (forwardTime - nextTime);
-        double timeAtSpeed = ((phase < targetTimePositionInStep) ? phase  : targetTimePositionInStep) *
-                (forwardTime - nextTime);
-        double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
-        double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
-        headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
-        position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
-        position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
-        if (targetTimePositionInStep > phase) {
-            // this is the part after the phase where the velocities have reached those set at the start of the
-            // interval and the heading delta from the forward
-            timeAtSpeed = (targetTimePositionInStep - phase) * (forwardTime - nextTime);
-            deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
-            deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
-            if (null != forwardControlRequest) {
-                headingDelta = new AngleD(forwardControlRequest.actualHeading).
-                        subtract(forwardControlRequest.expectedHeading);
-            }
+        if (nextTime < targetTime) {
+            double targetTimePositionInStep = (targetTime - nextTime) / (forwardTime - nextTime);
+            double timeAtSpeed = ((phase < targetTimePositionInStep) ? phase : targetTimePositionInStep) *
+                    (forwardTime - nextTime);
+            double deltaForward = timeAtSpeed * lastControlRequest.forward * maxMetersPerSec;
+            double deltaStrafe = timeAtSpeed * lastControlRequest.strafe * maxMetersPerSec;
+            headingDelta = new AngleD(nextControlRequest.actualHeading).subtract(nextControlRequest.expectedHeading);
             position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
             position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            if (targetTimePositionInStep > phase) {
+                // this is the part after the phase where the velocities have reached those set at the start of the
+                // interval and the heading delta from the forward
+                timeAtSpeed = (targetTimePositionInStep - phase) * (forwardTime - nextTime);
+                deltaForward = timeAtSpeed * nextControlRequest.forward * maxMetersPerSec;
+                deltaStrafe = timeAtSpeed * nextControlRequest.strafe * maxMetersPerSec;
+                if (null != forwardControlRequest) {
+                    headingDelta = new AngleD(forwardControlRequest.actualHeading).
+                            subtract(forwardControlRequest.expectedHeading);
+                }
+                position.forward += ((deltaForward * headingDelta.cos()) - (deltaStrafe * headingDelta.sin())) * scaleForward;
+                position.strafe += ((deltaForward * headingDelta.sin()) + (deltaStrafe * headingDelta.cos())) * scaleStrafe;
+            }
         }
 
         return position;
