@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class PhotonCameraWrapper {
 
-    private final PhotonCamera camera;
+    public final PhotonCamera camera;
     private final double height;
     private final AngleD angle;
 
