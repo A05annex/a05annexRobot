@@ -1,4 +1,4 @@
-* **version:** 2024.2.4
+* **version:** 2024.2.5
 * **status:** first used for FRC **2023 Charged Up**
 * **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
   base to jump start future years.
@@ -15,6 +15,7 @@ the robot response to their favorite game).
 <details>
   <summary>version 0.0.31 to 2024.2.4 (for <b>2024 Crescendo</b>):</summary>
   <ul>
+   <li>2024.2.5 - Fixed scope error in A05AprilTagPositionCommand</li>
    <li>2024.2.4 - Fixed an error in <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code>
      introduced in the last version where target times more than 1 command cycle into the future would report
      an incorrect projection. With more complete tests for phase in the cache.</li>

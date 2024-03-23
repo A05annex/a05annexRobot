@@ -216,14 +216,14 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
         }
     }
 
-    private double calcRotationFieldHeading() {
+    protected double calcRotationFieldHeading() {
         AngleD fieldHeading = navX.getHeadingInfo().getClosestHeading(HEADING);
         navX.setExpectedHeading(fieldHeading);
         return new AngleD(navX.getHeadingInfo().expectedHeading).
                 subtract(new AngleD(navX.getHeadingInfo().heading)).getRadians() * HEADING_ROTATION_KP;
     }
 
-    private double calcRotationTargetHeading() {
+    protected double calcRotationTargetHeading() {
         if(!camera.isTargetDataNew(tagSet)) {
             return 0.0;
         }
