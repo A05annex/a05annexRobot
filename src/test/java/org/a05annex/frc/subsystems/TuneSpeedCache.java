@@ -265,8 +265,8 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
         //-----------------------------------------------------------------------------------------------
         AprilTagTest thisAprilSegment = null;
         try (BufferedReader br = new BufferedReader(new FileReader(aprilTagFile))) {
-           boolean headerLine = true;
-           String line;
+            boolean headerLine = true;
+            String line;
             while ((line = br.readLine()) != null) {
                 if (headerLine) {
                     headerLine = false;
@@ -284,7 +284,7 @@ public class TuneSpeedCache  extends JFrame implements ActionListener, WindowLis
                 new AprilTagData(line, thisAprilSegment, speedCachedSwerve);
             }
             if (null != thisAprilSegment) {
-                thisAprilSegment.doneAdding();
+                closeTestSegment(thisAprilSegment);
             }
             aprilTagData.doneAdding();
         } catch (FileNotFoundException e) {

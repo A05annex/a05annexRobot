@@ -1,14 +1,14 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="TuneSpeedCache" type="Application" factoryName="Application" nameIsGenerated="true">
-    <option name="ALTERNATIVE_JRE_PATH" value="/Library/Java/JavaVirtualMachines/jdk-16.0.1.jdk/Contents/Home" />
+    <option name="ALTERNATIVE_JRE_PATH" value="17" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="org.a05annex.frc.subsystems.TuneSpeedCache" />
     <module name="a05annexRobot.test" />
-    <option name="PROGRAM_PARAMETERS" value="-a AprilData_20230816.csv -s SwerveData_20230816.csv" />
+    <option name="PROGRAM_PARAMETERS" value="-a AprilData_20240323.csv -s SwerveData_20240323.csv" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/test/resources/test_data" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="org.a05annex.frc.subsystems.*" />
+        <option name="PATTERN" value="frc.robot.subsystems.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
