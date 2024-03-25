@@ -459,7 +459,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
      * camera latency is our only concern, typically less than 100ms); or, the desired final position is outside
      * the target viewing range - usually short, so let's guess about 500ms (0.5 sec) is the maximum time the
      * robot is outside the last seen target
-     * method loads a path for the next 500ms (.5 second, about 25 command cycles) the idea being that if the april
+     * method loads a path for the next 1000ms (1.0 second, about 50 command cycles) the idea being that if the april
      * image was lost at the selected point, how well would the speed cache project the future path.
      */
     void loadPathFromSelectedPoint() {
@@ -474,7 +474,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             thisPath.refPathKeyPoints.clear();
 
             double startTime = selectedPoint.time + selectedPointTimeOffset;
-            double endTime = startTime + 0.5;
+            double endTime = startTime + 1.0;
             if (speedCachedSwerve.getMostRecentControlRequest().timeStamp < endTime) {
                 endTime = speedCachedSwerve.getMostRecentControlRequest().timeStamp;
             }
@@ -489,6 +489,8 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                 thisPt.transform(drawXfm);
                 thisPath.add(thisPt);
                 if (0 == index % 5) {
+                    // highlight every 5th point (0.1 sec) to make it easier to compare the projected april tag path
+                    // with the actual april tag path
                     thisPath.pathKeyPoints.add(thisPt);
                     PathPoint refKey = selectedPath.getPointAt(nextTime - selectedPointTimeOffset);
                     if (null != refKey) {

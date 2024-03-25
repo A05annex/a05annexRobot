@@ -24,8 +24,18 @@ import java.util.List;
 
 /**
  * This is a test class built to read data from april tag tracking runs with
- * the {@link org.a05annex.frc.subsystems.SpeedCachedSwerve} and help tune the prediction algorithms of the
- * {@link org.a05annex.frc.subsystems.SpeedCachedSwerve}
+ * the {@link org.a05annex.frc.subsystems.SpeedCachedSwerve} and
+ * {@link org.a05annex.frc.subsystems.PhotonCameraWrapper} and help tune the prediction algorithms of the
+ * {@link org.a05annex.frc.subsystems.SpeedCachedSwerve} to match what the
+ * {@link org.a05annex.frc.subsystems.PhotonCameraWrapper} says the robot really does. Run this program with
+ * these arguments:
+ * <ul>
+ *     <li><b>-a <i>April Tag data file name</i></b> The name of the April Tag data file extracted from the
+ *         robot log file by {@link org.a05annex.frc.ConditionSpeedCacheLog}</li>
+ *     <li><b>-s <i>speed cache data file name</i></b> The name of the swerve speed cache data file extracted from the
+ *         robot log file by {@link org.a05annex.frc.ConditionSpeedCacheLog}</li>
+ * </ul>
+ *
  */
 public class TuneSpeedCache  extends JFrame implements ActionListener, WindowListener {
 
