@@ -246,6 +246,12 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      */
     private double phase = 0.0;
 
+    /**
+     * We have observed that the timestamp from the PhotonVisionFrames is not the real time that the photo was taken, so
+     * this offset is intended to correct for that allowing for a more accurate cache prediction.
+     */
+    private double latencyOffset = 0.0;
+
 
     private SpeedCachedSwerve() {
         // the constructor does nothing, except set up a default 5 second cache.
@@ -330,6 +336,14 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         return phase;
     }
 
+    public void setLatencyOffset(double latencyOffset) {
+        this.latencyOffset = latencyOffset;
+    }
+
+    public double getLatencyOffset() {
+        return latencyOffset;
+    }
+
     /**
      * Get the robot position now, relative to where the robot was at the specified time. For example suppose the robot
      * were approaching a target, and the targeting software reported that the robot was 2.0m from the target and
@@ -366,6 +380,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      */
     @NotNull
     RobotRelativePosition getRobotRelativePositionSince(double targetTime, double sinceTime) {
+        sinceTime -= latencyOffset;
         int backIndex = mostRecentControlRequest;
         ControlRequest lastControlRequest = controlRequests[backIndex];
         double lastTime = lastControlRequest.timeStamp;
@@ -557,6 +572,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      */
     @Nullable
     AngleD getExpectedHeadingDeltaAt(double time) {
+        time -= latencyOffset;
         double nextTime;
         AngleD nextDelta = new AngleD();
         double lastTime = controlRequests[mostRecentControlRequest].timeStamp;

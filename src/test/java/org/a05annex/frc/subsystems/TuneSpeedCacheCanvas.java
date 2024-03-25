@@ -206,7 +206,6 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
     List<PlottedTest> plottedPaths = new ArrayList<>();
 
-    double selectedPointTimeOffset = 0.0;
     PlottedTest selectedTest = null;
     PlottedPath selectedPath = null;
     PathPoint selectedPoint = null;
@@ -473,7 +472,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             thisPath.pathKeyPoints.clear();
             thisPath.refPathKeyPoints.clear();
 
-            double startTime = selectedPoint.time + selectedPointTimeOffset;
+            double startTime = selectedPoint.time;
             double endTime = startTime + 1.0;
             if (speedCachedSwerve.getMostRecentControlRequest().timeStamp < endTime) {
                 endTime = speedCachedSwerve.getMostRecentControlRequest().timeStamp;
@@ -482,7 +481,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             int index = 0;
             for (double nextTime = startTime + 0.02; nextTime <= endTime; nextTime += 0.02) {
                 SpeedCachedSwerve.RobotRelativePosition relPosition =
-                        speedCachedSwerve.getRobotRelativePositionSince(nextTime, startTime);
+                        speedCachedSwerve.getRobotRelativePositionSince(nextTime - speedCachedSwerve.getLatencyOffset(), startTime);
                 PathPoint thisPt = new PathPoint(nextTime,
                         selectedPoint.fieldPt.getY() - relPosition.forward,
                         selectedPoint.fieldPt.getX() - relPosition.strafe, AngleConstantD.ZERO);
@@ -492,7 +491,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                     // highlight every 5th point (0.1 sec) to make it easier to compare the projected april tag path
                     // with the actual april tag path
                     thisPath.pathKeyPoints.add(thisPt);
-                    PathPoint refKey = selectedPath.getPointAt(nextTime - selectedPointTimeOffset);
+                    PathPoint refKey = selectedPath.getPointAt(nextTime);
                     if (null != refKey) {
                         refKey.transform(drawXfm);
                         thisPath.refPathKeyPoints.add(refKey);

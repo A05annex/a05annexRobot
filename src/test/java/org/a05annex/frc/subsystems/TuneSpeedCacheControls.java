@@ -67,10 +67,10 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
 
         pkgLoadAndAddLabel(controlPanel, "April Offset:");
         Hashtable<Integer, JLabel> offsetLabelTable = new Hashtable<>();
-        offsetLabelTable.put(-1000, new JLabel("-100ms") );
+        offsetLabelTable.put(-1600, new JLabel("-160ms") );
         offsetLabelTable.put(0, new JLabel("0ms") );
-        offsetLabelTable.put(1000, new JLabel("100ms") );
-        offsetSlider = phgLoadAndAddSlider(controlPanel, -1000, 1000,
+        offsetLabelTable.put(1600, new JLabel("160ms") );
+        offsetSlider = phgLoadAndAddSlider(controlPanel, -1600, 1600,
                 0,200,100, offsetLabelTable );
 
         add(controlPanel, BorderLayout.LINE_START);
@@ -177,7 +177,7 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
             if (source.getValueIsAdjusting()) {
                 double offset = (int) source.getValue() / 10000.0;
                 System.out.println("offset = " + offset + "sec");
-                canvas.selectedPointTimeOffset = offset;
+                canvas.speedCachedSwerve.setLatencyOffset(offset);
                 canvas.loadPathFromSelectedPoint();
                 canvas.repaint();
             }
