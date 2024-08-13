@@ -566,7 +566,10 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      *
      * @param time The time (FPGA timestamp in seconds) at which you want to know the heading delta.
      * @return Returns the heading delta, of {@code null} if the data in the cache does not extend back to the
-     * specified time.
+     * specified time. NOTE: the heading delta is signed so that it represents the angle that would be added to
+     * the target heading to get the current heading. E.g., if the desired heading is 90&deg; and the current
+     * heading is 91&deg; the heading delta would be 1&deg;, i.e. the currect heading is +1&deg; from the target
+     * heading.
      * @throws IllegalArgumentException Thrown if the requested {@code time} is more recent than the last cache
      *                                  entry, please used {@link NavX#getHeadingInfo()} to get the most recent (current) heading.
      */

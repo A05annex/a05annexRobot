@@ -178,13 +178,20 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
                 double offset = (int) source.getValue() / 10000.0;
                 System.out.println("offset = " + offset + "sec");
                 canvas.speedCachedSwerve.setLatencyOffset(offset);
+                for (TuneSpeedCacheCanvas.PlottedTest thisTest : canvas.plottedPaths) {
+                    TuneSpeedCacheCanvas.PlottedPath path = thisTest.
+                            plottedPaths.get(TuneSpeedCacheCanvas.HEADING_CORRECTED_APRIL_TAG_PATH);
+                    canvas.loadHeadingCorrectedAprilTagPath(canvas.speedCachedSwerve,
+                            thisTest. plottedPaths.get(TuneSpeedCacheCanvas.APRIL_TAG_PATH),
+                            path);
+                    path.transformPath(canvas.drawXfm);
+                }
                 canvas.loadPathFromSelectedPoint();
                 canvas.repaint();
             }
         }
 
         if (reloadCalcPath) {
-            int testIndex = 0;
             for (TuneSpeedCacheCanvas.PlottedTest thisTest : canvas.plottedPaths) {
                 TuneSpeedCacheCanvas.PlottedPath path = thisTest.
                         plottedPaths.get(TuneSpeedCacheCanvas.SPEED_CACHE_PATH);
@@ -192,7 +199,6 @@ public class TuneSpeedCacheControls extends JPanel implements ItemListener, Chan
                         thisTest. plottedPaths.get(TuneSpeedCacheCanvas.FILTERED_APRIL_TAG_PATH),
                         path);
                 path.transformPath(canvas.drawXfm);
-                testIndex++;
             }
             canvas.loadPathFromSelectedPoint();
             canvas.repaint();

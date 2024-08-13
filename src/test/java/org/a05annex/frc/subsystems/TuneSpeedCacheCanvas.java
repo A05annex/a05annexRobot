@@ -24,7 +24,9 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
     // -----------------------------------------------------------------------------------------------------------------
     /**
-     *
+     * This is a point along a {@link PlottedPath}. The point is represented by a tine, a field-relative point, a delta
+     * between the target heading and the current heading, and a screen-relative point used for drawing the
+     * point on the path.
      */
     static class PathPoint {
         double time;
@@ -94,11 +96,18 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             }
         }
 
-        PathPoint hitTestPath(Point2D.Double pt, double tolerance) {
+        /**
+         * Test whether a {@link PathPoint} on this path is <i>hit</i> by a screen point (usually the cursor
+         * position). Return the hit {@link PathPoint}, or {@code null} if no {@link PathPoint} is hit.
+         * @param testPt The test point, in screen coordinates.
+         * @param tolerance The hit tolerance, in pixels.
+         * @return The hit {@link PathPoint}, or {@code null} if no {@link PathPoint} is hit.
+         */
+        PathPoint hitTestPath(Point2D.Double testPt, double tolerance) {
             for (PathPoint pathPt : this) {
                 Point2D.Double thisPt = pathPt.screenPt;
-                if (Utl.inTolerance(thisPt.getX(), pt.getX(), tolerance) &&
-                        Utl.inTolerance(thisPt.getY(), pt.getY(), tolerance)) {
+                if (Utl.inTolerance(thisPt.getX(), testPt.getX(), tolerance) &&
+                        Utl.inTolerance(thisPt.getY(), testPt.getY(), tolerance)) {
                     return pathPt;
                 }
             }
@@ -178,7 +187,14 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
         // -----------------------------------------------------------------------------------------------------------------
     // These are the paths we are plotting
+    /**
+     * This is the path reported by the Photonvision library as interpreted by our {@link PhotonCameraWrapper}
+     */
     static public final int APRIL_TAG_PATH = 0;
+    /**
+     * This is a path derived from the {@link #APRIL_TAG_PATH} where the position has been corrected the cached
+     * deltaHeading to determine the correct location for deltaHeading = 0.0
+     */
     static public final int HEADING_CORRECTED_APRIL_TAG_PATH = 1;
     static public final int FILTERED_APRIL_TAG_PATH = 2;
     static public final int SWERVE_PATH = 3;
@@ -189,8 +205,8 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
         List<PlottedPath> plottedPaths = new ArrayList<>(Arrays.asList(
                 new PlottedPath(APRIL_TAG_PATH, "April Tag Path", Color.WHITE, true),
                 new PlottedPath(HEADING_CORRECTED_APRIL_TAG_PATH,"Nav Corrected Tag Path", Color.YELLOW, true),
-                new PlottedPath(FILTERED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.MAGENTA, true),
-                new PlottedPath(SWERVE_PATH,"Projected Path at Test", Color.CYAN, true),
+                new PlottedPath(FILTERED_APRIL_TAG_PATH,"Filtered April Tag Path", Color.MAGENTA, false),
+                new PlottedPath(SWERVE_PATH,"Projected Path at Test", Color.CYAN, false),
                 new PlottedPath(SPEED_CACHE_PATH,"Cache Computed Path", Color.ORANGE, true),
                 new PlottedPathFromPoint(SPEED_CACHE_FROM_SELECTED,"Cache Computed from Selected",
                         Color.GREEN, true)
@@ -345,21 +361,10 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
             for (AprilTagData aprilTag : thisTest.aprilPath) {
                 if (aprilTag.hasTarget) {
                     plottedTest.plottedPaths.get(SWERVE_PATH).add(new PathPoint(aprilTag.aprilTime,
-                            aprilTag.predictedDistance, aprilTag.predictedStrafe, aprilTag.headingDelta));
+                            aprilTag.predictedDistance, -aprilTag.predictedStrafe, aprilTag.headingDelta));
                     PathPoint pathPt = new PathPoint(aprilTag.aprilTime,
                             aprilTag.aprilDistance, aprilTag.aprilStrafe, aprilTag.headingDelta);
                     plottedTest.plottedPaths.get(APRIL_TAG_PATH).add(pathPt);
-                    // this corrects the distance and strafe when the heading drifts
-                    AngleConstantD headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(aprilTag.aprilTime);
-                    if (null == headingDelta) {
-                        headingDelta = AngleConstantD.ZERO;
-                    }
-                    double actDist = (pathPt.fieldPt.getY() * headingDelta.cos()) -
-                            (pathPt.fieldPt.getX() * headingDelta.sin());
-                    double actStrafe = (pathPt.fieldPt.getY() * headingDelta.sin()) +
-                            (pathPt.fieldPt.getX() * headingDelta.cos());
-                    pathPt = new PathPoint(aprilTag.aprilTime,actDist, actStrafe, headingDelta);
-                    plottedTest.plottedPaths.get(HEADING_CORRECTED_APRIL_TAG_PATH).add(pathPt);
                     // this is the computation for a 3 point weighted average filtering for the position value.
                     Point2D.Double thisPt = pathPt.fieldPt;
                     double thisTime = pathPt.time;
@@ -380,7 +385,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                                 (0.2 * thisPt.getY()) + (0.6 * lastPt.getY()) + (0.2 * lastLastPt.getY()));
                         thisAveTime = (0.2 * thisTime) + (0.6 * lastTime) + (0.2 * lastLastTime);
                     }
-                    headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(thisAveTime);
+                    AngleConstantD headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(thisAveTime);
                     if (null == headingDelta) {
                         headingDelta = AngleConstantD.ZERO;
                     }
@@ -393,6 +398,10 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
                 }
 
             }
+
+            loadHeadingCorrectedAprilTagPath(speedCachedSwerve,
+                    plottedTest.plottedPaths.get(APRIL_TAG_PATH),
+                    plottedTest.plottedPaths.get(HEADING_CORRECTED_APRIL_TAG_PATH));
 
             loadCalculatedSpeedCachePath(speedCacheData, speedCachedSwerve,
                     plottedTest.plottedPaths.get(FILTERED_APRIL_TAG_PATH),
@@ -413,6 +422,39 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
 
     }
 
+    /**
+     *
+     * @param speedCachedSwerve
+     * @param aprilPath
+     * @param plottedPath
+     */
+    void loadHeadingCorrectedAprilTagPath(@NotNull SpeedCachedSwerve speedCachedSwerve,
+                                          PlottedPath aprilPath, PlottedPath plottedPath) {
+        plottedPath.clear();
+        for (PathPoint aprilTag : aprilPath) {
+            // this corrects the photonvision distance and strafe when the heading drifts from the target heading
+            double time = aprilTag.time;    // the suspected time of the frame this tag is from
+            AngleConstantD headingDelta = speedCachedSwerve.getExpectedHeadingDeltaAt(aprilTag.time);
+            if (null == headingDelta) {
+                headingDelta = AngleConstantD.ZERO;
+            }
+            double aprilDistance = Math.sqrt((aprilTag.getDistance() * aprilTag.getDistance()) +
+                            (aprilTag.getStrafe() * aprilTag.getStrafe()));
+            AngleD aprilAngle = new AngleD().atan2(aprilTag.getStrafe(),aprilTag.getDistance());
+            aprilAngle.add(headingDelta);
+            double strafe = aprilDistance * aprilAngle.sin();
+            double distance = aprilDistance * aprilAngle.cos();
+            plottedPath.add(new PathPoint(time,distance, strafe, AngleConstantD.ZERO));
+        }
+    }
+
+    /**
+     *
+     * @param speedCacheData
+     * @param speedCachedSwerve
+     * @param aprilPath
+     * @param plottedPath
+     */
     void loadCalculatedSpeedCachePath(@NotNull List<SpeedCacheData> speedCacheData,
                                       @NotNull SpeedCachedSwerve speedCachedSwerve,
                                       PlottedPath aprilPath, PlottedPath plottedPath) {
