@@ -29,6 +29,7 @@ public class TuneSpeedCacheCanvas extends Canvas implements ActionListener {
      * point on the path.
      */
     static class PathPoint {
+        
         double time;
         Point2D.Double fieldPt;
         Point2D.Double screenPt = new Point2D.Double();

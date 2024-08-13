@@ -2,13 +2,13 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id "edu.wpi.first.GradleRIO" version "2024.3.1"
+    id "edu.wpi.first.GradleRIO" version "2024.3.2"
 }
 
 def javaVersion = JavaVersion.VERSION_17
 sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
-version = '2024.2.5'
+version = '2024.2.6'
 group = 'org.a05annex'
 
 // Set to true to use debug for JNI.
