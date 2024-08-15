@@ -2,6 +2,7 @@ package org.a05annex.frc.commands;
 
 import edu.wpi.first.math.util.Units;
 import org.a05annex.frc.A05Constants;
+import org.a05annex.frc.RobotPosition;
 import org.a05annex.frc.subsystems.PhotonCameraWrapper;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
 import org.a05annex.util.AngleConstantD;
@@ -10,51 +11,37 @@ import org.a05annex.util.Utl;
 
 import static org.a05annex.frc.A05Constants.aprilTagSetDictionary;
 
-
+/**
+ * Command for positioning the robot based on AprilTag and SpeedCache data.
+ */
 public class A05AprilTagPositionCommand extends A05DriveCommand {
 
     protected final SpeedCachedSwerve swerveDrive = SpeedCachedSwerve.getInstance();
-
     protected SpeedCachedSwerve.RobotRelativePosition positionAtFrame;
-
+    protected RobotPosition robotPosition;
     protected final A05Constants.AprilTagSet tagSet;
-
-    protected final PhotonCameraWrapper camera;
-
     protected boolean canPerformTargeting = false;
-
-    // Counter for how many ticks the robot hasn't seen a valid target
     protected int ticksWithoutTarget = 0;
-
-    // Maximum number of ticks where the robot hasn't had a valid target before resuming normal driving
     protected final int resumeDrivingTickThreshold = 100;
-
-    // The size of the "box" in which the robot is considered in the right position
     protected final double inZoneThreshold;
-
-    // Number of ticks where the robot needs to be in the zone to end the command
     protected final int TICKS_IN_ZONE = 10;
-
-    // Counter for how many ticks the robot has been in the zone
     protected int ticksInZoneCounter;
-
-    // Drive and control constants
     protected final double MAX_SPEED_DELTA = 0.075, HEADING_ROTATION_KP = 0.9, TARGET_ROTATION_KP = 0.9;
     protected final double X_POSITION, Y_POSITION, MAX_SPEED = 1.0, SPEED_SMOOTHING_MULTIPLIER = 0.8;
     protected final AngleD HEADING;
     protected final double X_MAX, X_MIN, Y_MAX, Y_MIN;
-
     protected boolean isFinished = false;
 
-    protected A05AprilTagPositionCommand(PhotonCameraWrapper camera,
-                                      double xPosition, double yPosition, String tagSetKey) {
-        // NOTE: the super adds the drive subsystem requirement
+    /**
+     * Constructs a new A05AprilTagPositionCommand.
+     *
+     * @param xPosition The target x-coordinate position for the robot.
+     * @param yPosition The target y-coordinate position for the robot.
+     * @param tagSetKey The key for the AprilTag set to target.
+     */
+    protected A05AprilTagPositionCommand(double xPosition, double yPosition, String tagSetKey) {
         super(SpeedCachedSwerve.getInstance());
-
-        this.camera = camera;
-
         this.tagSet = aprilTagSetDictionary.get(tagSetKey);
-
         this.X_POSITION = xPosition;
         this.Y_POSITION = -yPosition;
         this.HEADING = tagSet.heading();
@@ -63,8 +50,6 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
         this.Y_MIN = tagSet.Y_MIN;
         this.Y_MAX = tagSet.Y_MAX;
 
-        // When very close to the target, you need a tighter "zone". This statement applies a different formula if
-        //          the robot is within 1 meter of the target
         if(xPosition >= 1) {
             inZoneThreshold = Units.inchesToMeters(0.5 * xPosition);
         } else {
@@ -74,18 +59,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
     @Override
     public void initialize() {
-        camera.updateTrackingData();
-        /*
-          Is there a good target?
-          Yes: set ticksWithoutTarget to 0
-          No: set ticksWithoutTarget to the resumeDrivingTickThreshold because that is the point at which we resume normal driver control
-
-          If there is not immediately a target, the driver can keep going until there is a target, which means the
-          robot won't randomly stop meaning we move faster and smoother
-        */
-        ticksWithoutTarget = camera.isTargetDataNew(tagSet) ? 0 : resumeDrivingTickThreshold;
-
-        // Reset values for the start of a new command
+        robotPosition = RobotPosition.getRobotPosition(tagSet);
+        ticksWithoutTarget = robotPosition.isNew ? 0 : resumeDrivingTickThreshold;
         ticksInZoneCounter = 0;
         isFinished = false;
         canPerformTargeting = false;
@@ -93,10 +68,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
     @Override
     public void execute() {
-        camera.updateTrackingData();
-
+        robotPosition = RobotPosition.getRobotPosition(tagSet);
         checkIfCanPerformTargeting();
-
         executeTargeting();
     }
 
@@ -107,69 +80,71 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
     @Override
     public void end(boolean interrupted) {
-        // Stop the swerve
         swerveDrive.swerveDrive(AngleConstantD.ZERO, 0.0, 0.0);
     }
 
     /**
-     * Calculates the X speed between -1 and 1
+     * Calculates the X speed between -1 and 1.
      *
      * @return x speed
      */
     protected double calcX() {
         double center = (X_MAX + X_MIN) / 2.0;
         double scale = (X_MAX - X_MIN) / 2.0;
-        return Utl.clip((camera.getXFromLastTarget(tagSet) - positionAtFrame.forward - center) / scale - (X_POSITION - center) / scale, -1.0, 1.0);
+        return Utl.clip((robotPosition.x - positionAtFrame.forward - center) / scale - (X_POSITION - center) / scale, -1.0, 1.0);
     }
 
     /**
-     * Calculates the Y speed between -1 and 1
+     * Calculates the Y speed between -1 and 1.
      *
      * @return y speed
      */
     protected double calcY() {
         double center = (Y_MAX + Y_MIN) / 2.0;
         double scale = (Y_MAX - Y_MIN) / 2.0;
-        return Utl.clip((camera.getYFromLastTarget(tagSet) - positionAtFrame.strafe - center) / scale - (Y_POSITION - center) / scale, -1.0, 1.0);
+        return Utl.clip((robotPosition.y - positionAtFrame.strafe - center) / scale - (Y_POSITION - center) / scale, -1.0, 1.0);
     }
 
+    /**
+     * Checks if the current target ID is valid.
+     *
+     * @return True if valid, false otherwise.
+     */
     protected boolean isValidTargetID() {
-        return camera.getTarget(tagSet) != null;
+        return robotPosition.isValid;
     }
 
+    /**
+     * Checks for cache overrun in the robot's position data.
+     *
+     * @return True if there's a cache overrun, false otherwise.
+     */
     protected boolean cacheOverrun() {
-        return swerveDrive.getRobotRelativePositionSince(camera.getLatestTargetTime()).cacheOverrun;
+        return swerveDrive.getRobotRelativePositionSince(robotPosition.pipelineResult.getTimestampSeconds()).cacheOverrun;
     }
 
+    /**
+     * Determines whether the robot can perform targeting.
+     */
     protected void checkIfCanPerformTargeting() {
         canPerformTargeting = false;
 
         if(!isValidTargetID()) {
             if(driveXbox == null) {
                 isFinished = true;
-                canPerformTargeting = false;
                 return;
             }
-            canPerformTargeting = false;
             super.execute();
             return;
         }
 
-        /*
-        Is there a new target? (can the camera still pickup an aprilTag)
-
-        No: increment ticksWithoutTarget and if we haven't had a new target for a while resume joystick driving
-        */
-        if(!camera.isTargetDataNew(tagSet)) {
+        if(!robotPosition.isNew) {
             ticksWithoutTarget++;
             if(ticksWithoutTarget > resumeDrivingTickThreshold) {
-                // We haven't had a target for a while. we are going to resume driver control
                 if(driveXbox == null) {
                     isFinished = true;
-                    canPerformTargeting = false;
                     return;
                 }
-                canPerformTargeting = false;
                 super.execute();
                 return;
             }
@@ -179,43 +154,52 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
         if(cacheOverrun()) {
             isFinished = true;
-            canPerformTargeting = false;
             return;
         }
 
         canPerformTargeting = true;
     }
 
+    /**
+     * Calculates the current speed of the robot.
+     *
+     * @return The calculated speed.
+     */
     protected double calcSpeed() {
         double speed = Math.pow(Math.sqrt(Math.pow(Math.abs(calcX()), 2) + Math.pow(Math.abs(calcY()), 2)), SPEED_SMOOTHING_MULTIPLIER);
-
-        // Limit the speed delta
         speed = Utl.clip(speed, lastConditionedSpeed - MAX_SPEED_DELTA, lastConditionedSpeed + MAX_SPEED_DELTA);
-
-        // Slows the robot down as we go longer without a target. Hopefully allows the robot to "catch" the target again
         speed *= ((double) (resumeDrivingTickThreshold - ticksWithoutTarget) / (double) resumeDrivingTickThreshold);
-
-        // Clip robot speed to stay below max speed
         return Utl.clip(speed, 0.0, MAX_SPEED);
     }
 
+    /**
+     * Calculates the direction in which the robot should move.
+     *
+     * @param direction The AngleD object representing the current direction.
+     */
     protected void calcDirection(AngleD direction) {
-
         direction.atan2(calcY(), calcX());
-
-        // Add HEADING offset
         direction.add(HEADING);
     }
 
+    /**
+     * Calculates the rotation needed to align with the target.
+     *
+     * @return The calculated rotation.
+     */
     protected double calcRotation() {
         if(tagSet.useTargetForHeading) {
             return calcRotationTargetHeading();
-        }
-        else {
+        } else {
             return calcRotationFieldHeading();
         }
     }
 
+    /**
+     * Calculates the rotation based on the field heading.
+     *
+     * @return The calculated field heading rotation.
+     */
     protected double calcRotationFieldHeading() {
         AngleD fieldHeading = navX.getHeadingInfo().getClosestHeading(HEADING);
         navX.setExpectedHeading(fieldHeading);
@@ -223,47 +207,46 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
                 subtract(new AngleD(navX.getHeadingInfo().heading)).getRadians() * HEADING_ROTATION_KP;
     }
 
+    /**
+     * Calculates the rotation based on the target heading.
+     *
+     * @return The calculated target heading rotation.
+     */
     protected double calcRotationTargetHeading() {
-        if(!camera.isTargetDataNew(tagSet)) {
+        if(!robotPosition.isNew) {
             return 0.0;
         }
-
-        // 35.0 used because the camera FOV is approx. 70°, divided by 2 to be positive and negative
-        return camera.getTarget(tagSet).getYaw() / 35.0 * TARGET_ROTATION_KP;
+        return PhotonCameraWrapper.filterForTarget(robotPosition.pipelineResult, tagSet).getYaw() / 35.0 * TARGET_ROTATION_KP;
     }
 
+    /**
+     * Checks if the robot is within the specified zone.
+     *
+     * @return True if the robot is in the zone, false otherwise.
+     */
     protected boolean checkInZone() {
-        return Utl.inTolerance(camera.getXFromLastTarget(tagSet) - positionAtFrame.forward, X_POSITION, inZoneThreshold)
-                && Utl.inTolerance(camera.getYFromLastTarget(tagSet) - positionAtFrame.strafe, Y_POSITION, inZoneThreshold);
+        return Utl.inTolerance(robotPosition.x - positionAtFrame.forward, X_POSITION, inZoneThreshold)
+                && Utl.inTolerance(robotPosition.y - positionAtFrame.strafe, Y_POSITION, inZoneThreshold);
     }
 
+    /**
+     * Executes the targeting routine for the robot.
+     */
     protected void executeTargeting() {
-        // If canPerformTargeting is false, don't perform targeting
         if(!canPerformTargeting) {
             return;
         }
 
-        // Since getting here means canPerformTargeting was true, reset it to false and perform targeting
         canPerformTargeting = false;
 
-        // --------- Calculate Speed ---------
         conditionedSpeed = calcSpeed();
-
-
-        // ------- Calculate Rotation --------
         conditionedRotate = calcRotation();
-
-
-        // ------- Calculate Direction -------
         calcDirection(conditionedDirection);
 
-
-        // Update lasts
         lastConditionedDirection = conditionedDirection;
         lastConditionedSpeed = conditionedSpeed;
         lastConditionedRotate = conditionedRotate;
 
-        // Check if the robot is in the zone
         if(checkInZone()) {
             ticksInZoneCounter++;
             swerveDrive.swerveDrive(AngleD.ZERO, 0.0, conditionedRotate * 0.1);

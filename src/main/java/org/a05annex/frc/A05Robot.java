@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.a05annex.frc.subsystems.DriveSubsystem;
 import org.a05annex.frc.subsystems.ISwerveDrive;
+import org.a05annex.frc.subsystems.PhotonCameraWrapper;
 
 /**
  * This is the basic A05annex Robot that does All the common stuff for a swerve drive base with NavX mounted
@@ -47,12 +48,15 @@ public abstract class A05Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
+        PhotonCameraWrapper.updateAllTrackingData(); // This is happening above the command scheduler to ensure there is
+                                                     // fresh data for subsystems and commands to run on
 
         // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
         // commands, running already-scheduled commands, removing finished or interrupted commands,
         // and running subsystem periodic() methods.  This must be called from the robot's periodic
         // block in order for anything in the Command-based framework to work.
         CommandScheduler.getInstance().run();
+
     }
 
     @Override

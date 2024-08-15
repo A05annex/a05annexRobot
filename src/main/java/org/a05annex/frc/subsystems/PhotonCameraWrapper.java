@@ -3,10 +3,12 @@ package org.a05annex.frc.subsystems;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleD;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -14,6 +16,7 @@ import java.util.List;
  * A wrapper around a PhotonCamera object that provides convenient access to the latest frame and target information.
  */
 public class PhotonCameraWrapper {
+    private static final ArrayList<PhotonCameraWrapper> cameras = new ArrayList<>();
 
     public final PhotonCamera camera;
     private final double height;
@@ -38,13 +41,27 @@ public class PhotonCameraWrapper {
         this.camera = camera;
         this.height = height;
         this.angle = angle;
+
+        cameras.add(this);
+    }
+
+    /**
+     * Updates tracking data for all cameras. This only needs to be run once per
+     */
+    public static void updateAllTrackingData() {
+        cameras.forEach(PhotonCameraWrapper::updateTrackingData);
     }
 
     /**
      * Updates the latest frame and target information.
      */
-    public void updateTrackingData() {
-        newestFrame = camera.getLatestResult();
+     private void updateTrackingData() {
+         if(!camera.isConnected()) {
+            targetsAreNew = false;
+            return;
+        }
+
+         newestFrame = camera.getLatestResult();
         if(newestFrame == null) {
             throw new NullPointerException("Newest frame was null");
         }
@@ -76,16 +93,7 @@ public class PhotonCameraWrapper {
         if(targetList == null) {
             return null;
         }
-        return filterForTarget(tagSet);
-    }
 
-    /**
-     * Get the PhotonTrackedTarget with a matching ID from the id set contained in an AprilTagSet
-     *
-     * @param tagSet the AprilTagSet containing the IDs you want
-     * @return a PhotonTrackedTarget matching the IDs in tagSet or null if the correct target was not present
-     */
-    private PhotonTrackedTarget filterForTarget(A05Constants.AprilTagSet tagSet) {
         for(PhotonTrackedTarget target : targetList) {
             for(int i = 0; i < tagSet.tagIDs().length; i++) {
                 if(target.getFiducialId() == tagSet.tagIDs()[i]) {
@@ -94,6 +102,27 @@ public class PhotonCameraWrapper {
             }
         }
         return null;
+    }
+
+    /**
+     * Filters through a frame for a specific target
+     * @param frame The frame to search in
+     * @param tagSet The {@link org.a05annex.frc.A05Constants.AprilTagSet} defining which target to look for
+     * @return the {@link PhotonTrackedTarget} described by tagSet, or null if no tag matching the tagSet was in the frame
+     */
+    public static @Nullable PhotonTrackedTarget filterForTarget(@NotNull PhotonPipelineResult frame, A05Constants.AprilTagSet tagSet) {
+        for(PhotonTrackedTarget target : frame.getTargets()) {
+            for(int i = 0; i < tagSet.tagIDs().length; i++) {
+                if(target.getFiducialId() == tagSet.tagIDs()[i]) {
+                    return target;
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean hasTargets(A05Constants.AprilTagSet tagSet) {
+        return getTarget(tagSet) != null;
     }
 
     /**
@@ -153,11 +182,11 @@ public class PhotonCameraWrapper {
      */
 
     public double getXFromLastTarget(A05Constants.AprilTagSet tagSet) {
-        if(filterForTarget(tagSet) == null) {
+        if(getTarget(tagSet) == null) {
             throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
         }
 
-        return filterForTarget(tagSet).getBestCameraToTarget().getX();
+        return getTarget(tagSet).getBestCameraToTarget().getX();
     }
 
     /**
@@ -167,11 +196,11 @@ public class PhotonCameraWrapper {
      * @return the Y coordinate (left/right) of the last detected target relative to the camera.
      */
     public double getYFromLastTarget(A05Constants.AprilTagSet tagSet) {
-        if(filterForTarget(tagSet) == null) {
+        if(getTarget(tagSet) == null) {
             throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
         }
 
-        return -filterForTarget(tagSet).getBestCameraToTarget().getY();
+        return -getTarget(tagSet).getBestCameraToTarget().getY();
     }
 
 //    /**
