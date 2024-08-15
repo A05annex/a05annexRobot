@@ -35,12 +35,12 @@ public abstract class A05RobotContainer {
     /**
      * This is the robot driver Xbox controller typically used to control the drive.
      */
-    protected final XboxController driveXbox = A05Constants.DRIVE_XBOX;
+    protected static final XboxController driveXbox = A05Constants.DRIVE_XBOX;
 
     /**
      * This is the alternate Xbox controller typically used to control non-drive subsystems.
      */
-    protected final XboxController altXbox = A05Constants.ALT_XBOX;
+    protected static final XboxController altXbox = A05Constants.ALT_XBOX;
     /**
      * This is the autonomous path following command initialized for the path specified
      * by the autonomous path selection switches.
@@ -54,7 +54,7 @@ public abstract class A05RobotContainer {
     protected A05Constants.RobotSettings robotSettings = null;
 
     // drive controller button declarations
-    public final JoystickButton driveA = new JoystickButton(driveXbox, 1),
+    public static final JoystickButton driveA = new JoystickButton(driveXbox, 1),
                    driveB = new JoystickButton(driveXbox, 2),
                    driveX = new JoystickButton(driveXbox, 3),
                    driveY = new JoystickButton(driveXbox, 4),
@@ -66,7 +66,7 @@ public abstract class A05RobotContainer {
                    driveRightStickPress = new JoystickButton(driveXbox, 10);
 
     // alternate controller button declarations
-    public final JoystickButton altA = new JoystickButton(altXbox, 1),
+    public static final JoystickButton altA = new JoystickButton(altXbox, 1),
                    altB = new JoystickButton(altXbox, 2),
                    altX = new JoystickButton(altXbox, 3),
                    altY = new JoystickButton(altXbox, 4),
