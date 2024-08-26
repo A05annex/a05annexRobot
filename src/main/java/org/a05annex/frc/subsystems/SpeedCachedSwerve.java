@@ -41,16 +41,18 @@ import org.jetbrains.annotations.Nullable;
  * target image, and this reports the estimated change in field position after {@code sinceTime}. Please note the
  * following assumptions about this relative position:
  * <ul>
- *     <li>The robot is locked into an expected heading when targeting starts, so any rotation speeds have been set
+ *     <li>The robot is locked into an expected heading when targeting starts, so any rotation speeds set
  *     by the PID loop trying to hold the heading constant, and are ignored.</li>
  *     <li>Since the expected heading is locked, the relative position is with respect to the the position at
- *     {@code sinceTime} assuming the robot was in the expected heading, i.e. The
+ *     {@code sinceTime} with respect to the expected heading, i.e. The
  *     {@link RobotRelativePosition#forward} is along the expected heading; the
  *     {@link RobotRelativePosition#strafe} is 90&deg; to the expected heading; the
  *     {@link RobotRelativePosition#heading} will be set to the expected heading; and,
  *     {@link RobotRelativePosition#cacheOverrun} will normally be {@code false}, but, if it is {@code true}
  *     it means the {@code sinceTime} is before the oldest entry in the cache, and anything else in
- *     {@link RobotRelativePosition} is invalid.</li>
+ *     {@link RobotRelativePosition} is invalid;</li>
+ *     <li>As the relative position is computed, the robot forward and strafe distances are <i>heading corrected</i>,
+ *     i.e., they are mapped from the actual robot heading to the target heading coordinate system.</li>
  * </ul>
  * <b>The Forward Projection Algorithm</b>
  * So the question is, now that we have cached all this data about robot heading and what we have asked to robot

@@ -15,9 +15,9 @@ the robot response to their favorite game).
 <details>
   <summary>version 0.0.31 to 2024.2.7 (for <b>2024 Crescendo</b>):</summary>
   <ul>
-   <li>2024.2.7 - Added latency offset to the SpeedCacheSwerve, updated to wpilib 2024.3.2, updated vendordeps.</li>
-   <li>2024.2.6 - use wpilib V2024.3.2</li>
-   <li>2024.2.5 - Fixed scope error in A05AprilTagPositionCommand</li>
+   <li>2024.2.7 - Added latency offset to the <code>SpeedCacheSwerve</code>.</li>
+   <li>2024.2.6 - Updated to wpilib 2024.3.2, updated vendordeps.</li>
+   <li>2024.2.5 - Fixed scope error in A05AprilTagPositionCommand.</li>
    <li>2024.2.4 - Fixed an error in <code>SpeedCachedSwerve.getRobotRelativePositionSince(...)</code>
      introduced in the last version where target times more than 1 command cycle into the future would report
      an incorrect projection. With more complete tests for phase in the cache.</li>
