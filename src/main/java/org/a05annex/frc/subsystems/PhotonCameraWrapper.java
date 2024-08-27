@@ -19,8 +19,17 @@ import java.util.function.DoubleFunction;
 public class PhotonCameraWrapper {
     private static final ArrayList<PhotonCameraWrapper> cameras = new ArrayList<>();
 
+    /**
+     * The PhotonCamera to be wrapped.
+     */
     public final PhotonCamera camera;
+    /**
+     * The height of the target above the carpet.
+     */
     private final double height;
+    /**
+     * The angle of the camera above the horizon
+     */
     private final AngleD angle;
 
     // Latest frame, target, and frame with target
@@ -124,6 +133,11 @@ public class PhotonCameraWrapper {
         return null;
     }
 
+    /**
+     * Wraps the {@link #getTarget(A05Constants.AprilTagSet)} method to return a boolean of whether the camera has seen a specific target.
+     * @param tagSet The {@link A05Constants.AprilTagSet} defining which specific tag(s) to check for the visibility of.
+     * @return (boolean) did the latest frame with targets contain a target specified by the tagSet passed in.
+     */
     public boolean hasTargets(A05Constants.AprilTagSet tagSet) {
         return getTarget(tagSet) != null;
     }
@@ -181,6 +195,7 @@ public class PhotonCameraWrapper {
 
     /**
      * Returns the X coordinate (forward/backward) of the last detected target relative to the camera.
+     * @param tagSet the {@link A05Constants.AprilTagSet} defining which specific tag(s) to get the X of.
      * @return the X coordinate (forward/backward) of the last detected target relative to the camera.
      */
 
@@ -202,6 +217,7 @@ public class PhotonCameraWrapper {
      * Returns the Y coordinate (left/right) of the last detected target relative to the camera.
      * Note that this method returns the negative Y coordinate, as the Y axis of the image
      * is inverted with respect to the Y axis of the camera coordinate system.
+     * @param tagSet the {@link A05Constants.AprilTagSet} defining which specific tag(s) to get the Y of.
      * @return the Y coordinate (left/right) of the last detected target relative to the camera.
      */
     public double getYFromLastTarget(A05Constants.AprilTagSet tagSet) {
@@ -235,7 +251,7 @@ public class PhotonCameraWrapper {
      * @param xCorrectionFunction a method that takes one double as an input, reported X, and returns what the true X
      *                            should be.
      */
-    public void setXCorrectionParams(DoubleFunction<Double> xCorrectionFunction) {
+    public void setXCorrectionFunction(DoubleFunction<Double> xCorrectionFunction) {
         if(this.xCorrectionFunction != null) {
             throw new IllegalStateException("You tried to set the X correction function more than once for camera: " + camera.getName());
         }

@@ -180,6 +180,9 @@ public class RobotPosition {
 
     /**
      * Record class to represent the true position of the robot.
+     *
+     * @param x true X distance. Normal to the plane of the apriltag, not the camera.
+     * @param y tue Y distance. Normal to the plane of the apriltag, not the camera.
      */
     protected record TruePosition(double x, double y) {
     }

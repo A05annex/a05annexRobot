@@ -3,6 +3,10 @@ package org.a05annex.frc;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
 import org.photonvision.targeting.PhotonPipelineResult;
 
+/**
+ * This is similar to the {@link RobotPosition} class, however it implements the {@link SpeedCachedSwerve} to improve accuracy
+ * of the calculated position when the robot is in motion.
+ */
 public class InferredRobotPosition extends RobotPosition{
 
     /**

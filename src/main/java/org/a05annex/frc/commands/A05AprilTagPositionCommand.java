@@ -98,7 +98,23 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * The heading to target for if the {@link A05Constants.AprilTagSet} says to use field relative headings.
      */
     protected final AngleD HEADING;
-    protected final double X_MAX, X_MIN, Y_MAX, Y_MIN;
+
+    /**
+     * Maximum X value before applying maximum speed. Set by the {@link A05Constants.AprilTagSet}.
+     */
+    protected final double X_MAX,
+    /**
+     * Minimum X value before applying maximum speed. Set by the {@link A05Constants.AprilTagSet}
+     */
+                           X_MIN,
+    /**
+     * Maximum Y value before applying maximum speed. Set by the {@link A05Constants.AprilTagSet}.
+     */
+                           Y_MAX,
+    /**
+     * Minimum Y value before applying maximum speed. Set by the {@link A05Constants.AprilTagSet}
+     */
+                           Y_MIN;
     /**
      * Boolean flag to make true when the command is finished.
      */

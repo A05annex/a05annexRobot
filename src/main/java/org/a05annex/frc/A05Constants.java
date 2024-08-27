@@ -79,13 +79,13 @@ public abstract class A05Constants {
     private static boolean SPARK_CONFIG_FROM_FACTORY_DEFAULTS = true;
 
     /**
-     * {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise. Defaults
+     * {@code true} if the CAN devices should be flashed after configuration, {@code false} otherwise. Defaults
      * to {@code false}.
      */
     private static boolean SPARK_BURN_CONFIG = false;
 
     /**
-     *
+     * Sets the flags {@link #SPARK_CONFIG_FROM_FACTORY_DEFAULTS} and {@link #SPARK_BURN_CONFIG}.
      *
      * @param fromFactoryDefaults Set to {@code true} during pre-competition programming when you are tuning stuff
      *                            and motor configuration may be different with every restart. Once configurations
@@ -843,7 +843,11 @@ public abstract class A05Constants {
          */
         public final double lr;
         /**
-         *
+         * A calibration factor for the yaw reported by the Navx.
+         * <p>
+         * After many rotations in the same direction, the {@link NavX} tends to drift. To find what this value should
+         * be to correct for the drift, perform many complete rotations, then align the robot as closely as possible to
+         * the initial heading. Divide the reported heading by the actual heading and
          */
         public final double navxYawCalibration;
         /**
@@ -854,7 +858,6 @@ public abstract class A05Constants {
          * well a seasonal variations for each robot.
          */
         public final double maxSpeedCalibration;
-
         /**
          * Instantiate a robot description of a swerve drive base with a specified drive geometry and
          * calibration constants.
@@ -905,7 +908,7 @@ public abstract class A05Constants {
     // This is the data class for april tag positioning support
     // -----------------------------------------------------------------------------------------------------------------
     /**
-     *
+     * Stores a list of {@link AprilTagSet} objects to enable easy communication of aprilTag data.
      */
     public static final Dictionary<String, AprilTagSet> aprilTagSetDictionary = new Hashtable<>();
 
@@ -929,6 +932,10 @@ public abstract class A05Constants {
          */
         private final int[] blueTagIDs;
 
+        /**
+         * Checks the network table for the alliance color to determine which array of tag IDs to give out
+         * @return an array of ints defining the tag IDs to target on.
+         */
         public int[] tagIDs() {
             return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
         }
@@ -943,6 +950,10 @@ public abstract class A05Constants {
          */
         private final AngleD blueHeading;
 
+        /**
+         * Checks the network table for the alliance color to determine which target heading to give out
+         * @return an {@link AngleD} of the heading to face when targeting.
+         */
         public AngleD heading() {
             return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redHeading : blueHeading;
         }
@@ -959,8 +970,15 @@ public abstract class A05Constants {
         public final double height;
 
         /**
-         * @param useTargetForHeading False to use field heading for heading control, true to use target for heading control
-         * @param height the height, in meters of the target above the carpet
+         * Private constructor used by all the other {@link AprilTagSet} constructors with all parameters.
+         *
+         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param height The height in meters of the target above the carpet.
+         * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
+         * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
+         * @param useTargetForHeading boolean flag defining whether to use the tag or the field heading when a targeting
+         *                            algorithm accesses the AprilTagSet.
          */
         private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading) {
             this.redTagIDs = redTagIDs;
@@ -971,14 +989,41 @@ public abstract class A05Constants {
             this.height = height;
         }
 
+        /**
+         * Constructs an AprilTagSet object when you want the robot to face different field headings dependent on alliance.
+         *
+         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param height The height in meters of the target above the carpet.
+         * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
+         * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
+         */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
             this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false);
         }
 
+        /**
+         * Constructs an AprilTagSet object when you want the robot to face the same field heading regardless of alliance.
+         * <p>
+         * Note that this constructor should really be used when tags are 180 degrees apart since a field heading of zero
+         * is 180 degrees apart for each alliance.
+         *
+         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param height The height in meters of the target above the carpet.
+         * @param heading field heading for the robot to face when targeting the tag.
+         */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
             this(redTagIDs, blueTagIDs, height, heading, heading, false);
         }
 
+        /**
+         * Constructs an AprilTagSet object when you want the robot to face the target.
+         *
+         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param height The height in meters of the target above the carpet.
+         */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
             this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true);
         }

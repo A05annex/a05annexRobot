@@ -16,6 +16,9 @@ import org.a05annex.frc.subsystems.PhotonCameraWrapper;
  */
 public abstract class A05Robot extends TimedRobot {
 
+    /**
+     * The a05RobotContainerInstance instance
+     */
     protected A05RobotContainer a05RobotContainer;
 
     private Command autonomousCommand = null;

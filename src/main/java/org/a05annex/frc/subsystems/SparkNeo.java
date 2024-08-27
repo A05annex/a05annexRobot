@@ -549,6 +549,8 @@ public class SparkNeo {
     }
 
     /**
+     * The configuration for all PID constants for SmartMotion (position) control.
+     *
      * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
      * @param kIZone         The PID loop will not include the integral component until the current position or speed is

@@ -161,7 +161,6 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         public double getRotation() {
             return forward;
         }
-
     }
 
     /**
@@ -336,10 +335,20 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         return phase;
     }
 
+    /**
+     * Sets the {@link #latencyOffset} value. This is added to the timestamp reported by a
+     * {@link org.photonvision.targeting.PhotonPipelineResult} because that value has been found to be consistently off.
+     * @param latencyOffset the value you want to set the latency offset to.
+     */
     public void setLatencyOffset(double latencyOffset) {
         this.latencyOffset = latencyOffset;
     }
 
+    /**
+     * Gets the {@link #latencyOffset} value. This is added to the timestamp reported by a
+     * {@link org.photonvision.targeting.PhotonPipelineResult} because that value has been found to be consistently off.
+     * @return the latency offset value
+     */
     public double getLatencyOffset() {
         return latencyOffset;
     }
