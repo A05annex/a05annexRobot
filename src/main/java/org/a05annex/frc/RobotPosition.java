@@ -9,6 +9,12 @@ import org.photonvision.targeting.PhotonPipelineResult;
 /**
  * Represents the robot's position calculated from the data provided by the camera and navigation systems.
  * Utilizes AprilTags to ascertain the position in the field relative to a specific tag.
+ * <p>
+ * This class is expected to have a subclass that adds the {@link org.a05annex.frc.subsystems.SpeedCachedSwerve}
+ * allowing for a more accurate robot position. You will typically want to use that as it will provide a more accurate
+ * position which accounts for the delay between capturing of a photo, to the processing, sending to the
+ * {@link edu.wpi.first.networktables.NetworkTable}, and the 20ms control cycle delay which could ultimately result in
+ * around a 150ms delay even for a well tuned PhotonVisionPipeline.
  */
 public class RobotPosition {
 
@@ -65,7 +71,7 @@ public class RobotPosition {
      * @param pipelineResult The latest camera pipeline result.
      * @param tagSet The set of AprilTags used.
      */
-    private RobotPosition(boolean isValid, boolean isNew, double x, double y, PhotonPipelineResult pipelineResult, A05Constants.AprilTagSet tagSet) {
+    protected RobotPosition(boolean isValid, boolean isNew, double x, double y, PhotonPipelineResult pipelineResult, A05Constants.AprilTagSet tagSet) {
         this.isValid = isValid;
         this.isNew = isNew;
         this.x = x;
@@ -78,7 +84,7 @@ public class RobotPosition {
      * Default constructor creating an invalid RobotPosition instance.
      * This is used when targeting is not possible or no valid position can be calculated.
      */
-    private RobotPosition() {
+    protected RobotPosition() {
         this.isValid = false;
         this.isNew = false;
         this.x = 0.0;

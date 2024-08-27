@@ -2,7 +2,7 @@ package org.a05annex.frc.commands;
 
 import edu.wpi.first.math.util.Units;
 import org.a05annex.frc.A05Constants;
-import org.a05annex.frc.RobotPosition;
+import org.a05annex.frc.InferredRobotPosition;
 import org.a05annex.frc.subsystems.PhotonCameraWrapper;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
 import org.a05annex.util.AngleConstantD;
@@ -12,24 +12,96 @@ import org.a05annex.util.Utl;
 import static org.a05annex.frc.A05Constants.aprilTagSetDictionary;
 
 /**
- * Command for positioning the robot based on AprilTag and SpeedCache data.
+ * Command for positioning the robot based on InferredRobotPosition which accounts for both AprilTag and SpeedCache position
  */
 public class A05AprilTagPositionCommand extends A05DriveCommand {
-
+    /**
+     * The {@link SpeedCachedSwerve} Singleton pointer. This is a local variable since the swerve drive is called many times
+     */
     protected final SpeedCachedSwerve swerveDrive = SpeedCachedSwerve.getInstance();
-    protected SpeedCachedSwerve.RobotRelativePosition positionAtFrame;
-    protected RobotPosition robotPosition;
+    /**
+     * Stores the latest {@link InferredRobotPosition} from the cameras
+     */
+    protected InferredRobotPosition inferredRobotPosition;
+    /**
+     * The {@link A05Constants.AprilTagSet} that stores defines which tag to target with
+     */
     protected final A05Constants.AprilTagSet tagSet;
+    /**
+     * Boolean flag used to specify if targeting can be performed. Primarily to enable child classes to call the
+     * {@link #checkIfCanPerformTargeting()} if they don't need to modify the safeguard checks and only need to edit the
+     * targeting algorithm.
+     */
     protected boolean canPerformTargeting = false;
+    //TODO: Talk with roy about whether we still want/need this function or if with the cache we should edit or remove
+    // how it works
+    /**
+     * Counter to track the amount of 20ms control cycles the robot has gone without seeing a new target. Used as a
+     * multiplier on the {@link #conditionedSpeed} to slow the robot down as it goes longer without a target
+     */
     protected int ticksWithoutTarget = 0;
+    /**
+     * Maximum amount of 20ms control cycles that the robot can go before it resumes joystick driving.
+     */
     protected final int resumeDrivingTickThreshold = 100;
+    //TODO: Revisit this functionality. it may need to be edited with the implementation of InferredRobotPositions.
+    /**
+     * Distance in meters that defines the maximum deviation from the target position where the robot is still
+     * considered to have arrived at the target. This is needed since there is minor variance in the PhotonVision's
+     * reported position and our inability to drive to an exact location. Set by a function relative to the target X in
+     * the constructor
+     */
     protected final double inZoneThreshold;
+    /**
+     * Required number of consecutive control cycles where the robot's position is within the {@link #inZoneThreshold} of
+     * the target position to be considered to have arrived at the target.
+     */
     protected final int TICKS_IN_ZONE = 10;
+    /**
+     * Counts the number of consecutive control cycles (ticks) where the robot was inside the {@link #inZoneThreshold}.
+     */
     protected int ticksInZoneCounter;
-    protected final double MAX_SPEED_DELTA = 0.075, HEADING_ROTATION_KP = 0.9, TARGET_ROTATION_KP = 0.9;
-    protected final double X_POSITION, Y_POSITION, MAX_SPEED = 1.0, SPEED_SMOOTHING_MULTIPLIER = 0.8;
+    /**
+     * The maximum change in speed (0.0 to 1.0) per 20ms control cycle. This prevents harsh accelerations or
+     * decelerations that could excessively damage treads or cause burnouts.
+     */
+    protected final double MAX_SPEED_DELTA = 0.075;
+    /**
+     * The kP to use when controlling the robot heading with the goal of maintaining a field heading.
+     */
+    protected final double HEADING_ROTATION_KP = 0.9;
+    /**
+     * The kP to use when controlling the robot heading with the goal of facing a target.
+     */
+    protected final double TARGET_ROTATION_KP = 0.9;
+    /**
+     * The X position to target for. Passed in as a parameter.
+     */
+    protected final double X_POSITION;
+    /**
+     * The Y position to target for. Pass in as a parameter.
+     */
+    protected final double Y_POSITION;
+    //TODO: Revisit this. Is it still needed now that we have the cache, non-rolling-shutter cameras, and better ways to handle losing the target for
+    // a frame or two
+    /**
+     * The maximum speed that the robot will be clipped under. If the robot has trouble maintaining a target lock, this
+     * may need to be reduced.
+     */
+    protected final double MAX_SPEED = 1.0;
+    /**
+     * This is an exponent applied to the speed (0.0 to 1.0) which changes how the robot responds. A value above 1.0
+     * results in slower overall targeting, a value greater than 1.0 results in a more aggressive targeting speed.
+     */
+    protected final double SPEED_SMOOTHING_MULTIPLIER = 0.8;
+    /**
+     * The heading to target for if the {@link A05Constants.AprilTagSet} says to use field relative headings.
+     */
     protected final AngleD HEADING;
     protected final double X_MAX, X_MIN, Y_MAX, Y_MIN;
+    /**
+     * Boolean flag to make true when the command is finished.
+     */
     protected boolean isFinished = false;
 
     /**
@@ -59,8 +131,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
     @Override
     public void initialize() {
-        robotPosition = RobotPosition.getRobotPosition(tagSet);
-        ticksWithoutTarget = robotPosition.isNew ? 0 : resumeDrivingTickThreshold;
+        inferredRobotPosition = InferredRobotPosition.getInferredRobotPosition(tagSet);
+        ticksWithoutTarget = inferredRobotPosition.isNew ? 0 : resumeDrivingTickThreshold;
         ticksInZoneCounter = 0;
         isFinished = false;
         canPerformTargeting = false;
@@ -68,7 +140,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
     @Override
     public void execute() {
-        robotPosition = RobotPosition.getRobotPosition(tagSet);
+        inferredRobotPosition = InferredRobotPosition.getInferredRobotPosition(tagSet);
         checkIfCanPerformTargeting();
         executeTargeting();
     }
@@ -91,7 +163,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
     protected double calcX() {
         double center = (X_MAX + X_MIN) / 2.0;
         double scale = (X_MAX - X_MIN) / 2.0;
-        return Utl.clip((robotPosition.x - positionAtFrame.forward - center) / scale - (X_POSITION - center) / scale, -1.0, 1.0);
+        return Utl.clip((inferredRobotPosition.x - center) / scale - (X_POSITION - center) / scale, -1.0, 1.0);
     }
 
     /**
@@ -102,7 +174,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
     protected double calcY() {
         double center = (Y_MAX + Y_MIN) / 2.0;
         double scale = (Y_MAX - Y_MIN) / 2.0;
-        return Utl.clip((robotPosition.y - positionAtFrame.strafe - center) / scale - (Y_POSITION - center) / scale, -1.0, 1.0);
+        return Utl.clip((inferredRobotPosition.y - center) / scale - (Y_POSITION - center) / scale, -1.0, 1.0);
     }
 
     /**
@@ -110,26 +182,24 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      *
      * @return True if valid, false otherwise.
      */
-    protected boolean isValidTargetID() {
-        return robotPosition.isValid;
-    }
-
-    /**
-     * Checks for cache overrun in the robot's position data.
-     *
-     * @return True if there's a cache overrun, false otherwise.
-     */
-    protected boolean cacheOverrun() {
-        return swerveDrive.getRobotRelativePositionSince(robotPosition.pipelineResult.getTimestampSeconds()).cacheOverrun;
+    protected boolean isRobotPositionValid() {
+        return inferredRobotPosition.isValid;
     }
 
     /**
      * Determines whether the robot can perform targeting.
+     * <p>
+     * Sets the boolean flag {@link #canPerformTargeting} enabling a wrapper to call the can perform targeting and pull the
+     * result
+     * <p>
+     * If {@link #canPerformTargeting} will be false, calls {@code super.execute()} which is
+     * {@link A05DriveCommand#execute()} and thus executes a joystick drive as if the
+     * {@link org.a05annex.frc.subsystems.DriveSubsystem} is running its default command
      */
     protected void checkIfCanPerformTargeting() {
         canPerformTargeting = false;
 
-        if(!isValidTargetID()) {
+        if(!isRobotPositionValid()) {
             if(driveXbox == null) {
                 isFinished = true;
                 return;
@@ -138,7 +208,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
             return;
         }
 
-        if(!robotPosition.isNew) {
+        if(!inferredRobotPosition.isNew) {
             ticksWithoutTarget++;
             if(ticksWithoutTarget > resumeDrivingTickThreshold) {
                 if(driveXbox == null) {
@@ -150,11 +220,6 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
             }
         } else {
             ticksWithoutTarget = 0;
-        }
-
-        if(cacheOverrun()) {
-            isFinished = true;
-            return;
         }
 
         canPerformTargeting = true;
@@ -213,10 +278,10 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * @return The calculated target heading rotation.
      */
     protected double calcRotationTargetHeading() {
-        if(!robotPosition.isNew) {
+        if(!inferredRobotPosition.isNew) {
             return 0.0;
         }
-        return PhotonCameraWrapper.filterForTarget(robotPosition.pipelineResult, tagSet).getYaw() / 35.0 * TARGET_ROTATION_KP;
+        return PhotonCameraWrapper.filterForTarget(inferredRobotPosition.pipelineResult, tagSet).getYaw() / 35.0 * TARGET_ROTATION_KP;
     }
 
     /**
@@ -225,8 +290,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * @return True if the robot is in the zone, false otherwise.
      */
     protected boolean checkInZone() {
-        return Utl.inTolerance(robotPosition.x - positionAtFrame.forward, X_POSITION, inZoneThreshold)
-                && Utl.inTolerance(robotPosition.y - positionAtFrame.strafe, Y_POSITION, inZoneThreshold);
+        return Utl.inTolerance(inferredRobotPosition.x, X_POSITION, inZoneThreshold)
+                && Utl.inTolerance(inferredRobotPosition.y, Y_POSITION, inZoneThreshold);
     }
 
     /**
