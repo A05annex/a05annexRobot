@@ -11,6 +11,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.DoubleFunction;
 
 /**
  * A wrapper around a PhotonCamera object that provides convenient access to the latest frame and target information.
@@ -26,6 +27,8 @@ public class PhotonCameraWrapper {
     private PhotonPipelineResult newestFrame = new PhotonPipelineResult();
     private List<PhotonTrackedTarget> targetList = null;
     private PhotonPipelineResult frameWithTargets = null;
+
+    private DoubleFunction<Double> xCorrectionFunction = null;
 
     // Whether the latest pipeline result and latest target match
     private boolean targetsAreNew = false;
@@ -186,7 +189,13 @@ public class PhotonCameraWrapper {
             throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
         }
 
-        return getTarget(tagSet).getBestCameraToTarget().getX();
+        double reportedX = getTarget(tagSet).getBestCameraToTarget().getX();
+
+        if(xCorrectionFunction == null) {
+            return reportedX;
+        }
+
+        return xCorrectionFunction.apply(reportedX);
     }
 
     /**
@@ -220,5 +229,16 @@ public class PhotonCameraWrapper {
 //        return Math.atan2(getXFromLastTarget(), getYFromLastTarget());
 //    }
 
-
+    /**
+     * Sets the X correction function. This function should take the reported X from PhotonVision as the input and
+     * return what the true X (as found with a tape measure) is.
+     * @param xCorrectionFunction a method that takes one double as an input, reported X, and returns what the true X
+     *                            should be.
+     */
+    public void setXCorrectionParams(DoubleFunction<Double> xCorrectionFunction) {
+        if(this.xCorrectionFunction != null) {
+            throw new IllegalStateException("You tried to set the X correction function more than once for camera: " + camera.getName());
+        }
+        this.xCorrectionFunction = xCorrectionFunction;
+    }
 }
