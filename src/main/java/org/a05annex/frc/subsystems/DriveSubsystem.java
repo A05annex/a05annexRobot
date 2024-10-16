@@ -47,8 +47,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     private final Mk4NeoModule lf;
     private final Mk4NeoModule lr;
 
-    // create NavX - the drive subsystem owns the NavX and is responsible for the heading update
-    // cycle.
+    // Get the NavX instance
     private final NavX navX = NavX.getInstance();
 
     // These are the constants for the drive geometry. They will vary with different frames, and they are
@@ -560,8 +559,6 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     @Override
     public void periodic() {
         // This method will be called once per scheduler run
-        // Update the NavX heading
-        navX.recomputeHeading(false);
         // Update the odometry for the drive. OK, the scam here is that there was a previous heading set
         // in the last command cycle when we were setting the new direction/speed/rotation for the
         // chassis, and the heading we are at now. For odometry, assume the average of the last heading and current

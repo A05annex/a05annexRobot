@@ -15,6 +15,8 @@ import org.a05annex.frc.subsystems.ISwerveDrive;
  */
 public abstract class A05Robot extends TimedRobot {
 
+    private final NavX navX = NavX.getInstance();
+
     protected A05RobotContainer a05RobotContainer;
 
     private Command autonomousCommand = null;
@@ -47,7 +49,8 @@ public abstract class A05Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
-
+        // Update the NavX heading, fused heading, and displacements
+        navX.recomputeHeading();
         // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
         // commands, running already-scheduled commands, removing finished or interrupted commands,
         // and running subsystem periodic() methods.  This must be called from the robot's periodic

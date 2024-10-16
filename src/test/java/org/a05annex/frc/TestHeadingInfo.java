@@ -13,7 +13,7 @@ public class TestHeadingInfo {
 
     NavX.HeadingInfo newHeadingInfo(double degrees) {
         return new NavX.HeadingInfo(new AngleD(AngleUnit.DEGREES,degrees),
-                new AngleD(AngleUnit.DEGREES,degrees), true);
+                null, true, new AngleD(AngleUnit.DEGREES,degrees));
     }
 
     /**
