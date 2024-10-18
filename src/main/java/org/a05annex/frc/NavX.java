@@ -116,6 +116,10 @@ public class NavX {
 
     boolean includeFusedHeading = false;
 
+    private float displacementX = 0.0f;
+    private float displacementY = 0.0f;
+
+
     /**
      * Instantiate the NavX. We have had problems here where the NavX does not respond because it is somehow
      * unreachable (disconnected) - which means this instantiation never finishes, and the robot sits on the
@@ -270,6 +274,9 @@ public class NavX {
                 fusedHeading.setRadians(fusedHeadingRevs * AngleD.TWO_PI.getRadians())
                         .add(fusedHeading).subtract(refYaw).add(refHeading);
             }
+
+            displacementX = ahrs.getDisplacementX();
+            displacementY = ahrs.getDisplacementY();
         }
     }
 
@@ -298,7 +305,7 @@ public class NavX {
         }
         return new HeadingInfo(heading.cloneAngleD().mult(yawCalibrationFactor),
                 includeFusedHeading ? fusedHeading.cloneAngleD() : null,
-                isHeadingCurrent, expectedHeading);
+                isHeadingCurrent, expectedHeading, displacementX, displacementY);
     }
 
     /**
@@ -354,25 +361,32 @@ public class NavX {
          */
         public final AngleConstantD expectedHeading;
 
+        public final float displacementX;
+        public final float displacementY;
+
         /**
          * Initialize the {@link NavX.HeadingInfo} at construction.
          *
-         * @param heading                   The actual robot heading, as determined by the yaw gyro
-         * @param fusedHeading              The actual fused setting , as determined by the yaw gyro with correction
-         *                                  by the magnetometer when the robot is in a state where the magnetic
-         *                                  (compass) direction can be sensed. {@code null} if either the NavX
-         *                                  magnetometer has not been calibrated, or fused heading has not been
-         *                                  requested
-         * @param isHeadingCurrent          {@code true} is the NavX has updated the heading this command cycle, and
-         *                                  {@code false} otherwise.
-         * @param expectedHeading           The expected robot heading.
+         * @param heading          The actual robot heading, as determined by the yaw gyro
+         * @param fusedHeading     The actual fused setting , as determined by the yaw gyro with correction
+         *                         by the magnetometer when the robot is in a state where the magnetic
+         *                         (compass) direction can be sensed. {@code null} if either the NavX
+         *                         magnetometer has not been calibrated, or fused heading has not been
+         *                         requested
+         * @param isHeadingCurrent {@code true} is the NavX has updated the heading this command cycle, and
+         *                         {@code false} otherwise.
+         * @param expectedHeading  The expected robot heading.
+         * @param displacementX
+         * @param displacementY
          */
         HeadingInfo(@NotNull AngleD heading, @Nullable AngleD fusedHeading, boolean isHeadingCurrent,
-                    @NotNull AngleD expectedHeading) {
+                    @NotNull AngleD expectedHeading, float displacementX, float displacementY) {
             this.heading = heading;
             this.fusedHeading = fusedHeading;
             this.isHeadingCurrent = isHeadingCurrent;
             this.expectedHeading = expectedHeading;
+            this.displacementX = displacementX;
+            this.displacementY = displacementY;
         }
 
         /**
