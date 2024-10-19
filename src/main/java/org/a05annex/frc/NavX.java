@@ -175,6 +175,8 @@ public class NavX {
         fusedHeadingRevs = 0;
     }
 
+
+
     public boolean setIncludeFusedHeading(boolean includeFusedHeading) {
         this.includeFusedHeading = includeFusedHeading && ahrs.isMagnetometerCalibrated();
         return this.includeFusedHeading;
@@ -182,6 +184,14 @@ public class NavX {
 
     public boolean getIncludeFusedHeading() {
         return includeFusedHeading;
+    }
+
+    /**
+     * Call the {@link AHRS#resetDisplacement()} function for the NavX board. Since we are pretty foggy on
+     * how displacement calculations work, we are really not sure what this does yet.
+     */
+    public void resetDisplacement() {
+        ahrs.resetDisplacement();
     }
     /**
      * A calibration factor that the heading is multiplied by before being returned as the robot heading. We noted
