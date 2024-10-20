@@ -38,6 +38,13 @@ import org.jetbrains.annotations.Nullable;
 public class NavX {
 
     /**
+     * This constant allows testing code that has been added to the NavX library since this NavX class was
+     * initially conceived - when {@code true} it uses Yaw gyro calibration, yaw adjustment, and -&infin; to +&infin;
+     * Yaw angle reporting in the NavX firmware/library.
+     */
+    private final boolean USE_AHRS_ANGLE_AS_HEADING = false;
+
+    /**
      * This is the NavX inertial navigation board connection.
      */
     private final AHRS ahrs;
@@ -162,17 +169,28 @@ public class NavX {
     public void initializeHeadingAndNav(AngleConstantD heading) {
         // In the past we have always initialized with the front of the robot facing down field, so the
         // heading was 0.0 at initialization. In this case we are initializing to some other heading.
-        refPitch.setDegrees(ahrs.getPitch());
-        refYaw.setDegrees(ahrs.getYaw());
-        refRoll.setDegrees(ahrs.getRoll());
-        refHeading.setValue(heading);
-        // yaw gyro only
-        headingRawLast.setValue(AngleD.ZERO);
-        expectedHeading.setValue(refHeading);
-        headingRevs = 0;
-        // yaw gyro fused with magnetic heading
-        fusedHeadingLast.setValue(AngleD.ZERO);
-        fusedHeadingRevs = 0;
+        if (USE_AHRS_ANGLE_AS_HEADING) {
+            refPitch.setDegrees(ahrs.getPitch());
+            refRoll.setDegrees(ahrs.getRoll());
+            // reset the Yaw gyro to read 0.0
+            ahrs.reset();
+            // set the actual heading that should be returned for this robot position
+            ahrs.setAngleAdjustment(heading.getDegrees());
+            // Set the expected heading to the specified initialize heading
+            expectedHeading.setValue(refHeading);
+        } else {
+            refPitch.setDegrees(ahrs.getPitch());
+            refYaw.setDegrees(ahrs.getYaw());
+            refRoll.setDegrees(ahrs.getRoll());
+            refHeading.setValue(heading);
+            // yaw gyro only
+            headingRawLast.setValue(AngleD.ZERO); // I THINK THIS IS WRONG !!
+            expectedHeading.setValue(refHeading);
+            headingRevs = 0;
+            // yaw gyro fused with magnetic heading
+            fusedHeadingLast.setValue(AngleD.ZERO); // I THINK THIS IS WRONG !!
+            fusedHeadingRevs = 0;
+        }
     }
 
 
@@ -253,40 +271,56 @@ public class NavX {
             // this is a new report from the NavX board, update all the heading info.
             this.updateCt = updateCt;
 
-            AngleD headingRaw = new AngleD(AngleUnit.DEGREES, ahrs.getYaw());
-            // This is the logic for detecting and correcting for the IMU discontinuity at +180degrees and -180degrees.
-            if (headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && headingRaw.isGreaterThan(AngleD.ZERO)) {
-                // The previous raw IMU heading was negative and close to the discontinuity, and it is now positive. We
-                // have gone through the discontinuity, so we decrement the heading revolutions by 1 (we completed a
-                // negative revolution). NOTE: the initial check protects from the case that the heading is near 0 and
-                // goes continuously through 0, which is not the completion of a revolution.
-                headingRevs--;
-            } else if (headingRawLast.isGreaterThan(AngleD.PI_OVER_2) && headingRaw.isLessThan(AngleD.ZERO)) {
-                // The previous raw IMU heading was positive and close to the discontinuity, and it is now negative. We
-                // have gone through the discontinuity, so we increment the heading revolutions by 1 (we completed
-                // positive revolution). NOTE: the initial check protects from the case that the heading is near 0 and
-                // goes continuously through 0, which is not the completion of a revolution.
-                headingRevs++;
-            }
-            headingRawLast.setValue(headingRaw);
-            heading.setRadians(headingRevs * AngleD.TWO_PI.getRadians())
-                    .add(headingRaw).subtract(refYaw).add(refHeading);
-
-            if (includeFusedHeading) {
-                // This is initial teat code - assumes the same heading discontinuity correction
-                AngleD fusedHeading = new AngleD(AngleUnit.DEGREES, ahrs.getYaw());
-                if (fusedHeadingLast.isLessThan(AngleD.NEG_PI_OVER_2) && fusedHeading.isGreaterThan(AngleD.ZERO)) {
-                    fusedHeadingRevs--;
-                } else if (fusedHeadingLast.isGreaterThan(AngleD.PI_OVER_2) && fusedHeading.isLessThan(AngleD.ZERO)) {
-                    fusedHeadingRevs++;
+            if (USE_AHRS_ANGLE_AS_HEADING) {
+                // returns the accumulated yaw deviation (continuous -infinity to +infinity)
+                heading.setDegrees(ahrs.getAngle());
+                if (includeFusedHeading) {
+                    // not at all sure what to do here - documentation says the fused heading is in the range 0-360
+                    // degrees, so it would need some adjustment to get it into the continuous -infinity to +infinity
+                    // range. Right now the best we can do is report what the NavX reports, so we can confirm what it
+                    // does and figure out how to convert that to the continuous -infinity to +infinity representation.
+                    fusedHeading.setDegrees(ahrs.getFusedHeading());
                 }
-                fusedHeadingLast.setValue(fusedHeading);
-                fusedHeading.setRadians(fusedHeadingRevs * AngleD.TWO_PI.getRadians())
-                        .add(fusedHeading).subtract(refYaw).add(refHeading);
-            }
 
-            displacementX = ahrs.getDisplacementX();
-            displacementY = ahrs.getDisplacementY();
+                displacementX = ahrs.getDisplacementX();
+                displacementY = ahrs.getDisplacementY();
+
+            } else {
+                AngleD headingRaw = new AngleD(AngleUnit.DEGREES, ahrs.getYaw());
+                // This is the logic for detecting and correcting for the IMU discontinuity at +180degrees and -180degrees.
+                if (headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && headingRaw.isGreaterThan(AngleD.ZERO)) {
+                    // The previous raw IMU heading was negative and close to the discontinuity, and it is now positive. We
+                    // have gone through the discontinuity, so we decrement the heading revolutions by 1 (we completed a
+                    // negative revolution). NOTE: the initial check protects from the case that the heading is near 0 and
+                    // goes continuously through 0, which is not the completion of a revolution.
+                    headingRevs--;
+                } else if (headingRawLast.isGreaterThan(AngleD.PI_OVER_2) && headingRaw.isLessThan(AngleD.ZERO)) {
+                    // The previous raw IMU heading was positive and close to the discontinuity, and it is now negative. We
+                    // have gone through the discontinuity, so we increment the heading revolutions by 1 (we completed
+                    // positive revolution). NOTE: the initial check protects from the case that the heading is near 0 and
+                    // goes continuously through 0, which is not the completion of a revolution.
+                    headingRevs++;
+                }
+                headingRawLast.setValue(headingRaw);
+                heading.setRadians(headingRevs * AngleD.TWO_PI.getRadians())
+                        .add(headingRaw).subtract(refYaw).add(refHeading);
+
+                if (includeFusedHeading) {
+                    // This is initial test code - assumes the same heading discontinuity correction
+                    AngleD fusedHeading = new AngleD(AngleUnit.DEGREES, ahrs.getFusedHeading());
+                    if (fusedHeadingLast.isLessThan(AngleD.NEG_PI_OVER_2) && fusedHeading.isGreaterThan(AngleD.ZERO)) {
+                        fusedHeadingRevs--;
+                    } else if (fusedHeadingLast.isGreaterThan(AngleD.PI_OVER_2) && fusedHeading.isLessThan(AngleD.ZERO)) {
+                        fusedHeadingRevs++;
+                    }
+                    fusedHeadingLast.setValue(fusedHeading);
+                    this.fusedHeading.setRadians(fusedHeadingRevs * AngleD.TWO_PI.getRadians())
+                            .add(fusedHeading).subtract(refYaw).add(refHeading);
+                }
+
+                displacementX = ahrs.getDisplacementX();
+                displacementY = ahrs.getDisplacementY();
+            }
         }
     }
 
