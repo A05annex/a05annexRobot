@@ -3,6 +3,7 @@ package org.a05annex.frc.commands;
 import edu.wpi.first.math.util.Units;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.InferredRobotPosition;
+import org.a05annex.frc.NavX;
 import org.a05annex.frc.subsystems.PhotonCameraWrapper;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
 import org.a05annex.util.AngleConstantD;
@@ -177,9 +178,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * @return x speed
      */
     protected double calcX() {
-        double center = (X_MAX + X_MIN) / 2.0;
         double scale = (X_MAX - X_MIN) / 2.0;
-        return Utl.clip((inferredRobotPosition.x - center) / scale - (X_POSITION - center) / scale, -1.0, 1.0);
+        return Utl.clip((inferredRobotPosition.x - X_POSITION) / scale, -1.0, 1.0);
     }
 
     /**
@@ -188,9 +188,8 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * @return y speed
      */
     protected double calcY() {
-        double center = (Y_MAX + Y_MIN) / 2.0;
         double scale = (Y_MAX - Y_MIN) / 2.0;
-        return Utl.clip((inferredRobotPosition.y - center) / scale - (Y_POSITION - center) / scale, -1.0, 1.0);
+        return Utl.clip((inferredRobotPosition.y - Y_POSITION) / scale, -1.0, 1.0);
     }
 
     /**
@@ -226,14 +225,14 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
 
         if(!inferredRobotPosition.isNew) {
             ticksWithoutTarget++;
-            if(ticksWithoutTarget > resumeDrivingTickThreshold) {
-                if(driveXbox == null) {
-                    isFinished = true;
-                    return;
-                }
-                super.execute();
-                return;
-            }
+//            if(ticksWithoutTarget > resumeDrivingTickThreshold) {
+//                if(driveXbox == null) {
+//                    isFinished = true;
+//                    return;
+//                }
+//                super.execute();
+//                return;
+//            }
         } else {
             ticksWithoutTarget = 0;
         }
@@ -249,7 +248,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
     protected double calcSpeed() {
         double speed = Math.pow(Math.sqrt(Math.pow(Math.abs(calcX()), 2) + Math.pow(Math.abs(calcY()), 2)), SPEED_SMOOTHING_MULTIPLIER);
         speed = Utl.clip(speed, lastConditionedSpeed - MAX_SPEED_DELTA, lastConditionedSpeed + MAX_SPEED_DELTA);
-        speed *= ((double) (resumeDrivingTickThreshold - ticksWithoutTarget) / (double) resumeDrivingTickThreshold);
+        //speed *= ((double) (resumeDrivingTickThreshold - ticksWithoutTarget) / (double) resumeDrivingTickThreshold);
         return Utl.clip(speed, 0.0, MAX_SPEED);
     }
 
@@ -259,7 +258,7 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * @param direction The AngleD object representing the current direction.
      */
     protected void calcDirection(AngleD direction) {
-        direction.atan2(calcY(), calcX());
+        direction.atan2(inferredRobotPosition.y - Y_POSITION, inferredRobotPosition.x - X_POSITION);
         direction.add(HEADING);
     }
 
@@ -282,10 +281,10 @@ public class A05AprilTagPositionCommand extends A05DriveCommand {
      * @return The calculated field heading rotation.
      */
     protected double calcRotationFieldHeading() {
-        AngleD fieldHeading = navX.getHeadingInfo().getClosestHeading(HEADING);
+        NavX.HeadingInfo headingInfo = navX.getHeadingInfo();
+        AngleD fieldHeading = headingInfo.getClosestHeading(HEADING);
         navX.setExpectedHeading(fieldHeading);
-        return new AngleD(navX.getHeadingInfo().expectedHeading).
-                subtract(new AngleD(navX.getHeadingInfo().heading)).getRadians() * HEADING_ROTATION_KP;
+        return fieldHeading.subtract(new AngleD(headingInfo.heading)).getRadians() * HEADING_ROTATION_KP;
     }
 
     /**

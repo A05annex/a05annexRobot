@@ -920,7 +920,7 @@ public abstract class A05Constants {
         /**
          * Values that essentially control how sensitive the forward and strafe is
          */
-        public final double X_MAX = 3.0, X_MIN = 0.0, Y_MAX = 1.5, Y_MIN = -1.5;
+        public final double X_MAX = 2.0, X_MIN = 0.0, Y_MAX = 1.0, Y_MIN = -1.0;
 
         /**
          * Array of red alliance april tag ids to perform the targeting on

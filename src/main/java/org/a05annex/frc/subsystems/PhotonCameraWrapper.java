@@ -39,6 +39,8 @@ public class PhotonCameraWrapper {
 
     private DoubleFunction<Double> xCorrectionFunction = null;
 
+    private DoubleFunction<Double> yCorrectionFunction = null;
+
     // Whether the latest pipeline result and latest target match
     private boolean targetsAreNew = false;
 
@@ -58,7 +60,7 @@ public class PhotonCameraWrapper {
     }
 
     /**
-     * Updates tracking data for all cameras. This only needs to be run once per
+     * Updates tracking data for all cameras. This only needs to be run once per cycle
      */
     public static void updateAllTrackingData() {
         cameras.forEach(PhotonCameraWrapper::updateTrackingData);
@@ -225,7 +227,13 @@ public class PhotonCameraWrapper {
             throw new NullPointerException("A tag with the correct ID was not in the most recent frame. Make sure getTarget(AprilTagSet) does not return null before running this method");
         }
 
-        return -getTarget(tagSet).getBestCameraToTarget().getY();
+        double reportedY = getTarget(tagSet).getBestCameraToTarget().getY();
+
+        if(yCorrectionFunction == null) {
+            return -1.0 * reportedY;
+        }
+
+        return -1.0 * yCorrectionFunction.apply(reportedY);
     }
 
 //    /**
@@ -256,5 +264,12 @@ public class PhotonCameraWrapper {
             throw new IllegalStateException("You tried to set the X correction function more than once for camera: " + camera.getName());
         }
         this.xCorrectionFunction = xCorrectionFunction;
+    }
+
+    public void setYCorrectionFunction(DoubleFunction<Double> yCorrectionFunction) {
+        if(this.yCorrectionFunction != null) {
+            throw new IllegalStateException("You tried to set the Y correction function more than once for camera: " + camera.getName());
+        }
+        this.yCorrectionFunction = xCorrectionFunction;
     }
 }
