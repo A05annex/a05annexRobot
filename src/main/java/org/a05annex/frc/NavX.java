@@ -42,12 +42,12 @@ public class NavX {
      * initially conceived - when {@code true} it uses Yaw gyro calibration, yaw adjustment, and -&infin; to +&infin;
      * Yaw angle reporting in the NavX firmware/library.
      */
-    private final boolean USE_AHRS_ANGLE_AS_HEADING = false;
+    private final boolean USE_AHRS_ANGLE_AS_HEADING = true;
 
     /**
      * This is the NavX inertial navigation board connection.
      */
-    private final AHRS ahrs;
+    public final AHRS ahrs;
 
     /**
      * The heading we are trying to track with the robot, i.e. this is the heading the robot is expected to
@@ -148,6 +148,10 @@ public class NavX {
             }
         }
         updateCt = ahrs.getUpdateCount();
+        try {
+            //noinspection BusyWait
+            Thread.sleep(100);
+        } catch (InterruptedException e) {}
         initializeHeadingAndNav();
     }
 
@@ -172,15 +176,16 @@ public class NavX {
         if (USE_AHRS_ANGLE_AS_HEADING) {
             refPitch.setDegrees(ahrs.getPitch());
             refRoll.setDegrees(ahrs.getRoll());
+            refHeading.setValue(heading);
             // reset the Yaw gyro to read 0.0
             ahrs.reset();
             // set the actual heading that should be returned for this robot position
-            ahrs.setAngleAdjustment(heading.getDegrees());
+            ahrs.setAngleAdjustment(heading.getDegrees() + ahrs.getAngle());
             // Set the expected heading to the specified initialize heading
             expectedHeading.setValue(refHeading);
         } else {
             refPitch.setDegrees(ahrs.getPitch());
-            refYaw.setDegrees(ahrs.getYaw());
+            refYaw.setDegrees(-ahrs.getYaw());
             refRoll.setDegrees(ahrs.getRoll());
             refHeading.setValue(heading);
             // yaw gyro only
@@ -273,20 +278,20 @@ public class NavX {
 
             if (USE_AHRS_ANGLE_AS_HEADING) {
                 // returns the accumulated yaw deviation (continuous -infinity to +infinity)
-                heading.setDegrees(ahrs.getAngle());
+                heading.setDegrees(-ahrs.getAngle());
                 if (includeFusedHeading) {
                     // not at all sure what to do here - documentation says the fused heading is in the range 0-360
                     // degrees, so it would need some adjustment to get it into the continuous -infinity to +infinity
                     // range. Right now the best we can do is report what the NavX reports, so we can confirm what it
                     // does and figure out how to convert that to the continuous -infinity to +infinity representation.
-                    fusedHeading.setDegrees(ahrs.getFusedHeading());
+                    fusedHeading.setDegrees(-ahrs.getFusedHeading());
                 }
 
-                displacementX = ahrs.getDisplacementX();
+                displacementX = -ahrs.getDisplacementX();
                 displacementY = ahrs.getDisplacementY();
 
             } else {
-                AngleD headingRaw = new AngleD(AngleUnit.DEGREES, ahrs.getYaw());
+                AngleD headingRaw = new AngleD(AngleUnit.DEGREES, -ahrs.getYaw());
                 // This is the logic for detecting and correcting for the IMU discontinuity at +180degrees and -180degrees.
                 if (headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && headingRaw.isGreaterThan(AngleD.ZERO)) {
                     // The previous raw IMU heading was negative and close to the discontinuity, and it is now positive. We
@@ -318,7 +323,7 @@ public class NavX {
                             .add(fusedHeading).subtract(refYaw).add(refHeading);
                 }
 
-                displacementX = ahrs.getDisplacementX();
+                displacementX = -ahrs.getDisplacementX();
                 displacementY = ahrs.getDisplacementY();
             }
         }
@@ -369,10 +374,10 @@ public class NavX {
         // the reference position is set, see initializeHeadingAndNav().
         return new NavInfo(
                 new AngleConstantD(AngleUnit.DEGREES, ahrs.getPitch() - refPitch.getDegrees()),
-                new AngleConstantD(AngleUnit.DEGREES, ahrs.getYaw() - refYaw.getDegrees()),
+                new AngleConstantD(AngleUnit.DEGREES, -ahrs.getYaw() - refYaw.getDegrees()),
                 new AngleConstantD(AngleUnit.DEGREES, ahrs.getRoll() - refRoll.getDegrees()),
                 new AngleConstantD(AngleUnit.DEGREES, ahrs.getPitch()),
-                new AngleConstantD(AngleUnit.DEGREES, ahrs.getYaw()),
+                new AngleConstantD(AngleUnit.DEGREES, -ahrs.getYaw()),
                 new AngleConstantD(AngleUnit.DEGREES, ahrs.getRoll()));
     }
 
