@@ -182,7 +182,7 @@ public abstract class A05Constants {
      * driver is not applying any rotation command. It is also used during autonomous path following to maintain
      * the expected path heading. This default value has worked well for our robot the last several years.
      */
-    private static double DRIVE_ORIENTATION_kP = 1.2;;
+    private static double DRIVE_ORIENTATION_kP = 1.2;
 
     /**
      * Get the drive orientation Kp, which is the Kp for the PID loop that keeps the robot on the expected heading
@@ -920,7 +920,8 @@ public abstract class A05Constants {
         /**
          * Values that essentially control how sensitive the forward and strafe is
          */
-        public final double X_MAX = 2.0, X_MIN = 0.0, Y_MAX = 1.0, Y_MIN = -1.0;
+        public final double REDUCED_SPEED_RADIUS;
+        public final double POSITION_CONTROL_RADIUS;
 
         /**
          * Array of red alliance april tag ids to perform the targeting on
@@ -979,14 +980,36 @@ public abstract class A05Constants {
          * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
          * @param useTargetForHeading boolean flag defining whether to use the tag or the field heading when a targeting
          *                            algorithm accesses the AprilTagSet.
+         * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
          */
-        private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading) {
+        private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading, double reducedSpeedRadius, double positionControlRadius) {
             this.redTagIDs = redTagIDs;
             this.blueTagIDs = blueTagIDs;
             this.redHeading = redHeading;
             this.blueHeading = blueHeading;
             this.useTargetForHeading = useTargetForHeading;
             this.height = height;
+
+            this.REDUCED_SPEED_RADIUS = reducedSpeedRadius;
+            this.POSITION_CONTROL_RADIUS = positionControlRadius;
+        }
+
+        /**
+         * Constructs an AprilTagSet object when you want the robot to face different field headings dependent on alliance.
+         *
+         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param height The height in meters of the target above the carpet.
+         * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
+         * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
+         * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
+         */
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, double reducedSpeedRadius, double positionControlRadius) {
+            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, reducedSpeedRadius, positionControlRadius);
         }
 
         /**
@@ -999,7 +1022,7 @@ public abstract class A05Constants {
          * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
          */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
-            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false);
+            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, 2.0, 0.15);
         }
 
         /**
@@ -1014,7 +1037,7 @@ public abstract class A05Constants {
          * @param heading field heading for the robot to face when targeting the tag.
          */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
-            this(redTagIDs, blueTagIDs, height, heading, heading, false);
+            this(redTagIDs, blueTagIDs, height, heading, heading, false, 2.0, 0.15);
         }
 
         /**
@@ -1025,7 +1048,21 @@ public abstract class A05Constants {
          * @param height The height in meters of the target above the carpet.
          */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
-            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true);
+            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, 2.0, 0.15);
+        }
+
+        /**
+         * Constructs an AprilTagSet object when you want the robot to face the target.
+         *
+         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param height The height in meters of the target above the carpet.
+         * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
+         */
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, double reducedSpeedRadius, double positionControlRadius) {
+            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, reducedSpeedRadius, positionControlRadius);
         }
     }
 }

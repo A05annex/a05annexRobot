@@ -399,6 +399,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
     }
 
     @Override
+    @NotNull
     public DriveMode getDriveMode() {
         return driveMode;
     }
@@ -500,6 +501,7 @@ public class DriveSubsystem extends SubsystemBase implements ISwerveDrive {
         }
         startAbsoluteTranslate(distanceForward, distanceStrafe, 1.0);
     }
+
     @Override
     public void startAbsoluteTranslate(double distanceForward, double distanceStrafe, double maxSpeed) {
         testGeometryIsSet();

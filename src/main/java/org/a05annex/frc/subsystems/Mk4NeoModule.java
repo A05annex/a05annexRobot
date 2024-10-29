@@ -98,7 +98,7 @@ public class Mk4NeoModule {
      * tolerance on the field corresponds to {@code TARGET_POSITION_TOLERANCE} / {@link #TICS_PER_METER}, or
      * .007m (0.27in)
      */
-    static final double SMART_MOTION_TARGET_TOLERANCE = 0.4;
+    static final double SMART_MOTION_TARGET_TOLERANCE = 0.2;
 
     // -----------------------------------------------------------------------------------------------------------------
     // The module physical hardware
@@ -506,9 +506,9 @@ public class Mk4NeoModule {
      */
     public boolean isAtTargetDistance() {
         double currentPosition = getDriveEncoderPosition();
-        // If driving by speed, he the move by distance is done. Otherwise, test for a tolerance
+        // If driving by speed, the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
         return (driveMode == CANSparkMax.ControlType.kVelocity) ||
-                Utl.inTolerance(currentPosition, targetPosition, SMART_MOTION_TARGET_TOLERANCE * 3.0);
+                Utl.inTolerance(currentPosition, targetPosition, SMART_MOTION_TARGET_TOLERANCE * 2.0);
     }
 }

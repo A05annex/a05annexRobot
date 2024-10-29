@@ -389,6 +389,11 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      */
     @NotNull
     RobotRelativePosition getRobotRelativePositionSince(double targetTime, double sinceTime) {
+        // Make sure there is at least one value in the cache. If not, return a blank robot relative position
+        if(mostRecentControlRequest == -1) {
+            return new RobotRelativePosition(0.0, 0.0, new AngleD(AngleConstantD.ZERO), 0.0, false);
+        }
+
         sinceTime -= latencyOffset;
         int backIndex = mostRecentControlRequest;
         ControlRequest lastControlRequest = controlRequests[backIndex];
