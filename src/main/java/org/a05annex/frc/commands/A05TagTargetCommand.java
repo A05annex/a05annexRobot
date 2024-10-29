@@ -9,6 +9,7 @@ import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
 
+import java.util.Objects;
 import java.util.function.DoubleFunction;
 
 /**
@@ -258,7 +259,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
         if (!inferredRobotPosition.isNew) {
             return 0.0;
         }
-        return PhotonCameraWrapper.filterForTarget(inferredRobotPosition.pipelineResult, tagSet).getYaw() / 35.0 * TARGET_ROTATION_KP;
+        return Objects.requireNonNull(PhotonCameraWrapper.filterForTarget(inferredRobotPosition.pipelineResult, tagSet)).getYaw() / 35.0 * TARGET_ROTATION_KP;
     }
 
     /**

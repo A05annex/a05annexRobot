@@ -124,7 +124,8 @@ public class PhotonCameraWrapper {
      * @param tagSet The {@link org.a05annex.frc.A05Constants.AprilTagSet} defining which target to look for
      * @return the {@link PhotonTrackedTarget} described by tagSet, or null if no tag matching the tagSet was in the frame
      */
-    public static @Nullable PhotonTrackedTarget filterForTarget(@NotNull PhotonPipelineResult frame, A05Constants.AprilTagSet tagSet) {
+    @Nullable
+    public static PhotonTrackedTarget filterForTarget(@NotNull PhotonPipelineResult frame, A05Constants.AprilTagSet tagSet) {
         for(PhotonTrackedTarget target : frame.getTargets()) {
             for(int i = 0; i < tagSet.tagIDs().length; i++) {
                 if(target.getFiducialId() == tagSet.tagIDs()[i]) {
@@ -266,6 +267,12 @@ public class PhotonCameraWrapper {
         this.xCorrectionFunction = xCorrectionFunction;
     }
 
+    /**
+     * Sets the Y correction function. This function should take the reported Y from PhotonVision as the input and
+     * return what the true Y (as found with a tape measure) is.
+     * @param yCorrectionFunction a method that takes one double as an input, reported Y, and returns what the true Y
+     *                            should be.
+     */
     public void setYCorrectionFunction(DoubleFunction<Double> yCorrectionFunction) {
         if(this.yCorrectionFunction != null) {
             throw new IllegalStateException("You tried to set the Y correction function more than once for camera: " + camera.getName());
