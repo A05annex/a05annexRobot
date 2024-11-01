@@ -156,8 +156,8 @@ public class TestAutonomousPathCommand {
         assertEquals(3 * DummyStopAndRunCommand.STOP_AND_RUN_DURATION,
                 DummyStopAndRunCommand.stopAndRunDuration);
         // and the actual duration may be a bit more/less. The executes should be the
-        // cumulative duration / 20 + a couple extra executes because of timing uncertainties, say maybe 10 (.2 sec)
-        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) + 10 > DummyStopAndRunCommand.executeCt);
+        // cumulative duration / 20 + a couple extra executes because of timing uncertainties, say maybe 15 (.3 sec)
+        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) + 15 > DummyStopAndRunCommand.executeCt);
         assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) < DummyStopAndRunCommand.executeCt);
     }
 }

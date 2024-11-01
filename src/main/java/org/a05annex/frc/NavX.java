@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  *       <a href="https://pdocs.kauailabs.com/navx-mxp/guidance/gyroaccelcalibration/">Gyro/Accelerometer
  *       Calibration</a>. NOTE: gyros are subject to drift over multiple rotations, which, in the case of
  *       the NavX2 board is an incorrect scaling of the reported rotation. Calibration sets the correct scaling
- *       factor in the NavX2 board, so to minimize drift.</li>
+ *       factor in the NavX2 board to minimize drift.</li>
  *     <li>fused heading -  A heading based on the yaw gyro with periodic correction whenever a magnetic
  *       heading can be read. Using fused heading requires the
  *       <a href="https://pdocs.kauailabs.com/navx-mxp/guidance/magnetometer-calibration/">Magnetometer
@@ -28,9 +28,10 @@ import org.jetbrains.annotations.Nullable;
  *     <li>displacement - The NavX2 board has code to integrate gyro and accelerometer readings to compute
  *       a displacement of the robot since time of power-up. The best discussion of this in the NavX website is the
  *       last question of the <a href="https://pdocs.kauailabs.com/navx-mxp/intro/frequently-asked-questions/">NavX
- *       FAQ</a>.We can use this with the
+ *       FAQ</a>.We might be able to use this with the
  *       {@link org.a05annex.frc.subsystems.SpeedCachedSwerve} to provide an additional evaluation of change
- *       in robot position over time.</li>
+ *       in robot position over time. Our initial testing of displacements looked like they re pretty half-baked
+ *       right now, and unreliable.</li>
  * </ul>
  * Please read <a href="https://pdocs.kauailabs.com/navx-mxp/guidance/best-practices/">NavX best practices</a> to
  * get some insight on how to best use the NavX in your robot design and operation.
@@ -38,16 +39,9 @@ import org.jetbrains.annotations.Nullable;
 public class NavX {
 
     /**
-     * This constant allows testing code that has been added to the NavX library since this NavX class was
-     * initially conceived - when {@code true} it uses Yaw gyro calibration, yaw adjustment, and -&infin; to +&infin;
-     * Yaw angle reporting in the NavX firmware/library.
-     */
-    private final boolean USE_AHRS_ANGLE_AS_HEADING = true;
-
-    /**
      * This is the NavX inertial navigation board connection.
      */
-    public final AHRS ahrs;
+    private final AHRS ahrs;
 
     /**
      * The heading we are trying to track with the robot, i.e. this is the heading the robot is expected to
@@ -70,24 +64,15 @@ public class NavX {
     private boolean isHeadingCurrent;
 
     /**
-     * The raw heading, not corrected for the spins, read directly from the NavX, in the range -180&deg; to
-     * +180&deg;. Used for determining whether the boundary between -180&deg; and +180&deg; has been crossed.
-     */
-    private final AngleD headingRawLast = new AngleD(AngleD.ZERO);
-
-    /**
-     * The number of complete revolutions the robot has made, positive is clockwise.
-     */
-    private int headingRevs = 0;
-
-    /**
      * The actual heading of the robot from -&infin; to &infin;, so the spins are included in this
      * heading.
      */
     private final AngleD heading = new AngleD(AngleD.ZERO);
-
-    private final AngleD fusedHeadingLast = new AngleD(AngleD.ZERO);
-    private int fusedHeadingRevs = 0;
+    /** The fused heading of the robot - this is the heading from the gyro fused with (corrected by) the magnetic
+     *  heading if it can be read. Specifically, the gyro reading is subject to drift and this is supposed to use
+     *  the magnetic heading to correct for drift - but it looks half-baked in the documentation, so we really
+     *  don't expect it to work yet.
+     */
     private final AngleD fusedHeading = null;
 
     // --------------------------------------------------
@@ -116,14 +101,19 @@ public class NavX {
      */
     private final AngleD refHeading = new AngleD(AngleD.ZERO);
 
-    /** A multiplier for the heading that offsets the drift nof the NavX in
-     *  each rotation of the robot.
+    /**
+     * {@code true} if the fused heading should be reported in the {@link HeadingInfo}, {@code false} otherwise.
      */
-    private double yawCalibrationFactor = 1.0;
-
     boolean includeFusedHeading = false;
 
+    /**
+     * The X displacement reported by the NavX board.
+     */
     private float displacementX = 0.0f;
+
+    /**
+     * The Y displacement reported by the NavX boar.
+     */
     private float displacementY = 0.0f;
 
 
@@ -138,21 +128,26 @@ public class NavX {
         // needs to be on a thread that can be killed if it doesn't connect in time ......
         // TODO: figure out the threading, error handling, and redundancy.
         ahrs = new AHRS(SPI.Port.kMXP);
-        ahrs.reset();
-        while (ahrs.isCalibrating()) {
-            try {
-                //noinspection BusyWait
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-        updateCt = ahrs.getUpdateCount();
         try {
-            //noinspection BusyWait
+            // the reset starts a calibration process, so we want to make sure that finishes before we do
+            // anything else, This is happening when the robot is first powered up, so this blocking any other
+            // code from running until the NavX gyros are done calibrating
+            while (ahrs.isCalibrating()) {
+                     //noinspection BusyWait
+                    Thread.sleep(100);
+            }
+            // 26-oct-2024
+            // and, unfortunately, the board/software is still not really ready to be used. We discovered that
+            // trying to initialize the heading stuff did not work unless we waited, tried some different times,
+            // 100ms was reliable
             Thread.sleep(100);
-        } catch (InterruptedException e) {}
-        initializeHeadingAndNav();
+            // OK, let's finish initialization
+            updateCt = ahrs.getUpdateCount();
+            initializeHeadingAndNav();
+        } catch (InterruptedException ignored) {
+            // we only get here if one of the Thread.sleep() calls is interrupted because the robot program is being
+            // killed externally.
+        }
     }
 
     /**
@@ -173,38 +168,41 @@ public class NavX {
     public void initializeHeadingAndNav(AngleConstantD heading) {
         // In the past we have always initialized with the front of the robot facing down field, so the
         // heading was 0.0 at initialization. In this case we are initializing to some other heading.
-        if (USE_AHRS_ANGLE_AS_HEADING) {
-            refPitch.setDegrees(ahrs.getPitch());
-            refRoll.setDegrees(ahrs.getRoll());
-            refHeading.setValue(heading);
-            // reset the Yaw gyro to read 0.0
-            ahrs.reset();
-            // set the actual heading that should be returned for this robot position
-            ahrs.setAngleAdjustment(heading.getDegrees() + ahrs.getAngle());
-            // Set the expected heading to the specified initialize heading
-            expectedHeading.setValue(refHeading);
-        } else {
-            refPitch.setDegrees(ahrs.getPitch());
-            refYaw.setDegrees(-ahrs.getYaw());
-            refRoll.setDegrees(ahrs.getRoll());
-            refHeading.setValue(heading);
-            // yaw gyro only
-            headingRawLast.setValue(AngleD.ZERO); // I THINK THIS IS WRONG !!
-            expectedHeading.setValue(refHeading);
-            headingRevs = 0;
-            // yaw gyro fused with magnetic heading
-            fusedHeadingLast.setValue(AngleD.ZERO); // I THINK THIS IS WRONG !!
-            fusedHeadingRevs = 0;
-        }
+        refPitch.setDegrees(ahrs.getPitch());
+        refRoll.setDegrees(ahrs.getRoll());
+        refHeading.setValue(heading);
+        // reset the Yaw gyro to read 0.0
+        ahrs.reset();
+        // set the adjustment angle so the ahrs.getAngle() will return the specified heading
+        // in the current NavX board position.
+        ahrs.setAngleAdjustment(heading.getDegrees() + ahrs.getAngle());
+        // Set the expected heading to the specified initialize heading
+        expectedHeading.setValue(refHeading);
     }
 
-
-
+    /**
+     * Set whether the fused NavX heading should be returned with {@link HeadingInfo}. By default, this is
+     * {@code false}. Note that fused heading information is only available if magnetic calibration has been performed
+     * on the NavX board. If magnetic calibration has not been performed, then a call to this method is ignored and
+     * this remains {@code false}.
+     *
+     * @param includeFusedHeading {@code true} to request the inclusion of fused heading information, {@code false}
+     *                                       otherwise.
+     * @return {@code true} if fused heading information will be included in {@link HeadingInfo}, {@code false}
+     * otherwise. Note: if you try to set {@code includeFusedHeading} to {@code true}, and the NavX has not been
+     * magnetically calibrated, this will return {@code false}.
+     */
     public boolean setIncludeFusedHeading(boolean includeFusedHeading) {
         this.includeFusedHeading = includeFusedHeading && ahrs.isMagnetometerCalibrated();
         return this.includeFusedHeading;
     }
 
+    /**
+     * Will fused heading we returned {@link HeadingInfo}?
+     *
+     * @return {@code true} if fused heading information will be included in {@link HeadingInfo}, {@code false}
+     *  otherwise.
+     */
     public boolean getIncludeFusedHeading() {
         return includeFusedHeading;
     }
@@ -216,19 +214,6 @@ public class NavX {
     public void resetDisplacement() {
         ahrs.resetDisplacement();
     }
-    /**
-     * A calibration factor that the heading is multiplied by before being returned as the robot heading. We noted
-     * that there was a repeatable drift per rotation of yaw, and that reversing the direction of rotation undid
-     * that drift. So we measured that for the competition robot and added a calibration factor.
-     *
-     * @param yawCalibrationFactor (double) A calibration factor for the yaw reported by the NavX. We noted
-     *                               a repeatable drift per rotation, and measured a correction factor for that.
-     */
-    public void setYawCalibrationFactor(double yawCalibrationFactor)
-    {
-        this.yawCalibrationFactor = yawCalibrationFactor;
-    }
-
     /**
      * Change the expected heading by the specified angle.
      *
@@ -275,57 +260,18 @@ public class NavX {
         if (isHeadingCurrent) {
             // this is a new report from the NavX board, update all the heading info.
             this.updateCt = updateCt;
-
-            if (USE_AHRS_ANGLE_AS_HEADING) {
-                // returns the accumulated yaw deviation (continuous -infinity to +infinity)
-                heading.setDegrees(-ahrs.getAngle());
-                if (includeFusedHeading) {
-                    // not at all sure what to do here - documentation says the fused heading is in the range 0-360
-                    // degrees, so it would need some adjustment to get it into the continuous -infinity to +infinity
-                    // range. Right now the best we can do is report what the NavX reports, so we can confirm what it
-                    // does and figure out how to convert that to the continuous -infinity to +infinity representation.
-                    fusedHeading.setDegrees(-ahrs.getFusedHeading());
-                }
-
-                displacementX = -ahrs.getDisplacementX();
-                displacementY = ahrs.getDisplacementY();
-
-            } else {
-                AngleD headingRaw = new AngleD(AngleUnit.DEGREES, -ahrs.getYaw());
-                // This is the logic for detecting and correcting for the IMU discontinuity at +180degrees and -180degrees.
-                if (headingRawLast.isLessThan(AngleD.NEG_PI_OVER_2) && headingRaw.isGreaterThan(AngleD.ZERO)) {
-                    // The previous raw IMU heading was negative and close to the discontinuity, and it is now positive. We
-                    // have gone through the discontinuity, so we decrement the heading revolutions by 1 (we completed a
-                    // negative revolution). NOTE: the initial check protects from the case that the heading is near 0 and
-                    // goes continuously through 0, which is not the completion of a revolution.
-                    headingRevs--;
-                } else if (headingRawLast.isGreaterThan(AngleD.PI_OVER_2) && headingRaw.isLessThan(AngleD.ZERO)) {
-                    // The previous raw IMU heading was positive and close to the discontinuity, and it is now negative. We
-                    // have gone through the discontinuity, so we increment the heading revolutions by 1 (we completed
-                    // positive revolution). NOTE: the initial check protects from the case that the heading is near 0 and
-                    // goes continuously through 0, which is not the completion of a revolution.
-                    headingRevs++;
-                }
-                headingRawLast.setValue(headingRaw);
-                heading.setRadians(headingRevs * AngleD.TWO_PI.getRadians())
-                        .add(headingRaw).subtract(refYaw).add(refHeading);
-
-                if (includeFusedHeading) {
-                    // This is initial test code - assumes the same heading discontinuity correction
-                    AngleD fusedHeading = new AngleD(AngleUnit.DEGREES, ahrs.getFusedHeading());
-                    if (fusedHeadingLast.isLessThan(AngleD.NEG_PI_OVER_2) && fusedHeading.isGreaterThan(AngleD.ZERO)) {
-                        fusedHeadingRevs--;
-                    } else if (fusedHeadingLast.isGreaterThan(AngleD.PI_OVER_2) && fusedHeading.isLessThan(AngleD.ZERO)) {
-                        fusedHeadingRevs++;
-                    }
-                    fusedHeadingLast.setValue(fusedHeading);
-                    this.fusedHeading.setRadians(fusedHeadingRevs * AngleD.TWO_PI.getRadians())
-                            .add(fusedHeading).subtract(refYaw).add(refHeading);
-                }
-
-                displacementX = -ahrs.getDisplacementX();
-                displacementY = ahrs.getDisplacementY();
+            // returns the accumulated yaw deviation (continuous -infinity to +infinity)
+            heading.setDegrees(-ahrs.getAngle());
+            if (includeFusedHeading) {
+                // not at all sure what to do here - documentation says the fused heading is in the range 0-360
+                // degrees, so it would need some adjustment to get it into the continuous -infinity to +infinity
+                // range. Right now the best we can do is report what the NavX reports, so we can confirm what it
+                // does and figure out how to convert that to the continuous -infinity to +infinity representation.
+                fusedHeading.setDegrees(-ahrs.getFusedHeading());
             }
+
+            displacementX = -ahrs.getDisplacementX();
+            displacementY = ahrs.getDisplacementY();
         }
     }
 
@@ -352,7 +298,7 @@ public class NavX {
         if (null == ahrs) {
             return null;
         }
-        return new HeadingInfo(heading.cloneAngleD().mult(yawCalibrationFactor),
+        return new HeadingInfo(heading.cloneAngleD(),
                 includeFusedHeading ? fusedHeading.cloneAngleD() : null,
                 isHeadingCurrent, expectedHeading, displacementX, displacementY);
     }
