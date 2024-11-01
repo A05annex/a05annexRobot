@@ -40,6 +40,10 @@ public abstract class A05Robot extends TimedRobot {
 
         // Record both DS control and joystick data
         DriverStation.startDataLog(DataLogManager.getLog());
+
+        if(!A05Constants.getPrintDebug()) {
+            DriverStation.silenceJoystickConnectionWarning(true); // Silence the warning about unplugged joysticks if print debug is false
+        }
     }
 
     /**

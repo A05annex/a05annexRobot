@@ -190,7 +190,7 @@ public abstract class A05Constants {
      *
      * @return The drive orientation Kp.
      */
-    public static double getDriveOrientationkp() {
+    public static double getDriveOrientationKp() {
         return DRIVE_ORIENTATION_kP;
     }
 
@@ -201,7 +201,7 @@ public abstract class A05Constants {
      * @param kp The drive orientation Kp.
      */
     @SuppressWarnings("unused")
-    public static void setDriveOrientationkp(double kp) {
+    public static void setDriveOrientationKp(double kp) {
         DRIVE_ORIENTATION_kP = kp;
     }
 
@@ -218,35 +218,35 @@ public abstract class A05Constants {
     private static final DigitalInput switch5 = new DigitalInput(5);
 
     /**
-     * Read and return the driver Id from the switch panel.
+     * Read and return the driver ID from the switch panel.
      *
-     * @return The driver Id, {@code 0} if the switch panel is not connected.
+     * @return The driver ID, {@code 0} if the switch panel is not connected.
      */
     public static int readDriverID() {
         return (switch1.get() ? 0 : 1) + (switch0.get() ? 0 : 2);
     }
 
     /**
-     * Read and return the autonomous path Id from the switch panel.
+     * Read and return the autonomous path ID from the switch panel.
      *
-     * @return The autonomous path Id, {@code 0} if the switch panel is not connected.
+     * @return The autonomous path ID, {@code 0} if the switch panel is not connected.
      */
     public static int readAutoID() {
         return (switch4.get() ? 0 : 1) + (switch3.get() ? 0 : 2) + (switch2.get() ? 0 : 4);
     }
 
     /**
-     * Read and return the robot Id from digital IO 5. Install a jumper on the practice robot
+     * Read and return the robot ID from digital IO 5. Install a jumper on the practice robot
      * so the input reads {@code 1}. On the  competition robot without a jumper, the value will default to {@code 0}
      *
-     * @return The robot Id, {@code 1} is the practice robot, and {@code 0} is the competition robot.
+     * @return The robot ID, {@code 1} is the practice robot, and {@code 0} is the competition robot.
      */
     public static int readRobotID() {
         return switch5.get() ? 0 : 1;
     }
 
     /**
-     * Print the driver Id, autonomous Id, and robot Id to the smart dashboard.
+     * Print the driver ID, autonomous ID, and robot ID to the smart dashboard.
      */
     @SuppressWarnings("unused")
     public static void printIDs() {
@@ -272,8 +272,8 @@ public abstract class A05Constants {
          */
         protected final String pathName;
         /**
-         * The path Id. This is the expected index of the path description in the {@link #AUTONOMOUS_PATH_LIST}. If
-         * the Id does not match the expected position, then there is a problem in the declaration of the
+         * The path ID. This is the expected index of the path description in the {@link #AUTONOMOUS_PATH_LIST}. If
+         * the ID does not match the expected position, then there is a problem in the declaration of the
          * autonomous descriptions.
          */
         protected final int id;
@@ -802,8 +802,8 @@ public abstract class A05Constants {
      */
     public static class RobotSettings {
         /**
-         * The robot Id. This is the expected index of the robot description in the ROBOT_SETTINGS_LIST. If
-         * the Id does not match the expected position, then there is a problem in the declaration of the
+         * The robot ID. This is the expected index of the robot description in the ROBOT_SETTINGS_LIST. If
+         * the ID does not match the expected position, then there is a problem in the declaration of the
          * robot descriptions.
          */
         public final int id;
@@ -877,7 +877,7 @@ public abstract class A05Constants {
          * @param navxYawCalibration  (double) A calibration factor for the yaw reported by the NavX. We noted
          *                            a repeatable drift per rotation, and measured a correction factor for that.
          * @param maxSpeedCalibration (double) A calibration factor for the swerve module max m/sec to correct the
-         *                            msx m/sec computed from all of the spec sheets and mox module motor RPM to
+         *                            msx m/sec computed from all the spec sheets and mox module motor RPM to
          *                            the empirically measured max m/sec.
          */
         public RobotSettings(int id, String robotName, double length, double width,
@@ -1008,6 +1008,7 @@ public abstract class A05Constants {
          * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
          *                              one final translate before finishing.
          */
+        @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, double reducedSpeedRadius, double positionControlRadius) {
             this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, reducedSpeedRadius, positionControlRadius);
         }
@@ -1021,6 +1022,7 @@ public abstract class A05Constants {
          * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
          * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
          */
+        @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
             this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, 2.0, 0.15);
         }
@@ -1036,6 +1038,7 @@ public abstract class A05Constants {
          * @param height The height in meters of the target above the carpet.
          * @param heading field heading for the robot to face when targeting the tag.
          */
+        @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
             this(redTagIDs, blueTagIDs, height, heading, heading, false, 2.0, 0.15);
         }
@@ -1047,6 +1050,7 @@ public abstract class A05Constants {
          * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
          * @param height The height in meters of the target above the carpet.
          */
+        @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
             this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, 2.0, 0.15);
         }
@@ -1061,6 +1065,7 @@ public abstract class A05Constants {
          * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
          *                              one final translate before finishing.
          */
+        @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, double reducedSpeedRadius, double positionControlRadius) {
             this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, reducedSpeedRadius, positionControlRadius);
         }

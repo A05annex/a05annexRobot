@@ -26,10 +26,12 @@ public class PhotonCameraWrapper {
     /**
      * The height of the target above the carpet.
      */
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final double height;
     /**
      * The angle of the camera above the horizon
      */
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final AngleD angle;
 
     // Latest frame, target, and frame with target
@@ -51,6 +53,7 @@ public class PhotonCameraWrapper {
      * @param height The height of the camera above the target
      * @param angle The angle above the horizon of the camera
      */
+    @SuppressWarnings("unused")
     public PhotonCameraWrapper(@NotNull PhotonCamera camera, double height, AngleD angle) {
         this.camera = camera;
         this.height = height;
@@ -93,6 +96,7 @@ public class PhotonCameraWrapper {
      *
      * @return The latest pipeline result.
      */
+    @SuppressWarnings("unused")
     public PhotonPipelineResult getNewestFrame() {
         return newestFrame;
     }
@@ -137,7 +141,7 @@ public class PhotonCameraWrapper {
     }
 
     /**
-     * Wraps the {@link #getTarget(A05Constants.AprilTagSet)} method to return a boolean of whether the camera has seen a specific target.
+     * Wraps the {@link #getTarget(A05Constants.AprilTagSet)} method to return a boolean: whether the camera has seen a specific target.
      * @param tagSet The {@link A05Constants.AprilTagSet} defining which specific tag(s) to check for the visibility of.
      * @return (boolean) did the latest frame with targets contain a target specified by the tagSet passed in.
      */
@@ -150,6 +154,7 @@ public class PhotonCameraWrapper {
      *
      * @return The timestamp of the last target seen.
      */
+    @SuppressWarnings("unused")
     public double getLatestTargetTime() {
         return frameWithTargets.getTimestampSeconds();
     }
@@ -159,6 +164,7 @@ public class PhotonCameraWrapper {
      *
      * @return Whether the latest pipeline result and latest target match.
      */
+    @SuppressWarnings("unused")
     public boolean isTargetDataNew() {
         return targetsAreNew;
     }
@@ -178,6 +184,7 @@ public class PhotonCameraWrapper {
      *
      * @return List of all targets detected in the latest frame.
      */
+    @SuppressWarnings("unused")
     public List<PhotonTrackedTarget> getLatestTargets() {
         if (frameWithTargets.hasTargets()) {
             return targetList;
@@ -237,29 +244,13 @@ public class PhotonCameraWrapper {
         return -1.0 * yCorrectionFunction.apply(reportedY);
     }
 
-//    /**
-//     * Returns the Z coordinate of the last detected target relative to the camera.
-//     * @return the Z coordinate of the last detected target relative to the camera.
-//     */
-//    public double getZFromLastTarget() {
-//        return newestTarget.getBestCameraToTarget().getZ();
-//    }
-//
-//    /**
-//     * Calculates the horizontal angle offset in radians between the robot heading and the last detected target.
-//     * The result is obtained using the atan2 function with the X and Y coordinates of the last detected target.
-//     * @return The horizontal angle offset in radians between the robot heading and the last detected target.
-//     */
-//    public double getHorizontalOffsetRadians() {
-//        return Math.atan2(getXFromLastTarget(), getYFromLastTarget());
-//    }
-
     /**
      * Sets the X correction function. This function should take the reported X from PhotonVision as the input and
      * return what the true X (as found with a tape measure) is.
      * @param xCorrectionFunction a method that takes one double as an input, reported X, and returns what the true X
      *                            should be.
      */
+    @SuppressWarnings("unused")
     public void setXCorrectionFunction(DoubleFunction<Double> xCorrectionFunction) {
         if(this.xCorrectionFunction != null) {
             throw new IllegalStateException("You tried to set the X correction function more than once for camera: " + camera.getName());
@@ -273,10 +264,11 @@ public class PhotonCameraWrapper {
      * @param yCorrectionFunction a method that takes one double as an input, reported Y, and returns what the true Y
      *                            should be.
      */
+    @SuppressWarnings("unused")
     public void setYCorrectionFunction(DoubleFunction<Double> yCorrectionFunction) {
         if(this.yCorrectionFunction != null) {
             throw new IllegalStateException("You tried to set the Y correction function more than once for camera: " + camera.getName());
         }
-        this.yCorrectionFunction = xCorrectionFunction;
+        this.yCorrectionFunction = yCorrectionFunction;
     }
 }

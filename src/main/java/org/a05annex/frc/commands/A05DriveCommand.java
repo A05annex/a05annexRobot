@@ -218,7 +218,7 @@ public class A05DriveCommand extends Command {
             if (headingInfo != null) {
                 // This is a little PID correction to maintain heading
                 rotation = new AngleD(headingInfo.expectedHeading).subtract(new AngleD(headingInfo.heading))
-                        .getRadians() * A05Constants.getDriveOrientationkp();
+                        .getRadians() * A05Constants.getDriveOrientationKp();
                 // clip and add speed multiplier
                 rotation = Utl.clip(rotation, -0.5, 0.5) * this.conditionedSpeed;
                 if (A05Constants.getPrintDebug()) {
