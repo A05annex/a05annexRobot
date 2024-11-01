@@ -41,6 +41,9 @@ public abstract class A05Robot extends TimedRobot {
         // Record both DS control and joystick data
         DriverStation.startDataLog(DataLogManager.getLog());
 
+        // Tell IRP that caching is paused to avoid errors from disabled periodic telemetry
+        InferredRobotPosition.pauseCaching();
+
         if(!A05Constants.getPrintDebug()) {
             DriverStation.silenceJoystickConnectionWarning(true); // Silence the warning about unplugged joysticks if print debug is false
         }
@@ -64,6 +67,11 @@ public abstract class A05Robot extends TimedRobot {
         // block in order for anything in the Command-based framework to work.
         CommandScheduler.getInstance().run();
 
+    }
+
+    @Override
+    public void disabledInit() {
+        InferredRobotPosition.pauseCaching();
     }
 
     @Override

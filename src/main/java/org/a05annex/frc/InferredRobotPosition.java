@@ -1,6 +1,8 @@
 package org.a05annex.frc;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
+import org.jetbrains.annotations.NotNull;
 import org.photonvision.targeting.PhotonPipelineResult;
 
 /**
@@ -8,6 +10,12 @@ import org.photonvision.targeting.PhotonPipelineResult;
  * of the calculated position when the robot is in motion.
  */
 public class InferredRobotPosition extends RobotPosition {
+    /**
+     * Stores the last valid InferredRobotPosition
+     */
+    private static InferredRobotPosition lastValidIRP = new InferredRobotPosition();
+
+    private static boolean isCachingPaused = false;
 
     /**
      * The timestamp of the {@link RobotPosition#pipelineResult} or 0.0 if targeting is not possible.
@@ -37,6 +45,10 @@ public class InferredRobotPosition extends RobotPosition {
     private InferredRobotPosition(boolean isValid, boolean isNew, double x, double y, PhotonPipelineResult pipelineResult, A05Constants.AprilTagSet tagSet, double timestamp) {
         super(isValid, isNew, x, y, pipelineResult, tagSet);
         this.timestamp = timestamp;
+
+        if(isValid && isNew) {
+            setLastValidIRP(this);
+        }
     }
 
     /**
@@ -48,8 +60,8 @@ public class InferredRobotPosition extends RobotPosition {
      * {@link org.a05annex.frc.A05Constants.AprilTagSet} with the cache's predicted extra movement since the
      * {@link #pipelineResult} was captured.
      */
-    public static InferredRobotPosition getInferredRobotPosition(String tagSetKey) {
-        return getInferredRobotPosition(A05Constants.aprilTagSetDictionary.get(tagSetKey));
+    public static InferredRobotPosition getRobotPosition(String tagSetKey) {
+        return getRobotPosition(A05Constants.aprilTagSetDictionary.get(tagSetKey));
     }
 
     /**
@@ -61,25 +73,58 @@ public class InferredRobotPosition extends RobotPosition {
      * {@link org.a05annex.frc.A05Constants.AprilTagSet} with the cache's predicted extra movement since the
      * {@link #pipelineResult} was captured.
      */
-    public static InferredRobotPosition getInferredRobotPosition(A05Constants.AprilTagSet tagSet) {
-        RobotPosition robotPosition = getRobotPosition(tagSet);
+    public static InferredRobotPosition getRobotPosition(A05Constants.AprilTagSet tagSet) {
+        RobotPosition robotPosition = RobotPosition.getRobotPosition(tagSet);
 
-        // Make the isValid check in a separate if statement to avoid a NullPointerException on the pipelineResult call
+        // Verify that isValid is true and the SpeedCachedSwerve is still caching to avoid throwing
+        // a NullPointerException or IllegalArgumentException
         if(!robotPosition.isValid) {
             return new InferredRobotPosition();
         }
-
-        // Prefix SCS is specifying it is part of the SpeedCacheSwerve architecture
-        double timestamp = robotPosition.pipelineResult.getTimestampSeconds();
-
-        SpeedCachedSwerve.RobotRelativePosition scsRobotRelativePosition = SpeedCachedSwerve.getInstance().getRobotRelativePositionSince(timestamp);
-        if(scsRobotRelativePosition.cacheOverrun) {
-            return new InferredRobotPosition();
+        if(isCachingPaused) {
+            return lastValidIRP;
         }
 
-        TruePosition inferredPos = new TruePosition(robotPosition.x - scsRobotRelativePosition.forward, robotPosition.y + scsRobotRelativePosition.strafe);
+        double timestamp = robotPosition.pipelineResult.getTimestampSeconds();
 
-        return new InferredRobotPosition(true, robotPosition.isNew, inferredPos.x(), inferredPos.y(), robotPosition.pipelineResult, robotPosition.tagSet, timestamp);
+        try {
+            SpeedCachedSwerve.RobotRelativePosition scsRobotRelativePosition = SpeedCachedSwerve.getInstance().getRobotRelativePositionSince(timestamp);
+            if(scsRobotRelativePosition.cacheOverrun) {
+                return new InferredRobotPosition();
+            }
+
+            TruePosition inferredPos = new TruePosition(robotPosition.x - scsRobotRelativePosition.forward, robotPosition.y + scsRobotRelativePosition.strafe);
+
+            return new InferredRobotPosition(true, robotPosition.isNew, inferredPos.x(), inferredPos.y(), robotPosition.pipelineResult, robotPosition.tagSet, timestamp);
+        } catch (Exception e) {
+            //TODO: Talk with roy. Is this right/ok? could be bad
+            DriverStation.reportWarning("Getting a new InferredRobotPosition produced an error. The last valid " +
+                    "IRP was sent instead. InferredRobotPosition encountered this error: " + e.getMessage(), true);
+            return lastValidIRP;
+        }
+    }
+
+    public static void pauseCaching() {
+        isCachingPaused = true;
+    }
+
+    public static void resumeCaching() {
+        isCachingPaused = false;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean isCachingPaused() {
+        return isCachingPaused;
+    }
+
+    /**
+     * Sets lastValidIRP to a clone of the out-going InferredRobotPosition, but sets the isNew flag to false.
+     * @param inferredRobotPosition out-going InferredRobotPosition
+     */
+    public static void setLastValidIRP(@NotNull InferredRobotPosition inferredRobotPosition) {
+        lastValidIRP = new InferredRobotPosition(inferredRobotPosition.isValid, false, inferredRobotPosition.x,
+                inferredRobotPosition.y, inferredRobotPosition.pipelineResult, inferredRobotPosition.tagSet,
+                inferredRobotPosition.timestamp);
     }
 }
 

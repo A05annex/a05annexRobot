@@ -4,6 +4,7 @@ import edu.wpi.first.util.datalog.StringLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import org.a05annex.frc.InferredRobotPosition;
 import org.a05annex.frc.NavX;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
@@ -406,7 +407,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
             // here.
             throw new IllegalArgumentException("You are asking for a position projected more than 2 control" +
                     " cycles (40ms) into the future, which this cache cannot do. If you want to know where the" +
-                    " robot is now, you need a different strategy.");
+                    " robot is now, you need a different strategy. Current time: " + Timer.getFPGATimestamp() + ". Target time: " + targetTime + ". Last time: " + lastTime);
         }
         double nextTime;
         ControlRequest nextControlRequest;
@@ -840,6 +841,7 @@ public class SpeedCachedSwerve implements ISwerveDrive {
 
     @Override
     public void swerveDrive(AngleConstantD direction, double speed, double rotation) {
+        InferredRobotPosition.resumeCaching();
         if (driveMode == DriveMode.FIELD_RELATIVE) {
             AngleD chassisDirection = new AngleD(direction).subtract(NavX.getInstance().getHeading());
             swerveDriveComponents(chassisDirection.cos() * speed,
