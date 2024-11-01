@@ -54,28 +54,53 @@ public abstract class A05RobotContainer {
     protected A05Constants.RobotSettings robotSettings = null;
 
     // drive controller button declarations
-    public static final JoystickButton driveA = new JoystickButton(driveXbox, 1),
-                   driveB = new JoystickButton(driveXbox, 2),
-                   driveX = new JoystickButton(driveXbox, 3),
-                   driveY = new JoystickButton(driveXbox, 4),
-                   driveLeftBumper = new JoystickButton(driveXbox, 5),
-                   driveRightBumper = new JoystickButton(driveXbox, 6),
-                   driveBack = new JoystickButton(driveXbox, 7),
-                   driveStart = new JoystickButton(driveXbox, 8),
-                   driveLeftStickPress = new JoystickButton(driveXbox, 9),
-                   driveRightStickPress = new JoystickButton(driveXbox, 10);
+
+    /** Button A on the drive controller */
+    public static final JoystickButton driveA = new JoystickButton(driveXbox, 1);
+    /** Button B on the drive controller */
+    public static final JoystickButton driveB = new JoystickButton(driveXbox, 2);
+    /** Button X on the drive controller */
+    public static final JoystickButton driveX = new JoystickButton(driveXbox, 3);
+    /** Button Y on the drive controller */
+    public static final JoystickButton driveY = new JoystickButton(driveXbox, 4);
+    /** Left bumper button on the drive controller */
+    public static final JoystickButton driveLeftBumper = new JoystickButton(driveXbox, 5);
+    /** Right bumper button on the drive controller */
+    public static final JoystickButton driveRightBumper = new JoystickButton(driveXbox, 6);
+    /** Back button on the drive controller */
+    public static final JoystickButton driveBack = new JoystickButton(driveXbox, 7);
+    /** Start button on the drive controller */
+    public static final JoystickButton driveStart = new JoystickButton(driveXbox, 8);
+    /** Left stick press button on the drive controller */
+    public static final JoystickButton driveLeftStickPress = new JoystickButton(driveXbox, 9);
+    /** Right stick press button on the drive controller */
+    public static final JoystickButton driveRightStickPress = new JoystickButton(driveXbox, 10);
+
 
     // alternate controller button declarations
-    public static final JoystickButton altA = new JoystickButton(altXbox, 1),
-                   altB = new JoystickButton(altXbox, 2),
-                   altX = new JoystickButton(altXbox, 3),
-                   altY = new JoystickButton(altXbox, 4),
-                   altLeftBumper = new JoystickButton(altXbox, 5),
-                   altRightBumper = new JoystickButton(altXbox, 6),
-                   altBack = new JoystickButton(altXbox, 7),
-                   altStart = new JoystickButton(altXbox, 8),
-                   altLeftStickPress = new JoystickButton(altXbox, 9),
-                   altRightStickPress = new JoystickButton(altXbox, 10);
+
+    /** Button A on the alternate controller */
+    public static final JoystickButton altA = new JoystickButton(altXbox, 1);
+    /** Button B on the alternate controller */
+    public static final JoystickButton altB = new JoystickButton(altXbox, 2);
+    /** Button X on the alternate controller */
+    public static final JoystickButton altX = new JoystickButton(altXbox, 3);
+    /** Button Y on the alternate controller */
+    public static final JoystickButton altY = new JoystickButton(altXbox, 4);
+    /** Left bumper button on the alternate controller */
+    public static final JoystickButton altLeftBumper = new JoystickButton(altXbox, 5);
+    /** Right bumper button on the alternate controller */
+    public static final JoystickButton altRightBumper = new JoystickButton(altXbox, 6);
+    /** Back button on the alternate controller */
+    public static final JoystickButton altBack = new JoystickButton(altXbox, 7);
+    /** Start button on the alternate controller */
+    public static final JoystickButton altStart = new JoystickButton(altXbox, 8);
+    /** Left stick press button on the alternate controller */
+    public static final JoystickButton altLeftStickPress = new JoystickButton(altXbox, 9);
+    /** Right stick press button on the alternate controller */
+    public static final JoystickButton altRightStickPress = new JoystickButton(altXbox, 10);
+
+
 
     /**
      * The default robot container initialization, which:
@@ -89,7 +114,7 @@ public abstract class A05RobotContainer {
      * </ul>
      */
     public A05RobotContainer() {
-        // setup the driver profile - read the configuration switches 0 and 1 to get the driver id (0 to 3)
+        // set up the driver profile - read the configuration switches 0 and 1 to get the driver id (0 to 3)
         int driverId = A05Constants.readDriverID();
         try {
             // load the driver profile file

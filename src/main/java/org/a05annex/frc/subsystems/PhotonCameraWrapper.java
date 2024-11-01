@@ -14,9 +14,17 @@ import java.util.List;
  * A wrapper around a PhotonCamera object that provides convenient access to the latest frame and target information.
  */
 public class PhotonCameraWrapper {
-
+    /**
+     * The {@link PhotonCamera} object this class wraps
+     */
     public final PhotonCamera camera;
+    /**
+     * The height of the camera, in meters, above the ground
+     */
     private final double height;
+    /**
+     * The angle of the camera above the horizon
+     */
     private final AngleD angle;
 
     // Latest frame, target, and frame with target
@@ -149,6 +157,9 @@ public class PhotonCameraWrapper {
 
     /**
      * Returns the X coordinate (forward/backward) of the last detected target relative to the camera.
+     *
+     * @param tagSet the {@link A05Constants.AprilTagSet} to filter with
+     *
      * @return the X coordinate (forward/backward) of the last detected target relative to the camera.
      */
 
@@ -164,6 +175,9 @@ public class PhotonCameraWrapper {
      * Returns the Y coordinate (left/right) of the last detected target relative to the camera.
      * Note that this method returns the negative Y coordinate, as the Y axis of the image
      * is inverted with respect to the Y axis of the camera coordinate system.
+     *
+     * @param tagSet the {@link A05Constants.AprilTagSet} to filter with
+     *
      * @return the Y coordinate (left/right) of the last detected target relative to the camera.
      */
     public double getYFromLastTarget(A05Constants.AprilTagSet tagSet) {
