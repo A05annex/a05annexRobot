@@ -79,13 +79,14 @@ public abstract class A05Constants {
     private static boolean SPARK_CONFIG_FROM_FACTORY_DEFAULTS = true;
 
     /**
-     * {@code true} if the CAN devices should be flashed after configuration, {@link false} otherwise. Defaults
+     * {@code true} if the CAN devices should be flashed after configuration, {@code false} otherwise. Defaults
      * to {@code false}.
      */
     private static boolean SPARK_BURN_CONFIG = false;
 
     /**
-     *
+     * Sets how  the SparkMax motor controller settings will be set and retrieved. Either set from factory defaults after
+     * every robot code restart or pulled from each SparkMax's EEPROM. Choose to burn in the settings into each SparkMax
      *
      * @param fromFactoryDefaults Set to {@code true} during pre-competition programming when you are tuning stuff
      *                            and motor configuration may be different with every restart. Once configurations
@@ -905,62 +906,86 @@ public abstract class A05Constants {
     // This is the data class for april tag positioning support
     // -----------------------------------------------------------------------------------------------------------------
     /**
-     *
+     * Dictionary to enable easy passing of AprilTagSet objects between this library and the robot code
      */
     public static final Dictionary<String, AprilTagSet> aprilTagSetDictionary = new Hashtable<>();
 
 
     /**
-     * This class is used to contain the drive parameters used to do april tag positioning
+     * This class is used to contain the drive parameters used for positioning with AprilTags.
      */
     public static class AprilTagSet {
         /**
-         * Values that essentially control how sensitive the forward and strafe is
+         * Maximum and minimum X-axis values for controlling sensitivity of forward motion.
          */
-        public final double X_MAX = 3.0, X_MIN = 0.0, Y_MAX = 1.5, Y_MIN = -1.5;
+        public final double X_MAX = 3.0, X_MIN = 0.0;
 
         /**
-         * Array of red alliance april tag ids to perform the targeting on
+         * Maximum and minimum Y-axis values for controlling sensitivity of strafing motion.
+         */
+        public final double Y_MAX = 1.5, Y_MIN = -1.5;
+
+        /**
+         * Array of AprilTag IDs for the red alliance, used for targeting.
          */
         private final int[] redTagIDs;
-        
+
         /**
-         * Array of blue alliance april tag ids to perform the targeting on
+         * Array of AprilTag IDs for the blue alliance, used for targeting.
          */
         private final int[] blueTagIDs;
 
-        public int[] tagIDs() {
-            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
-        }
-        
         /**
-         * The field relative heading of the robot when facing the red AprilTag(s)
+         * The field-relative heading of the robot when facing the red alliance AprilTag(s).
          */
         private final AngleD redHeading;
 
         /**
-         * The field relative heading of the robot when facing the blue AprilTag(s)
+         * The field-relative heading of the robot when facing the blue alliance AprilTag(s).
          */
         private final AngleD blueHeading;
 
-        public AngleD heading() {
-            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redHeading : blueHeading;
-        }
-
         /**
-         * True: Face the robot towards the target
-         * False: Make the robot face a set field heading
+         * Flag indicating whether the robot should face the target directly (true)
+         * or face a fixed field heading (false).
          */
         public final boolean useTargetForHeading;
 
         /**
-         * The target's height above the carpet
+         * The height of the target above the floor in meters.
          */
         public final double height;
 
         /**
-         * @param useTargetForHeading False to use field heading for heading control, true to use target for heading control
-         * @param height the height, in meters of the target above the carpet
+         * Gets the appropriate array of AprilTag IDs based on alliance color.
+         *
+         * @return an array of AprilTag IDs for the current alliance color.
+         */
+        public int[] tagIDs() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo")
+                    .getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
+        }
+
+        /**
+         * Gets the heading based on the current alliance color.
+         *
+         * @return the field-relative heading of the robot for the current alliance color.
+         */
+        public AngleD heading() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo")
+                    .getEntry("IsRedAlliance").getBoolean(true) ? redHeading : blueHeading;
+        }
+
+        /**
+         * Constructs an AprilTagSet with specified alliance AprilTag IDs, target height,
+         * field-relative headings for red and blue alliances, and a heading control mode.
+         *
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         * @param redHeading the field-relative heading when facing red AprilTag(s).
+         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
+         * @param useTargetForHeading whether to face the target (true) or fixed field heading (false).
          */
         private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading) {
             this.redTagIDs = redTagIDs;
@@ -971,16 +996,44 @@ public abstract class A05Constants {
             this.height = height;
         }
 
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and alliance-specific headings.
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         * @param redHeading the field-relative heading when facing red AprilTag(s).
+         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
+         */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
             this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false);
         }
 
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and a uniform heading for both alliances.
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         * @param heading the field-relative heading when facing either alliance AprilTag(s).
+         */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
             this(redTagIDs, blueTagIDs, height, heading, heading, false);
         }
 
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs and target height, using default heading values
+         * and facing the target directly.
+         *
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         */
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
             this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true);
         }
     }
+
 }
