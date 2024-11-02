@@ -23,7 +23,11 @@ public class InferredRobotPosition extends RobotPosition {
      * The timestamp of the {@link RobotPosition#pipelineResult} or 0.0 if targeting is not possible.
      */
     public final double timestamp;
-
+    /**
+     * An {@link InferredRobotPosition} instance that is invalid and cannot be used for targeting. This is a separate,
+     * public variable to optimize memory and so that all classes can compare a received {@link InferredRobotPosition}
+     * to this instance to determine if it is invalid.
+     */
     public static final InferredRobotPosition INVALID_IRP = new InferredRobotPosition();
 
     /**
@@ -106,19 +110,36 @@ public class InferredRobotPosition extends RobotPosition {
         }
     }
 
+    /**
+     * Indicate pausing of the caching of the {@link SpeedCachedSwerve} to avoid errors from disabled periodic telemetry.
+     */
     public static void pauseCaching() {
         isCachingPaused = true;
     }
-
+    /**
+     * Indicate that the {@link SpeedCachedSwerve} has resumed caching after it has been paused.
+     */
     public static void resumeCaching() {
         isCachingPaused = false;
     }
-
+    /**
+     * Returns whether the {@link SpeedCachedSwerve} is receiving new data or if caching is paused.
+     *
+     * @return true if the caching is paused, false otherwise.
+     */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isCachingPaused() {
         return isCachingPaused;
     }
 
+    /**
+     * Increments the last valid {@link InferredRobotPosition} with the cache's predicted extra movement since the
+     * {@link #lastValidIRP} was calculated.
+     *
+     * @return The last valid {@link InferredRobotPosition} with the cache's predicted extra movement since the
+     * {@link #lastValidIRP} was calculated, or {@link #INVALID_IRP} if the last valid {@link InferredRobotPosition}
+     * is invalid or the cache has overrun.
+     */
     public static InferredRobotPosition cacheIncrementLastIRP() {
         if(!lastValidIRP.isValid) {
             lastValidIRP = INVALID_IRP;

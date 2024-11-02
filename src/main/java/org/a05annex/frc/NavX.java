@@ -246,7 +246,7 @@ public class NavX {
      * clockwise, and decreasing when rotation is counter-clockwise. This means that the heading range is continuous
      * from -&infin; to +&infin; so heading PID loops sre not subject to special logic for the &plusmn;180&deg;
      * boundary typical in reporting heading.
-     * </p><p>
+     * <p>
      * This method is called in the {@link A05Robot#robotPeriodic()} override of
      * {@link edu.wpi.first.wpilibj.TimedRobot#robotPeriodic()} so the
      * same NavX heading information is available to all subsystems and commands during each command cycle.
@@ -354,8 +354,13 @@ public class NavX {
          * {@link NavX#incrementExpectedHeading(AngleD)} and {@link NavX#setExpectedHeadingToCurrent()}.
          */
         public final AngleConstantD expectedHeading;
-
+        /**
+         * The X displacement reported by the NavX board. Highly experimental and not reliable.
+         */
         public final float displacementX;
+        /**
+         * The Y displacement reported by the NavX board. Highly experimental and not reliable.
+         */
         public final float displacementY;
 
         /**

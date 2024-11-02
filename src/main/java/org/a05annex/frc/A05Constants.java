@@ -27,6 +27,11 @@ import static org.a05annex.util.JsonSupport.readJsonFileAsJSONObject;
  * configuration and autonomous configurations. Override this class to build the constants for your robot project.
  */
 public abstract class A05Constants {
+    /**
+     * Default constructor for the A05Constants class.
+     * This constructor is implicitly called when a subclass is instantiated.
+     */
+    protected A05Constants() {}
 
     // ---------------------
     // Does this robot have cameras that need to be initialized, and what are they
@@ -919,9 +924,13 @@ public abstract class A05Constants {
      */
     public static class AprilTagSet {
         /**
-         * Values that essentially control how sensitive the forward and strafe is
+         * The radius around the target, in meters, where the speed will begin reducing.
          */
         public final double REDUCED_SPEED_RADIUS;
+        /**
+         * The radius around the target, in meters, where the TagTargetingCommand will initiate one final translate
+         * before finishing.
+         */
         public final double POSITION_CONTROL_RADIUS;
         /**
          * Array of AprilTag IDs for the red alliance, used for targeting.
@@ -997,13 +1006,13 @@ public abstract class A05Constants {
 
         /**
          * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and alliance-specific headings.
-         *          * By default, does not face the target directly.
-         *          *
-         *          * @param redTagIDs array of AprilTag IDs for the red alliance.
-         *          * @param blueTagIDs array of AprilTag IDs for the blue alliance.
-         *          * @param height the height of the target above the floor in meters.
-         *          * @param redHeading the field-relative heading when facing red AprilTag(s).
-         *          * @param blueHeading the field-relative heading when facing blue AprilTag(s).
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         * @param redHeading the field-relative heading when facing red AprilTag(s).
+         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
          * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
          * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
          *                              one final translate before finishing.

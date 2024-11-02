@@ -307,9 +307,22 @@ public class A05TagTargetCommand extends A05DriveCommand {
      * These modes transition based on distance thresholds.
      */
     protected enum MODE {
+        /**
+         * Full speed mode, used when the robot is far from the target.
+         */
         FULL_SPEED(distance -> distance >= REDUCED_SPEED_RADIUS),
+        /**
+         * Reduced speed mode, used when the robot is close to the target but not yet in position control range.
+         */
         REDUCED_SPEED(distance -> distance < REDUCED_SPEED_RADIUS && distance >= POSITION_CONTROL_RADIUS),
+        /**
+         * Position control mode, used when the robot is within the position control range.
+         */
         POSITION_CONTROL(distance -> distance < POSITION_CONTROL_RADIUS),
+        /**
+         * Waiting for target mode, used when the robot is waiting for a valid target to be detected. Drive should be
+         * joystick controlled.
+         */
         WAITING_FOR_TARGET(distance -> false);
 
         /**

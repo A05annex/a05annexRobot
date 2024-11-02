@@ -15,9 +15,17 @@ import org.a05annex.frc.subsystems.PhotonCameraWrapper;
  * the programmers to only worry about the attachments specific to the competition.
  */
 public abstract class A05Robot extends TimedRobot {
+    /**
+     * Default constructor for the A05Robot class.
+     * This constructor is implicitly called when a subclass is instantiated.
+     */
+    protected A05Robot() {}
 
     private final NavX navX = NavX.getInstance();
 
+    /**
+     * Stores the a05RobotContainer. A05RobotContainer Contains subsystems, OI devices, and commands.
+     */
     protected A05RobotContainer a05RobotContainer;
 
     private Command autonomousCommand = null;
