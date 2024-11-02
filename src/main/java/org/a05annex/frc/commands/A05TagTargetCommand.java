@@ -15,6 +15,7 @@ import java.util.function.DoubleFunction;
 /**
  * Command that controls the robot to reach a specified target position using AprilTags for localization.
  */
+@SuppressWarnings("unused")
 public class A05TagTargetCommand extends A05DriveCommand {
     /**
      * The radius (in meters) where the robot begins to slow down as it approaches the target.
@@ -87,6 +88,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
      * @param Y_POSITION Target y-coordinate for the robot.
      * @param tagSetKey  Key of the AprilTag set used to determine the target.
      */
+    @SuppressWarnings("unused")
     public A05TagTargetCommand(double X_POSITION, double Y_POSITION, String tagSetKey) {
         super(SpeedCachedSwerve.getInstance());
         tagSet = A05Constants.aprilTagSetDictionary.get(tagSetKey);
@@ -103,11 +105,13 @@ public class A05TagTargetCommand extends A05DriveCommand {
     @Override
     public void initialize() {
         inferredRobotPosition = InferredRobotPosition.getRobotPosition(tagSet);
-        System.out.println("updated data");
         currentMode = findMode();
         lastMode = null;
         canTarget = false;
         isFinished = false;
+
+        System.out.println("INVALID IRP ID: " + InferredRobotPosition.INVALID_IRP);
+        System.out.print("************************************************************************************");
     }
     /**
      * Executes the command, updating the inferred position and controlling robot movement based on targeting status.
@@ -115,6 +119,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
     @Override
     public void execute() {
         inferredRobotPosition = InferredRobotPosition.getRobotPosition(tagSet);
+        System.out.println(inferredRobotPosition);
         // We don't need to do this unless we get new data, so it can stay in the if statement
         if(!InferredRobotPosition.isCachingPaused()) {
             // Don't update if caching is paused
@@ -125,7 +130,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
         verifyOkToTarget();
 
         // Performs all actual drive calculations and calls methods that run the motors
-        calculateAndDrive();
+        calculateThenDrive();
 
         canTarget = false;
         lastMode = currentMode;
@@ -166,7 +171,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
      * Calculates and applies driving commands based on the current mode and targeting data.
      * The robot will drive towards the target or wait depending on the mode.
      */
-    protected void calculateAndDrive() {
+    protected void calculateThenDrive() {
         if(!canTarget) {
             return;
         }
@@ -283,10 +288,10 @@ public class A05TagTargetCommand extends A05DriveCommand {
      */
     protected MODE findMode() {
         /*
-        isValid is only false when inferredRobotPosition last saw the wrong target, or there is a cache overrun (the tag
+        isValid is only false when inferredRobotPosition last saw the wrong target or there is a cache overrun (the tag
         is so old that the cache moved past it)
          */
-        if(!inferredRobotPosition.isValid) {
+        if(!inferredRobotPosition.isValid || ((lastMode == null || lastMode == MODE.WAITING_FOR_TARGET) && !inferredRobotPosition.isNew)) {
             return MODE.WAITING_FOR_TARGET;
         }
 

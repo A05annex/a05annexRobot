@@ -1,8 +1,8 @@
 package org.a05annex.frc;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import org.a05annex.frc.subsystems.SpeedCachedSwerve;
-import org.jetbrains.annotations.NotNull;
 import org.photonvision.targeting.PhotonPipelineResult;
 
 /**
@@ -15,12 +15,16 @@ public class InferredRobotPosition extends RobotPosition {
      */
     private static InferredRobotPosition lastValidIRP = new InferredRobotPosition();
 
+    private static double lastValidIRPTime = 0.0;
+
     private static boolean isCachingPaused = false;
 
     /**
      * The timestamp of the {@link RobotPosition#pipelineResult} or 0.0 if targeting is not possible.
      */
     public final double timestamp;
+
+    public static final InferredRobotPosition INVALID_IRP = new InferredRobotPosition();
 
     /**
      * Default constructor which sets to default values. Used when isValid is false and targeting is impossible.
@@ -45,10 +49,6 @@ public class InferredRobotPosition extends RobotPosition {
     private InferredRobotPosition(boolean isValid, boolean isNew, double x, double y, PhotonPipelineResult pipelineResult, A05Constants.AprilTagSet tagSet, double timestamp) {
         super(isValid, isNew, x, y, pipelineResult, tagSet);
         this.timestamp = timestamp;
-
-        if(isValid && isNew) {
-            setLastValidIRP(this);
-        }
     }
 
     /**
@@ -60,6 +60,7 @@ public class InferredRobotPosition extends RobotPosition {
      * {@link org.a05annex.frc.A05Constants.AprilTagSet} with the cache's predicted extra movement since the
      * {@link #pipelineResult} was captured.
      */
+    @SuppressWarnings("unused")
     public static InferredRobotPosition getRobotPosition(String tagSetKey) {
         return getRobotPosition(A05Constants.aprilTagSetDictionary.get(tagSetKey));
     }
@@ -79,7 +80,7 @@ public class InferredRobotPosition extends RobotPosition {
         // Verify that isValid is true and the SpeedCachedSwerve is still caching to avoid throwing
         // a NullPointerException or IllegalArgumentException
         if(!robotPosition.isValid) {
-            return new InferredRobotPosition();
+            return tagSet == lastValidIRP.tagSet ? cacheIncrementLastIRP() : INVALID_IRP;
         }
         if(isCachingPaused) {
             return lastValidIRP;
@@ -90,14 +91,15 @@ public class InferredRobotPosition extends RobotPosition {
         try {
             SpeedCachedSwerve.RobotRelativePosition scsRobotRelativePosition = SpeedCachedSwerve.getInstance().getRobotRelativePositionSince(timestamp);
             if(scsRobotRelativePosition.cacheOverrun) {
-                return new InferredRobotPosition();
+                return INVALID_IRP;
             }
 
-            TruePosition inferredPos = new TruePosition(robotPosition.x - scsRobotRelativePosition.forward, robotPosition.y + scsRobotRelativePosition.strafe);
+            TruePosition inferredPos = new TruePosition(robotPosition.x - scsRobotRelativePosition.forward, robotPosition.y - scsRobotRelativePosition.strafe);
 
-            return new InferredRobotPosition(true, robotPosition.isNew, inferredPos.x(), inferredPos.y(), robotPosition.pipelineResult, robotPosition.tagSet, timestamp);
+            lastValidIRP = new InferredRobotPosition(true, robotPosition.isNew, inferredPos.x(), inferredPos.y(), robotPosition.pipelineResult, robotPosition.tagSet, timestamp);
+            lastValidIRPTime = Timer.getFPGATimestamp();
+            return lastValidIRP;
         } catch (Exception e) {
-            //TODO: Talk with roy. Is this right/ok? could be bad
             DriverStation.reportWarning("Getting a new InferredRobotPosition produced an error. The last valid " +
                     "IRP was sent instead. InferredRobotPosition encountered this error: " + e.getMessage(), true);
             return lastValidIRP;
@@ -117,14 +119,31 @@ public class InferredRobotPosition extends RobotPosition {
         return isCachingPaused;
     }
 
-    /**
-     * Sets lastValidIRP to a clone of the out-going InferredRobotPosition, but sets the isNew flag to false.
-     * @param inferredRobotPosition out-going InferredRobotPosition
-     */
-    public static void setLastValidIRP(@NotNull InferredRobotPosition inferredRobotPosition) {
-        lastValidIRP = new InferredRobotPosition(inferredRobotPosition.isValid, false, inferredRobotPosition.x,
-                inferredRobotPosition.y, inferredRobotPosition.pipelineResult, inferredRobotPosition.tagSet,
-                inferredRobotPosition.timestamp);
+    public static InferredRobotPosition cacheIncrementLastIRP() {
+        if(!lastValidIRP.isValid) {
+            lastValidIRP = INVALID_IRP;
+            return lastValidIRP;
+        }
+
+        try {
+            SpeedCachedSwerve.RobotRelativePosition scsRobotRelativePosition = SpeedCachedSwerve.getInstance().getRobotRelativePositionSince(lastValidIRPTime);
+
+            if(scsRobotRelativePosition.cacheOverrun) {
+                lastValidIRP = INVALID_IRP;
+                return lastValidIRP;
+            }
+
+            TruePosition inferredPos = new TruePosition(lastValidIRP.x - scsRobotRelativePosition.forward, lastValidIRP.y - scsRobotRelativePosition.strafe);
+
+            lastValidIRP = new InferredRobotPosition(lastValidIRP.isValid, lastValidIRP.isNew, inferredPos.x(), inferredPos.y(), lastValidIRP.pipelineResult, lastValidIRP.tagSet, lastValidIRP.timestamp);
+            lastValidIRPTime = Timer.getFPGATimestamp();
+            return lastValidIRP;
+        } catch (Exception e) {
+            DriverStation.reportWarning("Getting a new InferredRobotPosition produced an error. The last valid " +
+                    "IRP was sent instead. InferredRobotPosition encountered this error: " + e.getMessage(), true);
+            lastValidIRP = INVALID_IRP;
+            return lastValidIRP;
+        }
     }
 }
 
