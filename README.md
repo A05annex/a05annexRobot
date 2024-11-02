@@ -15,6 +15,10 @@ the robot response to their favorite game).
 <details>
   <summary>version 0.0.31 to 2024.2.7 (for <b>2024 Crescendo</b>):</summary>
   <ul>
+   <li>2024.2.8 - Added RobotPosition, InferredRobotPosition, and replaced A05AprilTagPositionCommand with 
+     A05TagTargetCommand. This makes the robot position found using a camera unaffected by rotation; A05TagTargetCommand
+     increases predictability and consistency with AprilTag targeting. PhotonCameraWrapper objects will update data
+     automatically in <code>A05Robot.robotPeriodic()</code>. Documentation.</li>
    <li>2024.2.7 - Added latency offset to the <code>SpeedCacheSwerve</code>.</li>
    <li>2024.2.6 - Updated to wpilib 2024.3.2, updated vendordeps.</li>
    <li>2024.2.5 - Fixed scope error in A05AprilTagPositionCommand.</li>
