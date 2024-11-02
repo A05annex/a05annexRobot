@@ -33,10 +33,6 @@ public class A05TagTargetCommand extends A05DriveCommand {
      */
     protected double POSITION_CONTROL_SPEED = 0.5;
     /**
-     * Singleton instance of the {@link SpeedCachedSwerve} for efficient swerve drive control.
-     */
-    protected final SpeedCachedSwerve swerveDrive = SpeedCachedSwerve.getInstance();
-    /**
      * Specifies the AprilTag set that identifies the target for the robot.
      */
     protected final A05Constants.AprilTagSet tagSet;
