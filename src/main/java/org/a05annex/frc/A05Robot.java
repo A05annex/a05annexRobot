@@ -16,9 +16,8 @@ import org.a05annex.frc.subsystems.PhotonCameraWrapper;
  */
 public abstract class A05Robot extends TimedRobot {
 
-    /**
-     * The a05RobotContainerInstance instance
-     */
+    private final NavX navX = NavX.getInstance();
+
     protected A05RobotContainer a05RobotContainer;
 
     private Command autonomousCommand = null;
@@ -61,6 +60,8 @@ public abstract class A05Robot extends TimedRobot {
         PhotonCameraWrapper.updateAllTrackingData(); // This is happening above the command scheduler to ensure there is
                                                      // fresh data for subsystems and commands to run on
 
+        // Update the NavX heading, fused heading, and displacements
+        navX.recomputeHeading();
         // Runs the Scheduler.  This is responsible for polling buttons, adding newly-scheduled
         // commands, running already-scheduled commands, removing finished or interrupted commands,
         // and running subsystem periodic() methods.  This must be called from the robot's periodic

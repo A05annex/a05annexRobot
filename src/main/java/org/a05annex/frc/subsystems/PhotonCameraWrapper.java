@@ -20,11 +20,11 @@ public class PhotonCameraWrapper {
     private static final ArrayList<PhotonCameraWrapper> cameras = new ArrayList<>();
 
     /**
-     * The PhotonCamera to be wrapped.
+     * The {@link PhotonCamera} object this class wraps
      */
     public final PhotonCamera camera;
     /**
-     * The height of the target above the carpet.
+     * The height of the camera, in meters, above the ground
      */
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final double height;
@@ -111,7 +111,16 @@ public class PhotonCameraWrapper {
         if(targetList == null) {
             return null;
         }
+        return filterForTarget(tagSet);
+    }
 
+    /**
+     * Get the PhotonTrackedTarget with a matching ID from the id set contained in an AprilTagSet
+     *
+     * @param tagSet the AprilTagSet containing the IDs you want
+     * @return a PhotonTrackedTarget matching the IDs in tagSet or null if the correct target was not present
+     */
+    private PhotonTrackedTarget filterForTarget(A05Constants.AprilTagSet tagSet) {
         for(PhotonTrackedTarget target : targetList) {
             for(int i = 0; i < tagSet.tagIDs().length; i++) {
                 if(target.getFiducialId() == tagSet.tagIDs()[i]) {
@@ -205,7 +214,9 @@ public class PhotonCameraWrapper {
 
     /**
      * Returns the X coordinate (forward/backward) of the last detected target relative to the camera.
+     *
      * @param tagSet the {@link A05Constants.AprilTagSet} defining which specific tag(s) to get the X of.
+     *
      * @return the X coordinate (forward/backward) of the last detected target relative to the camera.
      */
 
@@ -227,7 +238,9 @@ public class PhotonCameraWrapper {
      * Returns the Y coordinate (left/right) of the last detected target relative to the camera.
      * Note that this method returns the negative Y coordinate, as the Y axis of the image
      * is inverted with respect to the Y axis of the camera coordinate system.
+     *
      * @param tagSet the {@link A05Constants.AprilTagSet} defining which specific tag(s) to get the Y of.
+     *
      * @return the Y coordinate (left/right) of the last detected target relative to the camera.
      */
     public double getYFromLastTarget(A05Constants.AprilTagSet tagSet) {

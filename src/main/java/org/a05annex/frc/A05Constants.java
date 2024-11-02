@@ -85,7 +85,8 @@ public abstract class A05Constants {
     private static boolean SPARK_BURN_CONFIG = false;
 
     /**
-     * Sets the flags {@link #SPARK_CONFIG_FROM_FACTORY_DEFAULTS} and {@link #SPARK_BURN_CONFIG}.
+     * Sets how  the SparkMax motor controller settings will be set and retrieved. Either set from factory defaults after
+     * every robot code restart or pulled from each SparkMax's EEPROM. Choose to burn in the settings into each SparkMax
      *
      * @param fromFactoryDefaults Set to {@code true} during pre-competition programming when you are tuning stuff
      *                            and motor configuration may be different with every restart. Once configurations
@@ -908,13 +909,13 @@ public abstract class A05Constants {
     // This is the data class for april tag positioning support
     // -----------------------------------------------------------------------------------------------------------------
     /**
-     * Stores a list of {@link AprilTagSet} objects to enable easy communication of aprilTag data.
+     * Dictionary to enable easy passing of AprilTagSet objects between this library and robot code
      */
     public static final Dictionary<String, AprilTagSet> aprilTagSetDictionary = new Hashtable<>();
 
 
     /**
-     * This class is used to contain the drive parameters used to do april tag positioning
+     * This class is used to contain the drive parameters used for positioning with AprilTags.
      */
     public static class AprilTagSet {
         /**
@@ -922,14 +923,12 @@ public abstract class A05Constants {
          */
         public final double REDUCED_SPEED_RADIUS;
         public final double POSITION_CONTROL_RADIUS;
-
         /**
-         * Array of red alliance april tag ids to perform the targeting on
+         * Array of AprilTag IDs for the red alliance, used for targeting.
          */
         private final int[] redTagIDs;
-        
         /**
-         * Array of blue alliance april tag ids to perform the targeting on
+         * Array of AprilTag IDs for the blue alliance, used for targeting.
          */
         private final int[] blueTagIDs;
 
@@ -942,12 +941,12 @@ public abstract class A05Constants {
         }
         
         /**
-         * The field relative heading of the robot when facing the red AprilTag(s)
+         * The field-relative heading of the robot when facing the red alliance AprilTag(s).
          */
         private final AngleD redHeading;
 
         /**
-         * The field relative heading of the robot when facing the blue AprilTag(s)
+         * The field-relative heading of the robot when facing the blue alliance AprilTag(s).
          */
         private final AngleD blueHeading;
 
@@ -960,13 +959,13 @@ public abstract class A05Constants {
         }
 
         /**
-         * True: Face the robot towards the target
-         * False: Make the robot face a set field heading
+         * Flag indicating whether the robot should face the target directly (true)
+         * or face a fixed field heading (false).
          */
         public final boolean useTargetForHeading;
 
         /**
-         * The target's height above the carpet
+         * The height of the target above the floor in meters.
          */
         public final double height;
 
@@ -997,13 +996,14 @@ public abstract class A05Constants {
         }
 
         /**
-         * Constructs an AprilTagSet object when you want the robot to face different field headings dependent on alliance.
-         *
-         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
-         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
-         * @param height The height in meters of the target above the carpet.
-         * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
-         * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
+         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and alliance-specific headings.
+         *          * By default, does not face the target directly.
+         *          *
+         *          * @param redTagIDs array of AprilTag IDs for the red alliance.
+         *          * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         *          * @param height the height of the target above the floor in meters.
+         *          * @param redHeading the field-relative heading when facing red AprilTag(s).
+         *          * @param blueHeading the field-relative heading when facing blue AprilTag(s).
          * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
          * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
          *                              one final translate before finishing.
@@ -1014,13 +1014,14 @@ public abstract class A05Constants {
         }
 
         /**
-         * Constructs an AprilTagSet object when you want the robot to face different field headings dependent on alliance.
+         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and alliance-specific headings.
+         * By default, does not face the target directly.
          *
-         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
-         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
-         * @param height The height in meters of the target above the carpet.
-         * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
-         * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         * @param redHeading the field-relative heading when facing red AprilTag(s).
+         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
@@ -1028,15 +1029,13 @@ public abstract class A05Constants {
         }
 
         /**
-         * Constructs an AprilTagSet object when you want the robot to face the same field heading regardless of alliance.
-         * <p>
-         * Note that this constructor should really be used when tags are 180 degrees apart since a field heading of zero
-         * is 180 degrees apart for each alliance.
+         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and a uniform heading for both alliances.
+         * By default, does not face the target directly.
          *
-         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
-         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
-         * @param height The height in meters of the target above the carpet.
-         * @param heading field heading for the robot to face when targeting the tag.
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
+         * @param heading the field-relative heading when facing either alliance AprilTag(s).
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
@@ -1044,11 +1043,12 @@ public abstract class A05Constants {
         }
 
         /**
-         * Constructs an AprilTagSet object when you want the robot to face the target.
+         * Constructs an AprilTagSet with alliance AprilTag IDs and target height, using default heading values
+         * and facing the target directly.
          *
-         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
-         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
-         * @param height The height in meters of the target above the carpet.
+         * @param redTagIDs array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param height the height of the target above the floor in meters.
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {

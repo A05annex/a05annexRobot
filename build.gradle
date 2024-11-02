@@ -5,7 +5,7 @@ plugins {
     id "edu.wpi.first.GradleRIO" version "2024.3.2"
 }
 
-version = '2024.2.6'
+version = '2024.2.8'
 group = 'org.a05annex'
 
 // Set to true to use debug for JNI.

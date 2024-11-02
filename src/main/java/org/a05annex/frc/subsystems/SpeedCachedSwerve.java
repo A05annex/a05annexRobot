@@ -42,16 +42,18 @@ import org.jetbrains.annotations.Nullable;
  * target image, and this reports the estimated change in field position after {@code sinceTime}. Please note the
  * following assumptions about this relative position:
  * <ul>
- *     <li>The robot is locked into an expected heading when targeting starts, so any rotation speeds have been set
+ *     <li>The robot is locked into an expected heading when targeting starts, so any rotation speeds set
  *     by the PID loop trying to hold the heading constant, and are ignored.</li>
  *     <li>Since the expected heading is locked, the relative position is with respect to the the position at
- *     {@code sinceTime} assuming the robot was in the expected heading, i.e. The
+ *     {@code sinceTime} with respect to the expected heading, i.e. The
  *     {@link RobotRelativePosition#forward} is along the expected heading; the
  *     {@link RobotRelativePosition#strafe} is 90&deg; to the expected heading; the
  *     {@link RobotRelativePosition#heading} will be set to the expected heading; and,
  *     {@link RobotRelativePosition#cacheOverrun} will normally be {@code false}, but, if it is {@code true}
  *     it means the {@code sinceTime} is before the oldest entry in the cache, and anything else in
- *     {@link RobotRelativePosition} is invalid.</li>
+ *     {@link RobotRelativePosition} is invalid;</li>
+ *     <li>As the relative position is computed, the robot forward and strafe distances are <i>heading corrected</i>,
+ *     i.e., they are mapped from the actual robot heading to the target heading coordinate system.</li>
  * </ul>
  * <b>The Forward Projection Algorithm</b>
  * So the question is, now that we have cached all this data about robot heading and what we have asked to robot
@@ -581,7 +583,10 @@ public class SpeedCachedSwerve implements ISwerveDrive {
      *
      * @param time The time (FPGA timestamp in seconds) at which you want to know the heading delta.
      * @return Returns the heading delta, of {@code null} if the data in the cache does not extend back to the
-     * specified time.
+     * specified time. NOTE: the heading delta is signed so that it represents the angle that would be added to
+     * the target heading to get the current heading. E.g., if the desired heading is 90&deg; and the current
+     * heading is 91&deg; the heading delta would be 1&deg;, i.e. the currect heading is +1&deg; from the target
+     * heading.
      * @throws IllegalArgumentException Thrown if the requested {@code time} is more recent than the last cache
      *                                  entry, please used {@link NavX#getHeadingInfo()} to get the most recent (current) heading.
      */
