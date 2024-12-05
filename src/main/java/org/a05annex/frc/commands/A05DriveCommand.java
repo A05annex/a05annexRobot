@@ -56,7 +56,7 @@ public class A05DriveCommand extends Command {
     /**
      * The custom driver settings for the current driver.
      */
-    private final A05Constants.DriverSettings driver;
+    protected final A05Constants.DriverSettings driver;
 
     /**
      * The raw stick Y read from the controller and corrected for direction

@@ -979,6 +979,16 @@ public abstract class A05Constants {
         public final double height;
 
         /**
+         * The default X position for the robot to go to when targeting the tag. The targeting command will use this unless otherwise specified.
+         */
+        public final double DEFAULT_X_POSITION;
+
+        /**
+         * The default Y position for the robot to go to when targeting the tag. The targeting command will use this unless otherwise specified.
+         */
+        public final double DEFAULT_Y_POSITION;
+
+        /**
          * Private constructor used by all the other {@link AprilTagSet} constructors with all parameters.
          *
          * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
@@ -991,8 +1001,13 @@ public abstract class A05Constants {
          * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
          * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
          *                              one final translate before finishing.
+         * @param defaultXPosition the default X position for the robot to go to when targeting the tag.
+         * @param defaultYPosition the default Y position for the robot to go to when targeting the tag.
          */
-        private AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, boolean useTargetForHeading, double reducedSpeedRadius, double positionControlRadius) {
+        protected AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading,
+                              boolean useTargetForHeading, double reducedSpeedRadius, double positionControlRadius,
+                              double defaultXPosition, double defaultYPosition) {
+
             this.redTagIDs = redTagIDs;
             this.blueTagIDs = blueTagIDs;
             this.redHeading = redHeading;
@@ -1002,6 +1017,9 @@ public abstract class A05Constants {
 
             this.REDUCED_SPEED_RADIUS = reducedSpeedRadius;
             this.POSITION_CONTROL_RADIUS = positionControlRadius;
+
+            this.DEFAULT_X_POSITION = defaultXPosition;
+            this.DEFAULT_Y_POSITION = defaultYPosition;
         }
 
         /**
@@ -1019,7 +1037,7 @@ public abstract class A05Constants {
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, double reducedSpeedRadius, double positionControlRadius) {
-            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, reducedSpeedRadius, positionControlRadius);
+            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, reducedSpeedRadius, positionControlRadius, 1.0, 0.0);
         }
 
         /**
@@ -1034,7 +1052,7 @@ public abstract class A05Constants {
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
-            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, 2.0, 0.15);
+            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, 2.0, 0.15, 1.0, 0.0);
         }
 
         /**
@@ -1048,7 +1066,7 @@ public abstract class A05Constants {
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
-            this(redTagIDs, blueTagIDs, height, heading, heading, false, 2.0, 0.15);
+            this(redTagIDs, blueTagIDs, height, heading, heading, false, 2.0, 0.15, 1.0, 0.0);
         }
 
         /**
@@ -1061,7 +1079,7 @@ public abstract class A05Constants {
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
-            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, 2.0, 0.15);
+            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, 2.0, 0.15, 1.0, 0.0);
         }
 
         /**
@@ -1076,7 +1094,7 @@ public abstract class A05Constants {
          */
         @SuppressWarnings("unused")
         public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, double reducedSpeedRadius, double positionControlRadius) {
-            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, reducedSpeedRadius, positionControlRadius);
+            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, reducedSpeedRadius, positionControlRadius, 1.0, 0.0);
         }
     }
 }

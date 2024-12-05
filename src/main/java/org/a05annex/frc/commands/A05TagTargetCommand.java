@@ -118,13 +118,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
      */
     @Override
     public void execute() {
-        inferredRobotPosition = InferredRobotPosition.getRobotPosition(tagSet);
-        System.out.println(inferredRobotPosition);
-        // We don't need to do this unless we get new data, so it can stay in the if statement
-        if(!InferredRobotPosition.isCachingPaused()) {
-            // Don't update if caching is paused
-            currentMode = findMode();
-        }
+        updateIRP();
 
         // Does all checks to verify that data is valid and good to target with.
         verifyOkToTarget();
@@ -135,6 +129,17 @@ public class A05TagTargetCommand extends A05DriveCommand {
         canTarget = false;
         lastMode = currentMode;
     }
+
+    public void updateIRP() {
+        inferredRobotPosition = InferredRobotPosition.getRobotPosition(tagSet);
+        System.out.println(inferredRobotPosition);
+        // We don't need to do this unless we get new data, so it can stay in the if statement
+        if(!InferredRobotPosition.isCachingPaused()) {
+            // Don't update if caching is paused
+            currentMode = findMode();
+        }
+    }
+
     /**
      * Checks if the command should finish, which is true when either the position control is done or flagged finished.
      *
