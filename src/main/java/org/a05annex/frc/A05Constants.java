@@ -924,15 +924,6 @@ public abstract class A05Constants {
      */
     public static class AprilTagSet {
         /**
-         * The radius around the target, in meters, where the speed will begin reducing.
-         */
-        public final double REDUCED_SPEED_RADIUS;
-        /**
-         * The radius around the target, in meters, where the TagTargetingCommand will initiate one final translate
-         * before finishing.
-         */
-        public final double POSITION_CONTROL_RADIUS;
-        /**
          * Array of AprilTag IDs for the red alliance, used for targeting.
          */
         private final int[] redTagIDs;
@@ -942,25 +933,168 @@ public abstract class A05Constants {
         private final int[] blueTagIDs;
 
         /**
-         * Checks the network table for the alliance color to determine which array of tag IDs to give out
-         * @return an array of ints defining the tag IDs to target on.
-         */
-        public int[] tagIDs() {
-            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
-        }
-        
-        /**
          * The field-relative heading of the robot when facing the red alliance AprilTag(s).
          */
         private final AngleD redHeading;
-
         /**
          * The field-relative heading of the robot when facing the blue alliance AprilTag(s).
          */
         private final AngleD blueHeading;
 
         /**
+         * Flag indicating whether the robot should face the target directly (true)
+         * or face a fixed field heading (false).
+         */
+        public final boolean useTargetForHeading;
+        /**
+         * The default X position for the robot to go to when targeting the tag. The targeting command will use this unless otherwise specified.
+         */
+        public final double DEFAULT_X_POSITION;
+        /**
+         * The default Y position for the robot to go to when targeting the tag. The targeting command will use this unless otherwise specified.
+         */
+        public final double DEFAULT_Y_POSITION;
+        /**
+         * The radius around the target, in meters, where the speed will begin reducing.
+         */
+        public final double REDUCED_SPEED_RADIUS;
+        /**
+         * The radius around the target, in meters, where the TagTargetingCommand will initiate one final translate
+         * before finishing.
+         */
+        public final double POSITION_CONTROL_RADIUS;
+
+        /**
+         * Private constructor used by all the other {@link AprilTagSet} constructors with all parameters.
+         *
+         * @param redTagIDs             array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
+         * @param blueTagIDs            array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
+         * @param redHeading            the field heading for the robot to face when targeting the tag when on the red alliance.
+         * @param blueHeading           the field heading for the robot to face when targeting the tag when on the blue alliance.
+         * @param useTargetForHeading   boolean flag defining whether to use the tag or the field heading when a targeting
+         *                              algorithm accesses the AprilTagSet.
+         * <p>
+         * @param defaultXPosition      the default X position for the robot to go to when targeting the tag.
+         * @param defaultYPosition      the default Y position for the robot to go to when targeting the tag.
+         * @param reducedSpeedRadius    radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
+         */
+        protected AprilTagSet(int[] redTagIDs, int[] blueTagIDs, AngleD redHeading, AngleD blueHeading,
+                              boolean useTargetForHeading, double defaultXPosition, double defaultYPosition,
+                              double reducedSpeedRadius, double positionControlRadius) {
+
+            this.redTagIDs = redTagIDs;
+            this.blueTagIDs = blueTagIDs;
+            this.redHeading = redHeading;
+            this.blueHeading = blueHeading;
+            this.useTargetForHeading = useTargetForHeading;
+
+            this.DEFAULT_X_POSITION = defaultXPosition;
+            this.DEFAULT_Y_POSITION = defaultYPosition;
+            this.REDUCED_SPEED_RADIUS = reducedSpeedRadius;
+            this.POSITION_CONTROL_RADIUS = positionControlRadius;
+        }
+
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs and alliance-specific headings.
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs             array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs            array of AprilTag IDs for the blue alliance.
+         * @param redHeading            the field-relative heading when facing red AprilTag(s).
+         * @param blueHeading           the field-relative heading when facing blue AprilTag(s).
+         * <p>
+         * @param defaultXPosition      the default X position for the robot to go to when targeting the tag.
+         * @param defaultYPosition      the default Y position for the robot to go to when targeting the tag.
+         * @param reducedSpeedRadius    radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
+         */
+        @SuppressWarnings("unused")
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, AngleD redHeading, AngleD blueHeading, double defaultXPosition, double defaultYPosition, double reducedSpeedRadius, double positionControlRadius) {
+            this(redTagIDs, blueTagIDs, redHeading, blueHeading, false, defaultXPosition, defaultYPosition, reducedSpeedRadius, positionControlRadius);
+        }
+
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs and alliance-specific headings.
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs   array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs  array of AprilTag IDs for the blue alliance.
+         * @param redHeading  the field-relative heading when facing red AprilTag(s).
+         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
+         */
+        @SuppressWarnings("unused")
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, AngleD redHeading, AngleD blueHeading) {
+            this(redTagIDs, blueTagIDs, redHeading, blueHeading, false, 1.0, 0.0, 2.0, 0.15);
+        }
+
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs and a uniform heading for both alliances.
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs  array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         * @param heading    the field-relative heading when facing either alliance AprilTag(s).
+         */
+        @SuppressWarnings("unused")
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, AngleD heading) {
+            this(redTagIDs, blueTagIDs, heading, heading, false, 1.0, 0.0, 2.0, 0.15);
+        }
+
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs and a uniform heading for both alliances.
+         * By default, does not face the target directly.
+         *
+         * @param redTagIDs             array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs            array of AprilTag IDs for the blue alliance.
+         * @param heading               the field-relative heading when facing either alliance AprilTag(s).
+         * <p>
+         * @param defaultXPosition      the default X position for the robot to go to when targeting the tag.
+         * @param defaultYPosition      the default Y position for the robot to go to when targeting the tag.
+         * @param reducedSpeedRadius    radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
+         */
+        @SuppressWarnings("unused")
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, AngleD heading, double defaultXPosition, double defaultYPosition, double reducedSpeedRadius, double positionControlRadius) {
+            this(redTagIDs, blueTagIDs, heading, heading, false, defaultXPosition, defaultYPosition, reducedSpeedRadius, positionControlRadius);
+        }
+
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs, using default heading values
+         * and facing the target directly.
+         *
+         * @param redTagIDs  array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
+         */
+        @SuppressWarnings("unused")
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs) {
+            this(redTagIDs, blueTagIDs, new AngleD(), new AngleD(), true, 1.0, 0.0, 2.0, 0.15);
+        }
+
+        /**
+         * Constructs an AprilTagSet with alliance AprilTag IDs, using default heading values
+         * and facing the target directly.
+         *
+         * @param redTagIDs             array of AprilTag IDs for the red alliance.
+         * @param blueTagIDs            array of AprilTag IDs for the blue alliance.
+         * <p>
+         * @param defaultXPosition      the default X position for the robot to go to when targeting the tag.
+         * @param defaultYPosition      the default Y position for the robot to go to when targeting the tag.
+         * @param reducedSpeedRadius    radius around the target, in meters, where the speed will begin reducing
+         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
+         *                              one final translate before finishing.
+         */
+        @SuppressWarnings("unused")
+        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double defaultXPosition, double defaultYPosition, double reducedSpeedRadius, double positionControlRadius) {
+            this(redTagIDs, blueTagIDs, new AngleD(), new AngleD(), true, defaultXPosition, defaultYPosition, reducedSpeedRadius, positionControlRadius);
+        }
+
+        /**
          * Checks the network table for the alliance color to determine which target heading to give out
+         *
          * @return an {@link AngleD} of the heading to face when targeting.
          */
         public AngleD heading() {
@@ -968,133 +1102,12 @@ public abstract class A05Constants {
         }
 
         /**
-         * Flag indicating whether the robot should face the target directly (true)
-         * or face a fixed field heading (false).
-         */
-        public final boolean useTargetForHeading;
-
-        /**
-         * The height of the target above the floor in meters.
-         */
-        public final double height;
-
-        /**
-         * The default X position for the robot to go to when targeting the tag. The targeting command will use this unless otherwise specified.
-         */
-        public final double DEFAULT_X_POSITION;
-
-        /**
-         * The default Y position for the robot to go to when targeting the tag. The targeting command will use this unless otherwise specified.
-         */
-        public final double DEFAULT_Y_POSITION;
-
-        /**
-         * Private constructor used by all the other {@link AprilTagSet} constructors with all parameters.
+         * Checks the network table for the alliance color to determine which array of tag IDs to give out
          *
-         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
-         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
-         * @param height The height in meters of the target above the carpet.
-         * @param redHeading the field heading for the robot to face when targeting the tag when on the red alliance.
-         * @param blueHeading the field heading for the robot to face when targeting the tag when on the blue alliance.
-         * @param useTargetForHeading boolean flag defining whether to use the tag or the field heading when a targeting
-         *                            algorithm accesses the AprilTagSet.
-         * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
-         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
-         *                              one final translate before finishing.
-         * @param defaultXPosition the default X position for the robot to go to when targeting the tag.
-         * @param defaultYPosition the default Y position for the robot to go to when targeting the tag.
+         * @return an array of ints defining the tag IDs to target on.
          */
-        protected AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading,
-                              boolean useTargetForHeading, double reducedSpeedRadius, double positionControlRadius,
-                              double defaultXPosition, double defaultYPosition) {
-
-            this.redTagIDs = redTagIDs;
-            this.blueTagIDs = blueTagIDs;
-            this.redHeading = redHeading;
-            this.blueHeading = blueHeading;
-            this.useTargetForHeading = useTargetForHeading;
-            this.height = height;
-
-            this.REDUCED_SPEED_RADIUS = reducedSpeedRadius;
-            this.POSITION_CONTROL_RADIUS = positionControlRadius;
-
-            this.DEFAULT_X_POSITION = defaultXPosition;
-            this.DEFAULT_Y_POSITION = defaultYPosition;
-        }
-
-        /**
-         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and alliance-specific headings.
-         * By default, does not face the target directly.
-         *
-         * @param redTagIDs array of AprilTag IDs for the red alliance.
-         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
-         * @param height the height of the target above the floor in meters.
-         * @param redHeading the field-relative heading when facing red AprilTag(s).
-         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
-         * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
-         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
-         *                              one final translate before finishing.
-         */
-        @SuppressWarnings("unused")
-        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading, double reducedSpeedRadius, double positionControlRadius) {
-            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, reducedSpeedRadius, positionControlRadius, 1.0, 0.0);
-        }
-
-        /**
-         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and alliance-specific headings.
-         * By default, does not face the target directly.
-         *
-         * @param redTagIDs array of AprilTag IDs for the red alliance.
-         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
-         * @param height the height of the target above the floor in meters.
-         * @param redHeading the field-relative heading when facing red AprilTag(s).
-         * @param blueHeading the field-relative heading when facing blue AprilTag(s).
-         */
-        @SuppressWarnings("unused")
-        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD redHeading, AngleD blueHeading) {
-            this(redTagIDs, blueTagIDs, height, redHeading, blueHeading, false, 2.0, 0.15, 1.0, 0.0);
-        }
-
-        /**
-         * Constructs an AprilTagSet with alliance AprilTag IDs, target height, and a uniform heading for both alliances.
-         * By default, does not face the target directly.
-         *
-         * @param redTagIDs array of AprilTag IDs for the red alliance.
-         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
-         * @param height the height of the target above the floor in meters.
-         * @param heading the field-relative heading when facing either alliance AprilTag(s).
-         */
-        @SuppressWarnings("unused")
-        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, AngleD heading) {
-            this(redTagIDs, blueTagIDs, height, heading, heading, false, 2.0, 0.15, 1.0, 0.0);
-        }
-
-        /**
-         * Constructs an AprilTagSet with alliance AprilTag IDs and target height, using default heading values
-         * and facing the target directly.
-         *
-         * @param redTagIDs array of AprilTag IDs for the red alliance.
-         * @param blueTagIDs array of AprilTag IDs for the blue alliance.
-         * @param height the height of the target above the floor in meters.
-         */
-        @SuppressWarnings("unused")
-        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height) {
-            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, 2.0, 0.15, 1.0, 0.0);
-        }
-
-        /**
-         * Constructs an AprilTagSet object when you want the robot to face the target.
-         *
-         * @param redTagIDs array of ints corresponding to tag ids of the red alliance that share the same targeting settings.
-         * @param blueTagIDs array of ints corresponding to tag ids of the blue alliance that share the same targeting settings.
-         * @param height The height in meters of the target above the carpet.
-         * @param reducedSpeedRadius radius around the target, in meters, where the speed will begin reducing
-         * @param positionControlRadius radius around the target, in meters, where the TagTargetingCommand will initiate
-         *                              one final translate before finishing.
-         */
-        @SuppressWarnings("unused")
-        public AprilTagSet(int[] redTagIDs, int[] blueTagIDs, double height, double reducedSpeedRadius, double positionControlRadius) {
-            this(redTagIDs, blueTagIDs, height, new AngleD(), new AngleD(), true, reducedSpeedRadius, positionControlRadius, 1.0, 0.0);
+        public int[] tagIDs() {
+            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
         }
     }
 }
