@@ -36,6 +36,8 @@ public abstract class A05Robot extends TimedRobot {
         // Starts recording to data log
         DataLogManager.start();
 
+        NavX.getInstance().resetDisplacement();
+
         // Record both DS control and joystick data
         DriverStation.startDataLog(DataLogManager.getLog());
     }
