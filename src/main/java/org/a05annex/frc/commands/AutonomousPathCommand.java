@@ -207,20 +207,7 @@ public class AutonomousPathCommand extends Command {
      */
     private Command instantiateActionCommand(@NotNull String commandClassName) {
         String commandClass = "frc.robot.commands." + commandClassName;
-        Object obj;
-        Command command = null;
-        try {
-            obj = Class.forName(commandClass).getDeclaredConstructor().newInstance();
-            if (obj instanceof Command) {
-                command = (Command)obj;
-            } else {
-                System.out.printf("Class '%s' is not a command; continuing with path.%n", commandClass);
-
-            }
-        } catch (final Exception t) {
-            System.out.printf("Could not instantiate command: class='%s'; continuing with path.%n",
-                    commandClass);
-        }
+        Command command = Utl.instantiateObjectFromName(Command.class, commandClass);
         return command;
     }
 
