@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id "edu.wpi.first.GradleRIO" version "2024.3.2"
+    id "edu.wpi.first.GradleRIO" version "2025.1.1"
 }
 
 version = '2024.2.8'
