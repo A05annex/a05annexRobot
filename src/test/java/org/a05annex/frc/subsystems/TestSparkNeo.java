@@ -18,9 +18,9 @@ public class TestSparkNeo {
 
     SparkNeo newSparkNeo() {
         // mocked representations for physical hardware
-        final CANSparkMax spark = mock(CANSparkMax.class);
+        final SparkMax spark = mock(SparkMax.class);
         final RelativeEncoder encoder = mock(RelativeEncoder.class);
-        final SparkPIDController pid = mock(SparkPIDController.class);
+        final SparkClosedLoopController pid = mock(SparkClosedLoopController.class);
         when(spark.restoreFactoryDefaults()).thenReturn(REVLibError.kOk);
         when(encoder.getPosition()).thenReturn(DEFAULT_POSITION);
         return new SparkNeo(spark, encoder, pid);
@@ -36,7 +36,7 @@ public class TestSparkNeo {
      * @param kFF       (double, readonly) The expected forward multiplier.
      * @param resetMock (boolean) {@code true} to reset the mock function call cache, {@code false} otherwise.
      */
-    static void verifyPid(@NotNull SparkPIDController pid, int slotId, final double kP, final double kI,
+    static void verifyPid(@NotNull SparkClosedLoopController pid, int slotId, final double kP, final double kI,
                           final double kIZone, final double kFF, double kD, double min, double max, boolean resetMock) {
         verify(pid, times(1)).setP(kP, slotId);
         verify(pid, times(1)).setI(kI, slotId);
@@ -49,13 +49,13 @@ public class TestSparkNeo {
         }
     }
 
-    static void verifySmartMotion(@NotNull SparkPIDController pid, double kP, double kI, double kIZone,
+    static void verifySmartMotion(@NotNull SparkClosedLoopController pid, double kP, double kI, double kIZone,
                                   double kFF, double kD, double min, double max,
                                   double maxRPM, double maxRPMs, double minRPMs, double allowableError,
                                   boolean resetMock) {
         int slotId = SparkNeo.PIDtype.SMART_MOTION.slotId;
         verify(pid, times(1)).
-                setSmartMotionAccelStrategy(SparkPIDController.AccelStrategy.kTrapezoidal, slotId);
+                setSmartMotionAccelStrategy(SparkClosedLoopController.AccelStrategy.kTrapezoidal, slotId);
         verify(pid, times(1)).setSmartMotionMaxVelocity(maxRPM, slotId);
         verify(pid, times(1)).setSmartMotionMaxAccel(maxRPMs, slotId);
         verify(pid, times(1)).setSmartMotionMinOutputVelocity(minRPMs, slotId);
@@ -63,7 +63,7 @@ public class TestSparkNeo {
         verifyPid(pid, slotId, kP, kI, kIZone,kFF, kD, min, max, resetMock);
     }
 
-    private void verifyUnusedCAN(@NotNull CANSparkMax spark) {
+    private void verifyUnusedCAN(@NotNull SparkMax spark) {
         verify(spark, times(1)).
                 setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus3, 500);
         verify(spark, times(1)).
@@ -74,7 +74,7 @@ public class TestSparkNeo {
                 setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus6, 500);
     }
 
-    private void verifySetCurrentLimit(@NotNull CANSparkMax spark, @NotNull SparkNeo.UseType useType,
+    private void verifySetCurrentLimit(@NotNull SparkMax spark, @NotNull SparkNeo.UseType useType,
                                        @NotNull SparkNeo.BreakerAmps breakertAmps) {
         int maxAmps = maxCurrentMatrix[useType.index][breakertAmps.index];
         verify(spark, times(1)).
@@ -82,13 +82,13 @@ public class TestSparkNeo {
         reset(spark);
     }
 
-    private void verifySetDirection(@NotNull CANSparkMax spark, SparkNeo.Direction direction) {
+    private void verifySetDirection(@NotNull SparkMax spark, SparkNeo.Direction direction) {
         assertTrue(SparkNeo.Direction.REVERSE.reversed);
         verify(spark, times(1)).setInverted(direction.reversed);
         reset(spark);
     }
 
-    private void verifyIdleMode(@NotNull CANSparkMax spark, CANSparkMax.IdleMode idleMode) {
+    private void verifyIdleMode(@NotNull SparkMax spark, SparkMax.IdleMode idleMode) {
         verify(spark, times(1)).setIdleMode(idleMode);
         reset(spark);
     }
@@ -160,8 +160,8 @@ public class TestSparkNeo {
         verifySetDirection(sparkNeo.sparkMax, SparkNeo.Direction.DEFAULT);
 
         // test steIdle()
-        sparkNeo.setIdleMode(CANSparkMax.IdleMode.kBrake);
-        verifyIdleMode(sparkNeo.sparkMax, CANSparkMax.IdleMode.kBrake);
+        sparkNeo.setIdleMode(SparkMax.IdleMode.kBrake);
+        verifyIdleMode(sparkNeo.sparkMax, SparkMax.IdleMode.kBrake);
 
         // setCurrentLimit()
         sparkNeo.setCurrentLimit(SparkNeo.UseType.RPM_PROLONGED_STALL, SparkNeo.BreakerAmps.Amps40);
@@ -199,8 +199,8 @@ public class TestSparkNeo {
 
         // We are now outside configuration
         // test setIdle()
-        sparkNeo.setIdleMode(CANSparkMax.IdleMode.kCoast);
-        verifyIdleMode(sparkNeo.sparkMax, CANSparkMax.IdleMode.kCoast);
+        sparkNeo.setIdleMode(SparkMax.IdleMode.kCoast);
+        verifyIdleMode(sparkNeo.sparkMax, SparkMax.IdleMode.kCoast);
 
     }
 

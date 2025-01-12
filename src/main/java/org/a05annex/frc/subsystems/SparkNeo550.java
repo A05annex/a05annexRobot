@@ -7,8 +7,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This class is the packaging for a <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> motor
  * powered by a <a href="https://www.revrobotics.com/rev-11-2158/">REV Spark Max</a> motor controller. It binds
- * together the {@link com.revrobotics.CANSparkMax}, {@link com.revrobotics.RelativeEncoder}, and
- * {@link com.revrobotics.SparkPIDController} into a single object. See {@link SparkNeo} for details.
+ * together the {@link com.revrobotics.SparkMax}, {@link com.revrobotics.RelativeEncoder}, and
+ * {@link com.revrobotics.SparkClosedLoopController} into a single object. See {@link SparkNeo} for details.
  */
  public class SparkNeo550 extends SparkNeo{
 
@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
      */
     @NotNull
     public static SparkNeo550 factory(int canId) {
-        CANSparkMax sparkMax = new CANSparkMax(canId, CANSparkLowLevel.MotorType.kBrushless);
+        SparkMax sparkMax = new SparkMax(canId, CANSparkLowLevel.MotorType.kBrushless);
         return new SparkNeo550(sparkMax, sparkMax.getEncoder(), sparkMax.getPIDController());
     }
 
@@ -49,12 +49,12 @@ import org.jetbrains.annotations.NotNull;
      * The constructor for a {@code SparkNeo}. Always use {@link #factory(int)} to create the {@code SparkNeo550}
      * <i>unless</i> you are creating a mock {@code SparkNeo550} for testing.
      *
-     * @param sparkMax The {@link CANSparkMax}.
-     * @param encoder The {@link RelativeEncoder} of the {@link CANSparkMax}.
-     * @param sparkMaxPID The {@link com.revrobotics.SparkPIDController} of the {@link CANSparkMax}.
+     * @param sparkMax The {@link SparkMax}.
+     * @param encoder The {@link RelativeEncoder} of the {@link SparkMax}.
+     * @param sparkMaxPID The {@link com.revrobotics.SparkClosedLoopController} of the {@link SparkMax}.
      */
-    public SparkNeo550(@NotNull CANSparkMax sparkMax, @NotNull RelativeEncoder encoder,
-                       @NotNull SparkPIDController sparkMaxPID) {
+    public SparkNeo550(@NotNull SparkMax sparkMax, @NotNull RelativeEncoder encoder,
+                       @NotNull SparkClosedLoopController sparkMaxPID) {
         super(sparkMax, encoder, sparkMaxPID);
     }
 

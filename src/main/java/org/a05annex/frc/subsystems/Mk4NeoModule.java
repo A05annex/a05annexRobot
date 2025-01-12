@@ -6,6 +6,8 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.revrobotics.*;
+import com.revrobotics.spark.*;
+import com.revrobotics.spark.config.SparkBaseConfig;
 import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
@@ -141,10 +143,10 @@ public class Mk4NeoModule {
     /**
      * The control mode that is currently active.
      */
-    CANSparkMax.ControlType driveMode = CANSparkMax.ControlType.kVelocity;
+    SparkMax.ControlType driveMode = SparkMax.ControlType.kVelocity;
 
     /**
-     * The target position if {@link #driveMode}{@code  != }{@link CANSparkMax.ControlType#kVelocity}.
+     * The target position if {@link #driveMode}{@code  != }{@link SparkMax.ControlType#kVelocity}.
      */
     private double targetPosition;
 
@@ -225,7 +227,7 @@ public class Mk4NeoModule {
 
         // Configure the drive motor
         driveMotor.startConfig();
-        driveMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
+        driveMotor.setIdleMode(SparkBaseConfig.IdleMode.kCoast);
         driveMotor.setCurrentLimit(UseType.RPM_PROLONGED_STALL, BreakerAmps.Amps40);
         driveMotor.setRpmPID(DRIVE_kP, DRIVE_kI, DRIVE_IZONE, DRIVE_kFF);
         driveMotor.setSmartMotion(SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE,
@@ -236,7 +238,7 @@ public class Mk4NeoModule {
 
         // configure the direction motor
         directionMotor.startConfig();
-        directionMotor.setIdleMode(CANSparkBase.IdleMode.kCoast);
+        directionMotor.setIdleMode(SparkBaseConfig.IdleMode.kCoast);
         directionMotor.setDirection(Direction.REVERSE);
         directionMotor.setCurrentLimit(UseType.POSITION, BreakerAmps.Amps30);
         directionMotor.setPositionPID(SPIN_kP, SPIN_kI, SPIN_IZONE, 0.0);
@@ -290,7 +292,7 @@ public class Mk4NeoModule {
      *
      * @return The drive motor control mode that is currently active.
      */
-    public CANSparkMax.ControlType getSparkControlType() {
+    public SparkMax.ControlType getSparkControlType() {
         return driveMode;
     }
 
@@ -369,7 +371,7 @@ public class Mk4NeoModule {
         // last wheel direction and last direction encoder position.
         directionMotor.setTargetPosition(0.0);
         lastDirection.setValue(AngleUnit.RADIANS, 0.0);
-        driveMode = CANSparkMax.ControlType.kVelocity;
+        driveMode = SparkMax.ControlType.kVelocity;
         lastDirectionEncoder = 0.0;
         lastSpeed = 0.0;
         speedMultiplier = 1.0;
@@ -433,7 +435,7 @@ public class Mk4NeoModule {
         // Compute and set the speed value
         lastSpeed = speed;
         speed *= MAX_DRIVE_RPM * speedMultiplier;
-        driveMode = CANSparkMax.ControlType.kVelocity;
+        driveMode = SparkMax.ControlType.kVelocity;
         driveMotor.setTargetRPM(speed);
     }
 
@@ -460,7 +462,7 @@ public class Mk4NeoModule {
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
-        driveMode = CANSparkMax.ControlType.kPosition;
+        driveMode = SparkMax.ControlType.kPosition;
         driveMotor.sparkMaxPID.setOutputRange(-maxSpeed, maxSpeed, PIDtype.POSITION.slotId);
         driveMotor.setTargetPosition(targetTics);
     }
@@ -491,7 +493,7 @@ public class Mk4NeoModule {
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
-        driveMode = CANSparkMax.ControlType.kSmartMotion;
+        driveMode = SparkMax.ControlType.kSmartMotion;
         // now set up the smart motion speed and acceleration constants
         driveMotor.sparkMaxPID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, PIDtype.SMART_MOTION.slotId);
         driveMotor.sparkMaxPID.setSmartMotionMaxAccel(maxAcceleration, PIDtype.SMART_MOTION.slotId);
@@ -508,7 +510,7 @@ public class Mk4NeoModule {
         double currentPosition = getDriveEncoderPosition();
         // If driving by speed, the move by distance is done. Otherwise, test for a tolerance
         // of 0.2 -> which converts to roughly +-0.25"
-        return (driveMode == CANSparkMax.ControlType.kVelocity) ||
+        return (driveMode == SparkMax.ControlType.kVelocity) ||
                 Utl.inTolerance(currentPosition, targetPosition, SMART_MOTION_TARGET_TOLERANCE * 2.0);
     }
 }
