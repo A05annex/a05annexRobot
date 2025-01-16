@@ -13,6 +13,20 @@ the robot response to their favorite game).
 ## Change Log
 
 <details>
+  <summary>version 2025.0.0 to 2025.?.? (for <b>2025 Reefscape</b>):</summary>
+  <ul>
+   <li>2025.0.0 - Updating for major changes in the rev libraries and ctre libraries, both
+     code breaking changes that required a lot of library rework:
+     <ul>
+       <li>rev - big changes to configuration and recommendations about when/how you burn
+        configurations settings into the sparkMax, changes eliminating SmartMotion and introducing
+        MAXMotion for either position or RPM control.
+       </li>
+     </ul>
+   </li>
+  </ul>
+</details>
+<details>
   <summary>version 0.0.31 to 2024.2.7 (for <b>2024 Crescendo</b>):</summary>
   <ul>
    <li>2024.2.8 - Added RobotPosition, InferredRobotPosition, and replaced A05AprilTagPositionCommand with 

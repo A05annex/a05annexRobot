@@ -1,16 +1,17 @@
 package org.a05annex.frc.subsystems;
 
 import com.revrobotics.*;
+import com.revrobotics.spark.*;
 import org.a05annex.frc.A05Constants;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is the packaging for a <a href="https://www.revrobotics.com/rev-21-1651/">REV Neo 550</a> motor
  * powered by a <a href="https://www.revrobotics.com/rev-11-2158/">REV Spark Max</a> motor controller. It binds
- * together the {@link com.revrobotics.SparkMax}, {@link com.revrobotics.RelativeEncoder}, and
- * {@link com.revrobotics.SparkClosedLoopController} into a single object. See {@link SparkNeo} for details.
+ * together the {@link com.revrobotics.spark.SparkMax}, {@link com.revrobotics.RelativeEncoder}, and
+ * {@link com.revrobotics.spark.SparkClosedLoopController} into a single object. See {@link SparkNeo} for details.
  */
- public class SparkNeo550 extends SparkNeo{
+public class SparkNeo550 extends SparkNeo{
 
     /**
      * The factory for {@link SparkNeo550} objects for the physical robot. When the robot is powered up and this
@@ -22,8 +23,8 @@ import org.jetbrains.annotations.NotNull;
      */
     @NotNull
     public static SparkNeo550 factory(int canId) {
-        SparkMax sparkMax = new SparkMax(canId, CANSparkLowLevel.MotorType.kBrushless);
-        return new SparkNeo550(sparkMax, sparkMax.getEncoder(), sparkMax.getPIDController());
+        SparkMax sparkMax = new SparkMax(canId, SparkLowLevel.MotorType.kBrushless);
+        return new SparkNeo550(sparkMax, sparkMax.getEncoder(), sparkMax.getClosedLoopController());
     }
 
     static final int[][] maxCurrentMatrix = {
@@ -51,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
      *
      * @param sparkMax The {@link SparkMax}.
      * @param encoder The {@link RelativeEncoder} of the {@link SparkMax}.
-     * @param sparkMaxPID The {@link com.revrobotics.SparkClosedLoopController} of the {@link SparkMax}.
+     * @param sparkMaxPID The {@link com.revrobotics.spark.SparkClosedLoopController} of the {@link SparkMax}.
      */
     public SparkNeo550(@NotNull SparkMax sparkMax, @NotNull RelativeEncoder encoder,
                        @NotNull SparkClosedLoopController sparkMaxPID) {
@@ -75,8 +76,9 @@ import org.jetbrains.annotations.NotNull;
         verifyInConfig(true, "setCurrentLimit");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
             int maxAmps = maxCurrentMatrix[useType.index][breakerAmps.index];
-            sparkMax.setSmartCurrentLimit(maxAmps, maxAmps, 10000);
+            config.smartCurrentLimit(maxAmps, maxAmps, 10000);
         }
+        currentLimitIsSet = true;
     }
 
 }

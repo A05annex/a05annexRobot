@@ -6,7 +6,6 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CANcoderConfigurator;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.*;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;
@@ -72,10 +71,10 @@ public class TestMk4NeoModule {
             TestSparkNeo.verifyPid(drivePID, SparkNeo.PIDtype.RPM.slotId,Mk4NeoModule.DRIVE_kP,
                     Mk4NeoModule.DRIVE_kI, Mk4NeoModule.DRIVE_IZONE, Mk4NeoModule.DRIVE_kFF,
                     0.0, -1.0, 1.0, false);
-            TestSparkNeo.verifySmartMotion(drivePID, Mk4NeoModule.SMART_MOTION_kP,
-                    Mk4NeoModule.SMART_MOTION_kI, Mk4NeoModule.SMART_MOTION_IZONE, Mk4NeoModule.SMART_MOTION_kFF,
-                    0.0, -1.0, 1.0, Mk4NeoModule.SMART_MOTION_MAX_RPM,
-                    Mk4NeoModule.SMART_MOTION_MAX_RPMs, Mk4NeoModule.SMART_MOTION_MIN_RPM,
+            TestSparkNeo.verifySmartMotion(drivePID, Mk4NeoModule.MAX_MOTION_kP,
+                    Mk4NeoModule.MAX_MOTION_kI, Mk4NeoModule.MAX_MOTION_IZONE, Mk4NeoModule.MAX_MOTION_kFF,
+                    0.0, -1.0, 1.0, Mk4NeoModule.MAX_MOTION_MAX_RPM,
+                    Mk4NeoModule.MAX_MOTION_MAX_RPMs, Mk4NeoModule.MAX_MOTION_MIN_RPM,
                     Mk4NeoModule.SMART_MOTION_TARGET_TOLERANCE, false);
             TestSparkNeo.verifyPid(drivePID, SparkNeo.PIDtype.POSITION.slotId, Mk4NeoModule.DRIVE_POS_kP,
                     Mk4NeoModule.DRIVE_POS_kI, Mk4NeoModule.DRIVE_POS_IZONE,Mk4NeoModule.DRIVE_POS_kFF,

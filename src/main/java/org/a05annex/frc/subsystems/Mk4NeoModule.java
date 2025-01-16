@@ -5,9 +5,11 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import com.revrobotics.*;
 import com.revrobotics.spark.*;
+import com.revrobotics.spark.config.ClosedLoopConfig;
+import com.revrobotics.spark.config.MAXMotionConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
@@ -87,14 +89,14 @@ public class Mk4NeoModule {
     static double DRIVE_POS_IZONE = 2.0;
     static double DRIVE_POS_kFF = 0.0;
 
-    // PID values for the drive spark motor controller smart motion PID loop
-    static double SMART_MOTION_kP = 0.00005;
-    static double SMART_MOTION_kI = 0.000001;
-    static double SMART_MOTION_kFF = 0.000174;
-    static double SMART_MOTION_IZONE = 200.0;
-    static double SMART_MOTION_MAX_RPM = MAX_DRIVE_RPM;
-    static double SMART_MOTION_MAX_RPMs = 2.0 * MAX_DRIVE_RPM;
-    static double SMART_MOTION_MIN_RPM = 0.0;
+    // PID values for the drive spark motor controller MAX motion PID loop
+    static double MAX_MOTION_kP = 0.00005;
+    static double MAX_MOTION_kI = 0.000001;
+    static double MAX_MOTION_kFF = 0.000174;
+    static double MAX_MOTION_IZONE = 200.0;
+    static double MAX_MOTION_MAX_RPM = MAX_DRIVE_RPM;
+    static double MAX_MOTION_MAX_RPMs = 2.0 * MAX_DRIVE_RPM;
+    static double MAX_MOTION_MIN_RPM = 0.0;
     /**
      * A tolerance used for determining when the smart motion final position has been reached. This
      * tolerance on the field corresponds to {@code TARGET_POSITION_TOLERANCE} / {@link #TICS_PER_METER}, or
@@ -230,9 +232,8 @@ public class Mk4NeoModule {
         driveMotor.setIdleMode(SparkBaseConfig.IdleMode.kCoast);
         driveMotor.setCurrentLimit(UseType.RPM_PROLONGED_STALL, BreakerAmps.Amps40);
         driveMotor.setRpmPID(DRIVE_kP, DRIVE_kI, DRIVE_IZONE, DRIVE_kFF);
-        driveMotor.setSmartMotion(SMART_MOTION_kP, SMART_MOTION_kI, SMART_MOTION_IZONE,
-                SMART_MOTION_kFF, SMART_MOTION_MAX_RPM, SMART_MOTION_MAX_RPMs,
-                SMART_MOTION_MIN_RPM, SMART_MOTION_TARGET_TOLERANCE);
+        driveMotor.setMAXMotionPosition(MAX_MOTION_kP, MAX_MOTION_kI, MAX_MOTION_IZONE,
+                MAX_MOTION_kFF, MAX_MOTION_MAX_RPM, MAX_MOTION_MAX_RPMs, SMART_MOTION_TARGET_TOLERANCE);
         driveMotor.setPositionPID(DRIVE_POS_kP, DRIVE_POS_kI, DRIVE_POS_IZONE, DRIVE_POS_kFF);
         driveMotor.endConfig();
 
@@ -463,7 +464,11 @@ public class Mk4NeoModule {
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
         driveMode = SparkMax.ControlType.kPosition;
-        driveMotor.sparkMaxPID.setOutputRange(-maxSpeed, maxSpeed, PIDtype.POSITION.slotId);
+        SparkMaxConfig lclConfig = new SparkMaxConfig();
+        ClosedLoopConfig clConfig = new ClosedLoopConfig().outputRange(-maxSpeed, maxSpeed, PIDtype.POSITION.slotId);
+        lclConfig.apply(clConfig);
+        driveMotor.sparkMax.configure(lclConfig, SparkBase.ResetMode.kNoResetSafeParameters,
+                SparkBase.PersistMode.kNoPersistParameters);
         driveMotor.setTargetPosition(targetTics);
     }
 
@@ -493,11 +498,19 @@ public class Mk4NeoModule {
         setDirection(targetDirection);
         double targetTics = getDriveEncoderPosition() + (deltaTics * speedMultiplier);
         targetPosition = targetTics;
-        driveMode = SparkMax.ControlType.kSmartMotion;
+        driveMode = SparkMax.ControlType.kMAXMotionPositionControl;
         // now set up the smart motion speed and acceleration constants
-        driveMotor.sparkMaxPID.setSmartMotionMaxVelocity(maxSpeed * MAX_DRIVE_RPM, PIDtype.SMART_MOTION.slotId);
-        driveMotor.sparkMaxPID.setSmartMotionMaxAccel(maxAcceleration, PIDtype.SMART_MOTION.slotId);
-        driveMotor.setSmartMotionTarget(targetTics);
+        SparkMaxConfig lclConfig = new SparkMaxConfig();
+        ClosedLoopConfig clConfig = new ClosedLoopConfig();
+        MAXMotionConfig mmConfig = new MAXMotionConfig();
+        mmConfig.maxVelocity(maxSpeed * MAX_DRIVE_RPM, PIDtype.MAX_MOTION_POSITION.slotId);
+        mmConfig.maxAcceleration(maxAcceleration, PIDtype.MAX_MOTION_POSITION.slotId);
+        clConfig.apply(mmConfig);
+        lclConfig.apply(clConfig);
+        driveMotor.sparkMax.configure(lclConfig, SparkBase.ResetMode.kNoResetSafeParameters,
+                SparkBase.PersistMode.kNoPersistParameters);
+        // and set the target
+        driveMotor.setTargetMAXMotionPosition(targetTics);
     }
 
     /**

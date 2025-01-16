@@ -1,7 +1,8 @@
 package org.a05annex.frc.subsystems;
 
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.*;
-import edu.wpi.first.wpilibj.DriverStation;
+import com.revrobotics.spark.config.*;
 import org.a05annex.frc.A05Constants;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,13 +42,13 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  *     through the {@link SparkNeo#sparkMax}, {@link SparkNeo#encoder}, and {@link SparkNeo#sparkMaxPID} if
  *     you need to bypass the restrictions of the {@code SparkNeo} implementation - for example, in code that
  *     tunes PID settings.</li>
- *     <li>Controller PID slots - yeah, the REV documentation is confusing. {@code SparkNeo} manages the first 3 slots
- *     as {@link PIDtype#RPM}, {@link PIDtype#SMART_MOTION}, and {@link PIDtype#POSITION} and provides a constant,
- *     {@link PIDtype#CUSTOM} for the forth. The {@code SparkNeo} also hides the management of the slots by providing
+ *     <li>Controller PID slots - yeah, the REV documentation is confusing. {@code SparkNeo} manages all 4 slots
+ *     as {@link PIDtype#RPM}, {@link PIDtype#POSITION},{@link PIDtype#MAX_MOTION_RPM}, and
+ *     {@link PIDtype#MAX_MOTION_POSITION}. The {@code SparkNeo} also hides the management of the slots by providing
  *     the {@link #setRpmPID(double, double, double, double)},
- *     {@link #setSmartMotion(double, double, double, double, double, double, double, double)},
- *     {@link #setPositionPID(double, double, double, double)}, and
- *     {@link #setPID(PIDtype, double, double, double, double, double, double, double)}
+ *     {@link #setPositionPID(double, double, double, double)},
+ *     {@link #setMAXMotionRPM(double, double, double, double, double, double, double)}, and
+ *     {@link #setMAXMotionPosition(double, double, double, double, double, double, double)}.
  *     </li>
  * </ul>
  * <p>
@@ -184,13 +185,6 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  *         <li>Unnecessary CAN activity</li>
  *     </ul>
  *     </li>
- *     <li>We were previously always configuring starting with {@link SparkMax#restoreFactoryDefaults()} and then
- *     setting everything we needed. This was best practice with TalonSRX controllers several years ago. We
- *     experienced occasional initialization problems where it appeared the reset had not completed, and subsequent
- *     configuration calls were ignored or written over (the configuration was still the default value). Current best
- *     practice is to only configure this way during tuning, then burn the tuned configuration into the Spark Max
- *     flash memory so the Spark Max is correctly configured at power up. We experienced no startup problems after
- *     doing this.</li>
  *     <li>that we always used PID slot 0 which worked pretty well because we were not running multiple move modes
  *     on motors
  *                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         hen we switched control mode we were also resetting PID constants - which led to unpredictable </li>
@@ -198,11 +192,13 @@ import static org.a05annex.frc.subsystems.SparkNeo.UseType.FREE_SPINNING;
  * <p>
  * It provides a simple interface for configuration; PID control modes for:
  * <ul>
- *     <li>{@link com.revrobotics.SparkMax.ControlType#kVelocity} - use the {@link #setTargetRPM(double)}
+ *     <li>{@link com.revrobotics.spark.SparkMax.ControlType#kVelocity} - use the {@link #setTargetRPM(double)}
  *     method to set the motor velocity RPM.</li>
- *     <li>{@link com.revrobotics.SparkMax.ControlType#kSmartMotion} </li>
- *     <li>{@link com.revrobotics.SparkMax.ControlType#kPosition}</li>
- * </ul>
+ *     <li>{@link com.revrobotics.spark.SparkMax.ControlType#kPosition} - use the {@link #setTargetPosition(double)}
+ *     method to set the desired motor position.</li>
+ *     <li>{@link com.revrobotics.spark.SparkMax.ControlType#kMAXMotionVelocityControl} - use</li>
+ *     <li>{@link com.revrobotics.spark.SparkMax.ControlType#kMAXMotionPositionControl} </li>
+  * </ul>
  */
 public class SparkNeo {
 
@@ -216,8 +212,8 @@ public class SparkNeo {
      */
     @NotNull
     public static SparkNeo factory(int canId) {
-        SparkMax sparkMax = new SparkMax(canId, CANSparkLowLevel.MotorType.kBrushless);
-        return new SparkNeo(sparkMax, sparkMax.getEncoder(), sparkMax.getPIDController());
+        SparkMax sparkMax = new SparkMax(canId, SparkLowLevel.MotorType.kBrushless);
+        return new SparkNeo(sparkMax, sparkMax.getEncoder(), sparkMax.getClosedLoopController());
     }
 
     /**
@@ -228,24 +224,23 @@ public class SparkNeo {
         /**
          * The motor speed (RPM) PID slot managed by this wrapper.
          */
-        RPM(0),
+        RPM(ClosedLoopSlot.kSlot0),
         /**
-         * The smart motion PID slot managed by this wrapper.
+         * The position PID slot managed by this wrapper.
          */
-        SMART_MOTION(1),
+        POSITION(ClosedLoopSlot.kSlot1),
         /**
-         * The smart position PID slot managed by this wrapper.
+         * The MAX motion RPM PID slot managed by this wrapper.
          */
-        POSITION(2),
+        MAX_MOTION_RPM(ClosedLoopSlot.kSlot2),
         /**
-         * A slot PID that is unused by this wrapper and may be used for custom settings that are beyond the scope
-         * of this wrapper.
+         * The MAX motion position PID slot managed by this wrapper.
          */
-        CUSTOM(3);
+        MAX_MOTION_POSITION(ClosedLoopSlot.kSlot3);
 
-        final int slotId;
+        final ClosedLoopSlot slotId;
 
-        PIDtype(int slotId) {
+        PIDtype(ClosedLoopSlot slotId) {
             this.slotId = slotId;
         }
     }
@@ -353,6 +348,7 @@ public class SparkNeo {
             {10, 20, 30, 40}    // 10, 20, 30, 40 Amp
     };
 
+    SparkMaxConfig config = new SparkMaxConfig();
     boolean inConfig = false;
     boolean isConfigured = false;
     boolean currentLimitIsSet = false;
@@ -475,17 +471,18 @@ public class SparkNeo {
     public void startConfig() {
         verifyInConfig(false, "startConfig");
         inConfig = true;
-        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            while (true) {
-                REVLibError errorCode = sparkMax.restoreFactoryDefaults();
-                if (REVLibError.kOk == errorCode) {
-                    break;
-                }
-                DriverStation.reportWarning(
-                        String.format("SparkMAX config error: CAN id = %d; error =  %d",
-                                sparkMax.getDeviceId(), errorCode.value), false);
-            }
-        }
+        // It seems this does not apply any more.
+//        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
+//            while (true) {
+//                REVLibError errorCode = sparkMax.restoreFactoryDefaults();
+//                if (REVLibError.kOk == errorCode) {
+//                    break;
+//                }
+//                DriverStation.reportWarning(
+//                        String.format("SparkMAX config error: CAN id = %d; error =  %d",
+//                                sparkMax.getDeviceId(), errorCode.value), false);
+//            }
+//        }
     }
 
     /**
@@ -499,7 +496,7 @@ public class SparkNeo {
         verifyInConfig(true, "setCurrentLimit");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
             int maxAmps = maxCurrentMatrix[useType.index][breakerAmps.index];
-            sparkMax.setSmartCurrentLimit(maxAmps, maxAmps, 10000);
+            config.smartCurrentLimit(maxAmps, maxAmps, 10000);
         }
         currentLimitIsSet = true;
     }
@@ -516,19 +513,31 @@ public class SparkNeo {
     }
 
     /**
-     * Sets whether the power=0.0 mode should be free spinning ({@link com.revrobotics.SparkMax.IdleMode#kCoast})
-     * or brake ({@link com.revrobotics.SparkMax.IdleMode#kBrake}). NOTE: this is one os the few methods that can
-     * be called inside or outside configuration.
+     * Sets whether the power=0.0 mode should be free spinning
+     * ({@link com.revrobotics.spark.config.SparkBaseConfig.IdleMode#kCoast})
+     * or brake ({@link com.revrobotics.spark.config.SparkBaseConfig.IdleMode#kBrake}). NOTE: this is one
+     * of the few methods that can be called inside or outside configuration.
      *
      * @param idleMode The idle mode.
      */
-    public void setIdleMode(SparkMax.IdleMode idleMode) {
-        sparkMax.setIdleMode(idleMode);
+    public void setIdleMode(SparkBaseConfig.IdleMode idleMode) {
+        // if we are in config, we are setting this as part of the config object (i.e. it is the real default
+        // configuration), otherwise, this is a configuration change that needs to be applied now.
+        if (inConfig) {
+            // this is part of default configuration for this motor
+            config.idleMode(idleMode);
+        } else {
+            // This is a 'temporary' change in configuration
+            SparkMaxConfig lclConfig = new SparkMaxConfig();
+            lclConfig.idleMode(idleMode);
+            // Don't persist parameters since it takes time and this change is temporary
+            sparkMax.configure(lclConfig, SparkBase.ResetMode.kNoResetSafeParameters,
+                    SparkBase.PersistMode.kNoPersistParameters);
+        }
     }
 
-
     /**
-     * The most common setup for smart motion control of the motor.
+     * The most common setup for MAX motion control of the motor RPM.
      *
      * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
@@ -539,18 +548,40 @@ public class SparkNeo {
      * @param maxRPM         The maximum forward RPM, typically 0.8 to 0.9 times the {@link #getMaxFreeRPM()}.
      * @param maxRPMs        The maximum RPM acceleration per second, typically 1.0 to 4.0 times
      *                       the {@link #getMaxFreeRPM()}.
-     * @param minRPM         The maximum backwards RPM, typically -0.8 to -0.9 times the {@link #getMaxFreeRPM()}.
-     * @param allowableError The allowable error in final distance or RPM at which smart motion will consider the goal
+     * @param allowableError The allowable error in final RPM at which MAX motion will consider the goal
      *                       achieved.
      */
-    public void setSmartMotion(double kP, double kI, double kIZone, double kFF,
-                               double maxRPM, double maxRPMs, double minRPM, double allowableError) {
-        setSmartMotion(kP, kI, kIZone, kFF, 0.0, -1.0, 1.0, maxRPM, maxRPMs, minRPM, allowableError);
+    public void setMAXMotionRPM(double kP, double kI, double kIZone, double kFF,
+                                double maxRPM, double maxRPMs, double allowableError) {
+        setMAXMotion(PIDtype.MAX_MOTION_RPM, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0,
+                maxRPM, maxRPMs, allowableError);
+    }
+    /**
+     * The most common setup for MAX motion control of the motor position.
+     *
+     * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
+     * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kIZone         The PID loop will not include the integral component until the current position or speed is
+     *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
+     *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
+     * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
+     * @param maxRPM         The maximum forward RPM, typically 0.8 to 0.9 times the {@link #getMaxFreeRPM()}.
+     * @param maxRPMs        The maximum RPM acceleration per second, typically 1.0 to 4.0 times
+     *                       the {@link #getMaxFreeRPM()}.
+     * @param allowableError The allowable error in final distance at which MAX motion will consider the goal
+     *                       achieved.
+     */
+    public void setMAXMotionPosition(double kP, double kI, double kIZone, double kFF,
+                                double maxRPM, double maxRPMs, double allowableError) {
+        setMAXMotion(PIDtype.MAX_MOTION_RPM, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0,
+                maxRPM, maxRPMs, allowableError);
     }
 
     /**
      * The configuration for all PID constants for SmartMotion (position) control.
      *
+     * @param pidType        The PID type, must be either {@link PIDtype#MAX_MOTION_RPM} or
+     *                       {@link PIDtype#MAX_MOTION_POSITION}.
      * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
      * @param kIZone         The PID loop will not include the integral component until the current position or speed is
@@ -563,21 +594,30 @@ public class SparkNeo {
      * @param maxRPM         The maximum forward RPM, typically 0.8 to 0.9 times the {@link #getMaxFreeRPM()}.
      * @param maxRPMs        The maximum RPM acceleration per second, typically 1.0 to 4.0 times
      *                       the {@link #getMaxFreeRPM()}.
-     * @param minRPM         The maximum backwards RPM, typically -0.8 to -0.9 times the {@link #getMaxFreeRPM()}.
      * @param allowableError The allowable error in final distance or RPM at which smart motion will consider the goal
      *                       achieved.
      */
-    public void setSmartMotion(double kP, double kI, double kIZone, double kFF, double kD, double min, double max,
-                               double maxRPM, double maxRPMs, double minRPM, double allowableError) {
-        verifyInConfig(true, "setSmartMotion");
+    public void setMAXMotion(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF, double kD,
+                             double min, double max, double maxRPM, double maxRPMs,
+                             double allowableError) {
+        verifyInConfig(true, "setMAXMotion");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            setPID(PIDtype.SMART_MOTION, kP, kI, kIZone, kFF, kD, min, max);
-            int slotId = PIDtype.SMART_MOTION.slotId;
-            sparkMaxPID.setSmartMotionAccelStrategy(SparkClosedLoopController.AccelStrategy.kTrapezoidal, slotId);
-            sparkMaxPID.setSmartMotionMaxVelocity(maxRPM, slotId);
-            sparkMaxPID.setSmartMotionMaxAccel(maxRPMs, slotId);
-            sparkMaxPID.setSmartMotionMinOutputVelocity(minRPM, slotId);
-            sparkMaxPID.setSmartMotionAllowedClosedLoopError(allowableError, slotId);
+            ClosedLoopConfig clConfig = setPID(pidType, kP, kI, kIZone, kFF, kD, min, max);
+            MAXMotionConfig mmConfig = new MAXMotionConfig();
+            mmConfig.maxVelocity(maxRPM, pidType.slotId);
+            mmConfig.maxAcceleration(maxRPMs, pidType.slotId);
+            mmConfig.allowedClosedLoopError(allowableError, pidType.slotId);
+            mmConfig.positionMode(MAXMotionConfig.MAXMotionPositionMode.kMAXMotionTrapezoidal,pidType.slotId);
+            clConfig.apply(mmConfig);
+            config.apply(clConfig);
+
+//            // the old code for reference
+//            int slotId = PIDtype.SMART_MOTION.slotId;
+//            sparkMaxPID.setSmartMotionAccelStrategy(SparkClosedLoopController.AccelStrategy.kTrapezoidal, slotId);
+//            sparkMaxPID.setSmartMotionMaxVelocity(maxRPM, slotId);
+//            sparkMaxPID.setSmartMotionMaxAccel(maxRPMs, slotId);
+//            sparkMaxPID.setSmartMotionMinOutputVelocity(minRPM, slotId);
+//            sparkMaxPID.setSmartMotionAllowedClosedLoopError(allowableError, slotId);
         }
     }
 
@@ -625,7 +665,8 @@ public class SparkNeo {
         setPID(PIDtype.RPM, kP, kI, kIZone, kFF, kD, min, max);
     }
     /**
-     * The configuration for all PID constants for position control.
+     * The configuration for all PID constants for position control. It is generally NOT recommended that you call
+     * this directly, but that you use the PID configuration methods specific to the control type.
      *
      * @param kP      The PID proportional constant <i>K<sub>p</sub></i>.
      * @param kI      The PID integral constant <i>K<sub>i</sub></i>.
@@ -655,17 +696,16 @@ public class SparkNeo {
      * @param min     The minimum RPM that will be requested, -1.0 is full reverse speed.
      * @param max     The maximum RPM that will be requested, 1.0 is full forward speed.
      */
-    public void setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
+    public ClosedLoopConfig setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
                        double kD, double min, double max) {
         verifyInConfig(true, "setPID");
         if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            int slotId = pidType.slotId;
-            sparkMaxPID.setP(kP, slotId);
-            sparkMaxPID.setI(kI, slotId);
-            sparkMaxPID.setIZone(kIZone, slotId);
-            sparkMaxPID.setFF(kFF, slotId);
-            sparkMaxPID.setD(kD, slotId);
-            sparkMaxPID.setOutputRange(min, max, slotId);
+            ClosedLoopSlot slotId = pidType.slotId;
+            ClosedLoopConfig clConfig = new ClosedLoopConfig()
+                    .pidf(kP, kI, kD, kFF, slotId)
+                    .iZone(kIZone, slotId)
+                    .outputRange(min, max, slotId);
+            config.apply(clConfig);
         }
     }
 
@@ -678,19 +718,21 @@ public class SparkNeo {
      */
     public void setSoftLimits(Double min, Double max) {
         verifyInConfig(true, "setSoftLimits");
+        SoftLimitConfig slConfig = new SoftLimitConfig();
         if(min == null) {
-            sparkMax.enableSoftLimit(SparkMax.SoftLimitDirection.kReverse, false);
+            slConfig.reverseSoftLimitEnabled(false);
         } else {
-            sparkMax.enableSoftLimit(SparkMax.SoftLimitDirection.kReverse, true);
-            sparkMax.setSoftLimit(SparkMax.SoftLimitDirection.kReverse, min.floatValue());
+            slConfig.reverseSoftLimitEnabled(true);
+            slConfig.reverseSoftLimit(min);
         }
 
         if(max == null) {
-            sparkMax.enableSoftLimit(SparkMax.SoftLimitDirection.kForward, false);
+            slConfig.forwardSoftLimitEnabled(false);
         } else {
-            sparkMax.enableSoftLimit(SparkMax.SoftLimitDirection.kForward, true);
-            sparkMax.setSoftLimit(SparkMax.SoftLimitDirection.kForward, max.floatValue());
+            slConfig.forwardSoftLimitEnabled(true);
+            slConfig.forwardSoftLimit(max.floatValue());
         }
+        config.apply(slConfig);
     }
 
     /**
@@ -704,19 +746,27 @@ public class SparkNeo {
      */
     public void endConfig() {
         verifyInConfig(true, "endConfig");
-        if (A05Constants.getSparkConfigFromFactoryDefaults() && A05Constants.getSparkBurnConfig()) {
-            sparkMax.burnFlash();
-        }
-        // These cannot be burned into the configuration - so they must be set at configuration
-        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus3, 500);
-        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus4, 500);
-        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus5, 500);
-        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus6, 500);
+//        // This was the old way to do this - and the config was set before we set the periodic stuff.
+//        if (A05Constants.getSparkConfigFromFactoryDefaults() && A05Constants.getSparkBurnConfig()) {
+//            sparkMax.burnFlash();
+//        }
+        config.signals.absoluteEncoderPositionAlwaysOn(true);
+        config.signals.absoluteEncoderVelocityAlwaysOn(true);
+        // OK - these will take a bit more research. These are a bunch of things we don't use, so we had set the
+        // reporting time way long to reduce CAN traffic.
+//        // These cannot be burned into the configuration - so they must be set at configuration
+//        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus3, 500);
+//        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus4, 500);
+//        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus5, 500);
+//        sparkMax.setPeriodicFramePeriod(SparkLowLevel.PeriodicFrame.kStatus6, 500);
         // current limit configuration IS REQUIRED. If the current limit has not been set - pick the safest, and
         // of course, the lowest possible breaker amperage.
         if (!currentLimitIsSet) {
             setCurrentLimit(FREE_SPINNING, BreakerAmps.Amps10);
         }
+        // and this is the new way we set the configuration for the SparkMAX - they now say we should always burn
+        // the real config
+        sparkMax.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kPersistParameters);
         // this spark is now configured
         inConfig = false;
         isConfigured = true;
@@ -741,16 +791,6 @@ public class SparkNeo {
     }
 
     /**
-     * Set a smart motion target position for this motor. The smart motion PID will be used to achieve this.
-     *
-     * @param targetPosition The target position.
-     */
-    public void setSmartMotionTarget(double targetPosition) {
-        verifyIsConfigured("setSmartMotionTarget");
-        sparkMaxPID.setReference(targetPosition, SparkMax.ControlType.kSmartMotion, PIDtype.SMART_MOTION.slotId);
-    }
-
-    /**
      * Set a target position for this motor. The position PID will be used to achieve this.
      *
      * @param targetPosition The target position.
@@ -759,4 +799,25 @@ public class SparkNeo {
         verifyIsConfigured("setTargetPosition");
         sparkMaxPID.setReference(targetPosition, SparkMax.ControlType.kPosition, PIDtype.POSITION.slotId);
     }
-}
+    /**
+     * Set a target RPM for this motor. The MAX Motion velocity PID will be used to achieve this RPM.
+     *
+     * @param targetRpm The target RPM.
+     */
+    public void setTargetMAXMotionRPM(double targetRpm) {
+        verifyIsConfigured("setTargetRPM");
+        sparkMaxPID.setReference(targetRpm, SparkMax.ControlType.kMAXMotionVelocityControl,
+                PIDtype.MAX_MOTION_RPM.slotId);
+    }
+    /**
+     * Set a smart motion target position for this motor. The MAX Motion position PID will be used to achieve this.
+     *
+     * @param targetPosition The target position.
+     */
+    public void setTargetMAXMotionPosition(double targetPosition) {
+        verifyIsConfigured("setSmartMotionTarget");
+        sparkMaxPID.setReference(targetPosition, SparkMax.ControlType.kMAXMotionPositionControl,
+                PIDtype.MAX_MOTION_POSITION.slotId);
+    }
+
+ }
