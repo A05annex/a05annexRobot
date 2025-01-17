@@ -1,15 +1,16 @@
 package org.a05annex.frc.subsystems;
 
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.revrobotics.spark.*;
 import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.MAXMotionConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
@@ -214,7 +215,9 @@ public class Mk4NeoModule {
                 }
                 config.MagnetSensor.withSensorDirection(SensorDirectionValue.Clockwise_Positive);
                 config.MagnetSensor.withMagnetOffset(0.0);
-                config.MagnetSensor.withAbsoluteSensorRange(AbsoluteSensorRangeValue.Unsigned_0To1);
+                config.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
+                // the old specification
+//                config.MagnetSensor.withAbsoluteSensorRange(AbsoluteSensorRangeValue.Unsigned_0To1);
                 statusCode = calibrationEncoder.getConfigurator().apply(config);
                 if (StatusCode.OK == statusCode) {
                     break;
@@ -314,15 +317,15 @@ public class Mk4NeoModule {
      * @return The analog direction encoder position.
      */
     public double getCalibrationPosition() {
-        double absolutePosition;
+        StatusSignal<Angle> absolutePosition;
         // get the absolute position of the calibration CANcoder. Note, this loop
         // is here because it occasionally takes a bit for the CANcoder to correctly initialize, and
         // out of range values may be reported.
         do {
-            absolutePosition = calibrationEncoder.getAbsolutePosition().getValue();
-        } while (absolutePosition < 0.0 || absolutePosition > 1.0);
+            absolutePosition = calibrationEncoder.getAbsolutePosition(true);
+        } while (absolutePosition.getValueAsDouble() < 0.0 || absolutePosition.getValueAsDouble() > 1.0);
         // convert 0 to 1.0 revolutions to and angle of 0 to 2pi
-        return absolutePosition * 2.0 * Math.PI;
+        return absolutePosition.getValueAsDouble() * 2.0 * Math.PI;
     }
 
     /**

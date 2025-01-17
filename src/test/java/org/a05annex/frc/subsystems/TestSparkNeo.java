@@ -1,6 +1,7 @@
 package org.a05annex.frc.subsystems;
 
 import com.revrobotics.*;
+import com.revrobotics.spark.*;
 import org.a05annex.frc.A05Constants;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;

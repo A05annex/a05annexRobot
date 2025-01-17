@@ -6,6 +6,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CANcoderConfigurator;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.*;
+import com.revrobotics.spark.*;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
 import org.jetbrains.annotations.NotNull;

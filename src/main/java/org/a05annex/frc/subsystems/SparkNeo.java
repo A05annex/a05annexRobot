@@ -699,14 +699,13 @@ public class SparkNeo {
     public ClosedLoopConfig setPID(@NotNull PIDtype pidType, double kP, double kI, double kIZone, double kFF,
                        double kD, double min, double max) {
         verifyInConfig(true, "setPID");
-        if (A05Constants.getSparkConfigFromFactoryDefaults()) {
-            ClosedLoopSlot slotId = pidType.slotId;
-            ClosedLoopConfig clConfig = new ClosedLoopConfig()
-                    .pidf(kP, kI, kD, kFF, slotId)
-                    .iZone(kIZone, slotId)
-                    .outputRange(min, max, slotId);
-            config.apply(clConfig);
-        }
+        ClosedLoopSlot slotId = pidType.slotId;
+        ClosedLoopConfig clConfig = new ClosedLoopConfig()
+                .pidf(kP, kI, kD, kFF, slotId)
+                .iZone(kIZone, slotId)
+                .outputRange(min, max, slotId);
+        config.apply(clConfig);
+        return clConfig;
     }
 
     /**
