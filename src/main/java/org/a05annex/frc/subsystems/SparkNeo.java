@@ -509,7 +509,7 @@ public class SparkNeo {
      */
     public void setDirection(Direction direction) {
         verifyInConfig(true, "setDirection");
-        sparkMax.setInverted(direction.reversed);
+        config.inverted(direction.reversed);
     }
 
     /**
