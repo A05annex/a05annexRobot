@@ -573,7 +573,7 @@ public class SparkNeo {
      */
     public void setMAXMotionPosition(double kP, double kI, double kIZone, double kFF,
                                 double maxRPM, double maxRPMs, double allowableError) {
-        setMAXMotion(PIDtype.MAX_MOTION_RPM, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0,
+        setMAXMotion(PIDtype.MAX_MOTION_POSITION, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0,
                 maxRPM, maxRPMs, allowableError);
     }
 
