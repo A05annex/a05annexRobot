@@ -559,21 +559,21 @@ public class SparkNeo {
     /**
      * The most common setup for MAX motion control of the motor position.
      *
-     * @param kP             The PID proportional constant <i>K<sub>p</sub></i>.
-     * @param kI             The PID integral constant <i>K<sub>i</sub></i>.
+     * @param kP             The PID proportional constant <i>K<sub>p</sub></i>
+     * @param kI             The PID integral constant <i>K<sub>i</sub></i>
      * @param kIZone         The PID loop will not include the integral component until the current position or speed is
      *                       within this distance or RPM from the target. This zone helps prevent overshoot as the integral
      *                       is only accumulated once the <i>K<sub>p</sub></i> has brought the system close to the target
-     * @param kFF            The PID feed-forward constant <i>K<sub>ff</sub></i>
+     * @param kD            The PID derivative constant <i>K<sub>d</sub></i>
      * @param maxRPM         The maximum forward RPM, typically 0.8 to 0.9 times the {@link #getMaxFreeRPM()}.
      * @param maxRPMs        The maximum RPM acceleration per second, typically 1.0 to 4.0 times
      *                       the {@link #getMaxFreeRPM()}.
      * @param allowableError The allowable error in final distance at which MAX motion will consider the goal
      *                       achieved.
      */
-    public void setMAXMotionPosition(double kP, double kI, double kIZone, double kFF,
+    public void setMAXMotionPosition(double kP, double kI, double kIZone, double kD,
                                 double maxRPM, double maxRPMs, double allowableError) {
-        setMAXMotion(PIDtype.MAX_MOTION_POSITION, kP, kI, kIZone, kFF, 0.0, -1.0, 1.0,
+        setMAXMotion(PIDtype.MAX_MOTION_POSITION, kP, kI, kIZone, 0.0, kD, -1.0, 1.0,
                 maxRPM, maxRPMs, allowableError);
     }
 
