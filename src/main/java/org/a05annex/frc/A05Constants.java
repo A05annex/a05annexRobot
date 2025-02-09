@@ -146,6 +146,41 @@ public abstract class A05Constants {
      */
     public static final XboxController ALT_XBOX = new XboxController(1);
 
+    public enum D_PAD {
+        U,
+        UR,
+        R,
+        DR,
+        D,
+        DL,
+        L,
+        UL,
+        NONE(-1);
+
+        public final int pov;
+
+        D_PAD() {
+            pov = ordinal() * 45;
+        }
+
+        D_PAD(int pov) {
+            this.pov = pov;
+        }
+    }
+
+    public static D_PAD getDPad(XboxController controller) {
+        int pov = controller.getPOV();
+        for(D_PAD dir : D_PAD.values()) {
+            if(dir.pov == pov) {
+                return dir;
+            }
+        }
+        return D_PAD.NONE;
+    }
+
+
+
+
     // -----------------------------------------------------------------------------------------------------------------
     // Controlling whether there is debugging logging of this library in the console file for the run.
     // -----------------------------------------------------------------------------------------------------------------
@@ -471,7 +506,7 @@ public abstract class A05Constants {
         protected static final String RIGHT_TRIGGER = "RIGHT";
 
         /**
-         * The driver name, usually a first name like "Nolan", "Ethan", "Calvin", etc. Mostly used
+         * The driver name, usually a first name like "Ocean", "Salma", "Ethan", etc. Mostly used
          * for visual feedback of the selected driver in the smart dashboard, or, for error messaging.
          */
         protected final String driverName;
