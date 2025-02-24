@@ -76,19 +76,29 @@ public class PhotonCameraWrapper {
          if(!camera.isConnected()) {
             targetsAreNew = false;
             return;
-        }
+         }
 
-         newestFrame = camera.getLatestResult();
-        if(newestFrame == null) {
-            throw new NullPointerException("Newest frame was null");
-        }
-        if(newestFrame.hasTargets()) {
-            frameWithTargets = newestFrame;
-            targetList = frameWithTargets.getTargets();
-            targetsAreNew = true;
-        } else {
-            targetsAreNew = false;
-        }
+         List<PhotonPipelineResult> resultList = camera.getAllUnreadResults();
+
+         if(resultList.isEmpty()) {
+             targetsAreNew = false;
+             return;
+         }
+
+         newestFrame = resultList.getLast();
+
+         if(newestFrame == null) {
+             throw new NullPointerException("Newest frame was null");
+         }
+
+         for(PhotonPipelineResult result : resultList) {
+             if(result.hasTargets()) {
+                 frameWithTargets = result;
+                 targetList = frameWithTargets.getTargets();
+                 targetsAreNew = result == resultList.getLast();
+                 break;
+             }
+         }
     }
 
     /**
