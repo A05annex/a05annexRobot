@@ -25,6 +25,8 @@ public class A05TagTargetCommand extends A05DriveCommand {
      * The radius (in meters) within which the robot switches to precise position control.
      */
     protected static double POSITION_CONTROL_RADIUS = 0.15;
+
+    protected double IN_POSITION_RADIUS = 0.02;
     /**
      * The max speed to drive at, when outside the {@link #REDUCED_SPEED_RADIUS}
      */
@@ -147,7 +149,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
      */
     @Override
     public boolean isFinished() {
-        return isFinished || (lastMode == MODE.POSITION_CONTROL && iSwerveDrive.isAbsoluteTranslateDone());
+        return isFinished || (lastMode == MODE.POSITION_CONTROL && iSwerveDrive.isAbsoluteTranslateDone()) || distance() < IN_POSITION_RADIUS;
     }
     /**
      * Stops the robot by setting all drive parameters to zero.
@@ -187,13 +189,13 @@ public class A05TagTargetCommand extends A05DriveCommand {
             return;
         }
 
-        if(currentMode == MODE.POSITION_CONTROL && lastMode != MODE.POSITION_CONTROL) {
-            iSwerveDrive.startAbsoluteSmartTranslate(xError(), yError(), POSITION_CONTROL_SPEED, 5000.0);
-            conditionedSpeed = 0.0;
-            conditionedRotate = 0.0;
-            conditionedDirection = new AngleD().atan2(yError(), xError());
-            InferredRobotPosition.pauseCaching();
-        }
+//        if(currentMode == MODE.POSITION_CONTROL && lastMode != MODE.POSITION_CONTROL) {
+//            iSwerveDrive.startAbsoluteSmartTranslate(xError(), yError(), POSITION_CONTROL_SPEED, 5000.0);
+//            conditionedSpeed = 0.0;
+//            conditionedRotate = 0.0;
+//            conditionedDirection = new AngleD().atan2(yError(), xError());
+//            InferredRobotPosition.pauseCaching();
+//        }
 
         if(currentMode == MODE.FULL_SPEED || currentMode == MODE.REDUCED_SPEED) {
             calcDirection(conditionedDirection);
@@ -274,9 +276,10 @@ public class A05TagTargetCommand extends A05DriveCommand {
      * @return The conditioned speed for the current mode.
      */
     protected double calcSpeed() {
-        double speed = POSITION_CONTROL_SPEED + ((distance() - POSITION_CONTROL_RADIUS) / (REDUCED_SPEED_RADIUS - POSITION_CONTROL_RADIUS)) * (MAX_SPEED - POSITION_CONTROL_SPEED);
+        //double speed = POSITION_CONTROL_SPEED + ((distance() - POSITION_CONTROL_RADIUS) / (REDUCED_SPEED_RADIUS - POSITION_CONTROL_RADIUS)) * (MAX_SPEED - POSITION_CONTROL_SPEED);
+        double speed = distance() / REDUCED_SPEED_RADIUS * MAX_SPEED;
         speed = Utl.clip(speed, lastConditionedSpeed - MAX_SPEED_DELTA, lastConditionedSpeed + MAX_SPEED_DELTA);
-        return Utl.clip(speed, 0.0, 1.0);
+        return Utl.clip(speed, 0.0, MAX_SPEED);
     }
     /**
      * Calculates the distance from the robot's current position to the target.

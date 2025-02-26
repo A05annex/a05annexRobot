@@ -85,7 +85,7 @@ public class PhotonCameraWrapper {
              return;
          }
 
-         newestFrame = resultList.getLast();
+         newestFrame = resultList.get(resultList.size() - 1);
 
          if(newestFrame == null) {
              throw new NullPointerException("Newest frame was null");
@@ -95,7 +95,7 @@ public class PhotonCameraWrapper {
              if(result.hasTargets()) {
                  frameWithTargets = result;
                  targetList = frameWithTargets.getTargets();
-                 targetsAreNew = result == resultList.getLast();
+                 targetsAreNew = result == resultList.get(resultList.size() - 1);
                  break;
              }
          }
