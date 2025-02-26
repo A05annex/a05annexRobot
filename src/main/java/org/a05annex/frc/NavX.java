@@ -1,7 +1,6 @@
 package org.a05annex.frc;
 
-import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.wpilibj.SPI;
+import com.studica.frc.AHRS;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.AngleUnit;
@@ -127,7 +126,7 @@ public class NavX {
         // So, if there is no navX, there is no error - it just keeps trying to connect forever, so this
         // needs to be on a thread that can be killed if it doesn't connect in time ......
         // TODO: figure out the threading, error handling, and redundancy.
-        ahrs = new AHRS(SPI.Port.kMXP);
+        ahrs = new AHRS(AHRS.NavXComType.kMXP_SPI);
         try {
             // the reset starts a calibration process, so we want to make sure that finishes before we do
             // anything else, This is happening when the robot is first powered up, so this blocking any other
