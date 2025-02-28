@@ -111,9 +111,10 @@ public class A05TagTargetCommand extends A05DriveCommand {
         lastMode = null;
         canTarget = false;
         isFinished = false;
-
-        System.out.println("INVALID IRP ID: " + InferredRobotPosition.INVALID_IRP);
-        System.out.print("************************************************************************************");
+        if(A05Constants.getPrintDebug()) {
+            System.out.println("INVALID IRP ID: " + InferredRobotPosition.INVALID_IRP);
+            System.out.print("************************************************************************************");
+        }
     }
     /**
      * Executes the command, updating the inferred position and controlling robot movement based on targeting status.
@@ -134,7 +135,9 @@ public class A05TagTargetCommand extends A05DriveCommand {
 
     public void updateIRP() {
         inferredRobotPosition = InferredRobotPosition.getRobotPosition(tagSet);
-        System.out.println(inferredRobotPosition);
+        if(A05Constants.getPrintDebug()) {
+            System.out.println(inferredRobotPosition);
+        }
         // We don't need to do this unless we get new data, so it can stay in the if statement
         if(!InferredRobotPosition.isCachingPaused()) {
             // Don't update if caching is paused
