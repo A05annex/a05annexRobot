@@ -100,10 +100,6 @@ public class AutonomousPathCommand extends Command {
      */
     protected LclPathPoint pathPoint = null;
     /**
-     * The last {@link LclPathPoint} for the last call of {@link #execute()}
-     */
-    protected LclPathPoint lastPathPoint = null;
-    /**
      * Whether this command is finished. Because there are other commands that can be launched by this command, this
      * command does not finish until the end of the path is reached, and until those launched commands have lso finished.
      */
@@ -217,7 +213,6 @@ public class AutonomousPathCommand extends Command {
                     stopAndRunCommand.initialize();
                 }
             }
-            lastPathPoint = pathPoint;
         }
         if (A05Constants.getPrintDebug()) {
             System.out.println("AutonomousPathCommand.initializeRobotForPath() called for path '" +
@@ -277,18 +272,10 @@ public class AutonomousPathCommand extends Command {
      */
     @Override
     public void execute() {
-        // if a command is potentially taking control of the drive, test whether it is ready.
-        if ((null != takeDriveCommand) && !takeDriveCmdHasDriveControl) {
-            takeDriveCmdHasDriveControl = ((ICanTakeDrive)takeDriveCommand).canTakeDrive();
-        }
 
         if (null != stopAndRunCommand) {
             // There is an active stop-and-run command. Take the next step in that command.
             stopAndRunCommand.execute();
-
-        } else if ((null != takeDriveCommand) && takeDriveCmdHasDriveControl) {
-            // there is a targeting command that has drive control, run it.
-            takeDriveCommand.execute();
 
         } else {
             // get the path time: path time is a time along the path as though there were no stop-and-run
@@ -297,11 +284,25 @@ public class AutonomousPathCommand extends Command {
             // may be another scheduled action that needs to be queued, or pre emps te
             double pathTime = (System.currentTimeMillis() - startTime - accumulatedStopDuration) / 1000.0;
             if ((null != takeDriveCommand) && !takeDriveCmdHasDriveControl &&
-                    (pathTime > takeDriveCmdDefEndPathTime)) {
+                    (pathTime >= takeDriveCmdDefEndPathTime)) {
                 // This is a worst-case scenario - the robot has driven to the control point after targeting started,
                 // but the target has not been acquired. Force an end to the targeting command.
                 stopTakesDriveCommand(true);
             }
+            // if a command is potentially taking control of the drive, test whether it is ready.
+            if ((null != takeDriveCommand) && !takeDriveCmdHasDriveControl) {
+                takeDriveCmdHasDriveControl = ((ICanTakeDrive)takeDriveCommand).canTakeDrive();
+            }
+            if (takeDriveCmdHasDriveControl && (pathTime >= takeDriveCmdDefEndPathTime)) {
+                // The takeDriveCommand is still driving. We have run the path follower
+                // to the next control point, and do not want to go any further in path
+                // following, so we are just waiting for targeting to complete now.
+                takeDriveCommand.execute();
+                return;
+            }
+
+            // NOTE: we may be targeting, but we still need to path follow up to the control
+            // point so that we pick up any scheduled commands that may be started during targeting.
             pathPoint = getPointAt(pathTime);
             if (A05Constants.getPrintDebug()) {
                 System.out.println("AutonomousPathCommand.execute() get point at time: " + pathTime);
@@ -341,43 +342,50 @@ public class AutonomousPathCommand extends Command {
                             swerveDrive.swerveDriveComponents(0.0, 0.0, 0.0);
                             stopAndRunStartTime = System.currentTimeMillis();
                             stopAndRunCommand.initialize();
+                            // not path following again until this finishes.
                             return;
                         } else if (RobotActionType.RELINQUISH_DRIVE_TO_COMMAND == pathPoint.action().actionType) {
                             takeDriveCommand = command;
                             takeDriveCmdHasDriveControl = false;
                             takeDriveCmdStartTime = System.currentTimeMillis();
-                            takeDriveCmdDefEndPathTime = pathPoint.nextControlPt().getTime();
+                            // set this just short of the control point so we get the control point and possibly
+                            // stop and run command when path following restarts.
+                            takeDriveCmdDefEndPathTime = pathPoint.nextControlPt().getTime() - 0.05;
                             takeDriveCommand.initialize();
                         }
                     }
                 }
 
-                double forward = pathPoint.speedForward() / swerveDrive.getMaxMetersPerSec();
-                double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
-                // The expected heading is included in the PathPoint. The path point is the instantaneous
-                // speed and position that we want to be at when we go through the path point. So, we are
-                // actually telling the swerve drive what to do to get from this path point to the next
-                // path point. If the heading is not correct for this path point, then forward and strafe
-                // speeds are not in the right direction to get to the next path point.
-                //
-                // So here we have a heading PID error correction to try and keep us on path. The error is:
-                //     expected heading (pathPoint.fieldHeading()) -
-                //         actual robot heading (NavX.getInstance().getHeading())
-                // and we would like to correct this in several command cycles without introducing oscillation.
-                // 1 cycle time is 20ms, or .02sec -- or initial guess was 3 command cycles for correction, but
-                // that resulted in rotation oscillations typical of too high Kp in a PID loop, so we adjusted
-                // the guess targeting for a 12 cycle correction, so
-                //     error(radians) / (12 * .02sec) = radians/sec adjustment to the path rotation to
-                // correct the error.
-                double headingError = (pathPoint.fieldHeading().getRadians() -
-                        NavX.getInstance().getHeading().getRadians());
-                NavX.getInstance().setExpectedHeading(pathPoint.fieldHeading());
-//                double headingCorrection = headingError / (12.0 * 0.02);
-                double headingCorrection = headingError * A05Constants.getDriveOrientationKp();
-                double rotation = Utl.clip((pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec()) + headingCorrection, -1.0, 1.0);
-                swerveDrive.swerveDriveComponents(forward, strafe, rotation);
-
-                lastPathPoint = pathPoint;
+                if (takeDriveCmdHasDriveControl) {
+                    // there is a targeting command that has drive control, run it.
+                    takeDriveCommand.execute();
+                } else {
+                    // normal path following
+                    double forward = pathPoint.speedForward() / swerveDrive.getMaxMetersPerSec();
+                    double strafe = pathPoint.speedStrafe() / swerveDrive.getMaxMetersPerSec();
+                    // The expected heading is included in the PathPoint. The path point is the instantaneous
+                    // speed and position that we want to be at when we go through the path point. So, we are
+                    // actually telling the swerve drive what to do to get from this path point to the next
+                    // path point. If the heading is not correct for this path point, then forward and strafe
+                    // speeds are not in the right direction to get to the next path point.
+                    //
+                    // So here we have a heading PID error correction to try and keep us on path. The error is:
+                    //     expected heading (pathPoint.fieldHeading()) -
+                    //         actual robot heading (NavX.getInstance().getHeading())
+                    // and we would like to correct this in several command cycles without introducing oscillation.
+                    // 1 cycle time is 20ms, or .02sec -- or initial guess was 3 command cycles for correction, but
+                    // that resulted in rotation oscillations typical of too high Kp in a PID loop, so we adjusted
+                    // the guess targeting for a 12 cycle correction, so
+                    //     error(radians) / (12 * .02sec) = radians/sec adjustment to the path rotation to
+                    // correct the error.
+                    double headingError = (pathPoint.fieldHeading().getRadians() -
+                            NavX.getInstance().getHeading().getRadians());
+                    NavX.getInstance().setExpectedHeading(pathPoint.fieldHeading());
+//                    double headingCorrection = headingError / (12.0 * 0.02);
+                    double headingCorrection = headingError * A05Constants.getDriveOrientationKp();
+                    double rotation = Utl.clip((pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec()) + headingCorrection, -1.0, 1.0);
+                    swerveDrive.swerveDriveComponents(forward, strafe, rotation);
+                }
             }
         }
     }
