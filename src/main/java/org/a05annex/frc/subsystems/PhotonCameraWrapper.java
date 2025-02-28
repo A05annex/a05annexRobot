@@ -1,7 +1,6 @@
 package org.a05annex.frc.subsystems;
 
 import org.a05annex.frc.A05Constants;
-import org.a05annex.util.AngleD;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.photonvision.PhotonCamera;
@@ -27,12 +26,7 @@ public class PhotonCameraWrapper {
      * The height of the camera, in meters, above the ground
      */
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final double height;
-    /**
-     * The angle of the camera above the horizon
-     */
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final AngleD angle;
+    public final double xDisplacement, yDisplacement, headingAngle;
 
     // Latest frame, target, and frame with target
     private PhotonPipelineResult newestFrame = new PhotonPipelineResult();
@@ -50,14 +44,16 @@ public class PhotonCameraWrapper {
      * Creates a new PhotonCameraWrapper with the specified PhotonCamera object.
      *
      * @param camera The PhotonCamera object to wrap.
-     * @param height The height of the camera above the target
-     * @param angle The angle above the horizon of the camera
+     * @param xDisplacement The forward displacement of the camera, in meters, from the center of rotation
+     * @param yDisplacement The sideways displacement of the camera, in meters, from the center of rotation. Positive is to the right.
+     * @param headingAngle The angle of the camera, in degrees, from the front of the robot. Positive is clockwise.
      */
     @SuppressWarnings("unused")
-    public PhotonCameraWrapper(@NotNull PhotonCamera camera, double height, AngleD angle) {
+    public PhotonCameraWrapper(@NotNull PhotonCamera camera, double xDisplacement, double yDisplacement, double headingAngle) {
         this.camera = camera;
-        this.height = height;
-        this.angle = angle;
+        this.xDisplacement = xDisplacement;
+        this.yDisplacement = yDisplacement;
+        this.headingAngle = headingAngle;
 
         cameras.add(this);
     }

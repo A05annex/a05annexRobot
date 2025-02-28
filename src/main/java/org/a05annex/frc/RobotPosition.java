@@ -3,6 +3,7 @@ package org.a05annex.frc;
 import org.a05annex.frc.subsystems.PhotonCameraWrapper;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
+import org.a05annex.util.Utl;
 import org.jetbrains.annotations.NotNull;
 import org.photonvision.targeting.PhotonPipelineResult;
 
@@ -148,6 +149,9 @@ public class RobotPosition {
         double camX = camera.getXFromLastTarget(tagSet); // camera X is distance from target
         double camY = camera.getYFromLastTarget(tagSet); // camera Y is horizontal offset X
 
+        camX += camera.xDisplacement;
+        camY += camera.yDisplacement;
+
         AngleD headingDelta = navX.getHeadingInfo().getClosestHeading(tagSet.heading()).subtract(navX.getHeading()).cloneAngleD(); // Tag heading - current heading
 
         double[] output = solveForTruePositionTestMethod(camX, camY, headingDelta);
@@ -171,7 +175,7 @@ public class RobotPosition {
             hypotenuseAngle.add(AngleConstantD.DEG_180);
         }
 
-        double hypotenuse = Math.sqrt(Math.pow(camX, 2) + Math.pow(camY, 2));
+        double hypotenuse = Utl.length(camX, camY);
         double x = hypotenuseAngle.sin() * hypotenuse; // true X is distance from target
         double y = hypotenuseAngle.cos() * hypotenuse;
 
