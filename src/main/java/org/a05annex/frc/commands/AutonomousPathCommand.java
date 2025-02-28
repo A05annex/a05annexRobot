@@ -10,6 +10,7 @@ import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleUnit;
 import org.a05annex.util.Utl;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
+import org.a05annex.util.geo2d.KochanekBartelsSpline.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,19 +28,26 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("unused")
 public class AutonomousPathCommand extends Command {
 
+    // --------------------------------------------------------------------------------------------
+    // These are some static parameters set during the run of the command, and examined only for
+    // testing, to assure the cammand has operated as expected.
+
+    // --------------------------------------------------------------------------------------------
+
+
 
     /**
-     * This is a wrapper for a {@link KochanekBartelsSpline.PathPoint} that provides mirroring around Y for the path.
-     * It provides getter functions for the parameters in the {@link KochanekBartelsSpline.PathPoint} and performs
+     * This is a wrapper for a {@link PathPoint} that provides mirroring around Y for the path.
+     * It provides getter functions for the parameters in the {@link PathPoint} and performs
      * the mirroring functionality as required.
      */
-    protected static class PathPoint {
+    protected static class LclPathPoint {
 
         /**
-         * This is the {@link KochanekBartelsSpline.PathPoint} returned by the
-         * {@link KochanekBartelsSpline.PathFollower}.
+         * This is the {@link PathPoint} returned by the
+         * {@link PathFollower}.
          */
-        final KochanekBartelsSpline.PathPoint pathPoint;
+        final PathPoint pathPoint;
         /**
          * {@code true} if the path should be mirrored, {@code false} if the path should be run as specified.
          */
@@ -47,12 +55,12 @@ public class AutonomousPathCommand extends Command {
 
         /**
          * Instantiate a {@code PathPoint}.
-         * @param pathPoint The actual {@link KochanekBartelsSpline.PathPoint} returned by the
-         *              {@link KochanekBartelsSpline.PathFollower}.
+         * @param pathPoint The actual {@link PathPoint} returned by the
+         *              {@link PathFollower}.
          * @param mirror {@code true} if the path should be mirrored, {@code false} if the path should be run
          *                           as specified.
          */
-        PathPoint(KochanekBartelsSpline.PathPoint pathPoint, boolean mirror) {
+        LclPathPoint(PathPoint pathPoint, boolean mirror) {
             this.pathPoint = pathPoint;
             this.mirror = mirror;
         }
@@ -65,7 +73,9 @@ public class AutonomousPathCommand extends Command {
                     pathPoint.fieldHeading;
         }
 
-        KochanekBartelsSpline.RobotAction action() { return pathPoint.action; }
+        RobotAction action() { return pathPoint.action; }
+
+        ControlPoint nextControlPt() { return pathPoint.nextControlPoint; }
     }
     /**
      * The swerve drive
@@ -81,18 +91,18 @@ public class AutonomousPathCommand extends Command {
      */
     private final KochanekBartelsSpline spline;
     /**
-     * The {@link KochanekBartelsSpline.PathFollower} which accepts a time from start of the path and returns
-     * a {@link KochanekBartelsSpline.PathPoint}.
+     * The {@link PathFollower} which accepts a time from start of the path and returns
+     * a {@link PathPoint}.
      */
-    private KochanekBartelsSpline.PathFollower pathFollower;
+    private PathFollower pathFollower;
     /**
-     * The current {@link AutonomousPathCommand.PathPoint} for this call of {@link #execute()}
+     * The current {@link LclPathPoint} for this call of {@link #execute()}
      */
-    protected PathPoint pathPoint = null;
+    protected LclPathPoint pathPoint = null;
     /**
-     * The last {@link AutonomousPathCommand.PathPoint} for the last call of {@link #execute()}
+     * The last {@link LclPathPoint} for the last call of {@link #execute()}
      */
-    protected PathPoint lastPathPoint = null;
+    protected LclPathPoint lastPathPoint = null;
     /**
      * Whether this command is finished. Because there are other commands that can be launched by this command, this
      * command does not finish until the end of the path is reached, and until those launched commands have lso finished.
@@ -104,22 +114,36 @@ public class AutonomousPathCommand extends Command {
     private long startTime;
     /**
      * The start time for the current {@link #stopAndRunCommand}. When the current {@link #stopAndRunCommand}
-     * finishes, this is used to compute the duration of that command, which is added to {@link #stopAndRunDuration}
+     * finishes, this is used to compute the duration of that command, which is added to {@link #accumulatedStopDuration}
      */
     private long stopAndRunStartTime = 0;
     /**
      * The current <i>stop-and-run-command</i>, {@code null} if there is no current <i>stop-and-run-command</i>.
      */
     private Command stopAndRunCommand = null;
+
+    private Command takeDriveCommand = null;
+    private boolean takeDriveCmdHasDriveControl = false;
+    private long takeDriveCmdStartTime = 0;
     /**
-     * The time consumed by the <i>stop and run</i> commands. The time on the path is the<br>
-     * {@link System#currentTimeMillis()} - {@link #startTime} - {@code stopAndRunDuration}
+     * The path time the path following should restart after {@link RobotActionType#RELINQUISH_DRIVE_TO_COMMAND}
+     * ends. if it does not take control of the drive (the robot should be in at the curve control point, which
+     * is the expected location at the end of targeting), and path following should resume.
      */
-    protected long stopAndRunDuration = 0;
+    private double takeDriveCmdDefEndPathTime = 0.0;
+
+    /**
+     * The accumulated time that the robot has not been running the path because it is running other commands that
+     * take control of the drive for some period, and the robot must wait before
+     * path following resumes. The time on the path is the<br>
+     * ({@link System#currentTimeMillis()} - {@link #startTime} - {@code accumulatedStopDuration}) / 1000.0
+     */
+    protected long accumulatedStopDuration = 0;
 
     /**
      * {@code false} if the path should be followed as specified, {@code true} if X should be mirrored
-     * around the Y axis.
+     * around the Y axis. This is used when the red and black fields are mirrors of reach other rather
+     * that a 180&deg; rotation around field center.
      */
     protected boolean mirror = false;
 
@@ -151,8 +175,8 @@ public class AutonomousPathCommand extends Command {
         this.mirror = mirror;
     }
 
-    private PathPoint getPointAt(double time) {
-        return new PathPoint(pathFollower.getPointAt(time), mirror);
+    private LclPathPoint getPointAt(double time) {
+        return new LclPathPoint(pathFollower.getPointAt(time), mirror);
     }
 
     // Called when the command is initially scheduled.
@@ -184,9 +208,11 @@ public class AutonomousPathCommand extends Command {
             double rotation = (pathPoint.speedRotation() / swerveDrive.getMaxRadiansPerSec());
             swerveDrive.prepareForDriveComponents(forward, strafe, rotation);
             startTime = System.currentTimeMillis();
-            if ((null != pathPoint.action()) && (null != pathPoint.action().command) &&
-                    (KochanekBartelsSpline.RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action().actionType)) {
-                if (null != (stopAndRunCommand = instantiateActionCommand(pathPoint.action().command))) {
+            RobotAction robotAction = pathPoint.action();
+            if ((null != robotAction) && (RobotActionType.STOP_AND_RUN_COMMAND == robotAction.actionType)) {
+                Command command;
+                if (null != (command = instantiateActionCommand(robotAction))) {
+                    stopAndRunCommand = command;
                     stopAndRunStartTime = System.currentTimeMillis();
                     stopAndRunCommand.initialize();
                 }
@@ -201,14 +227,48 @@ public class AutonomousPathCommand extends Command {
 
     /**
      * Instantiate the action command.
-     * @param commandClassName The command class name, assumed to be in the {@code frc.robot.commands}
-     *                         package, and has a no argument constructor.
+     * @param robotAction The {@link RobotAction} description for the action to be performed. The command assumed to
+     *                    be in the {@code frc.robot.commands} package, and has a constructor with an argument
+     *                    constructor signature that matches that specified in the description.
      * @return Returns the instantiated command, or {@code null} if the command could not be instantiated.
      */
-    private Command instantiateActionCommand(@NotNull String commandClassName) {
+    private Command instantiateActionCommand(@NotNull RobotAction robotAction) {
+        String commandClassName = robotAction.getCommand();
+        if (null == commandClassName) {
+            return null;
+        }
         String commandClass = "frc.robot.commands." + commandClassName;
-        Command command = Utl.instantiateObjectFromName(Command.class, commandClass);
+        Command command = Utl.instantiateObjectFromName(Command.class, commandClass,
+                robotAction.getArgTypeArray(), robotAction.getArgValueArray());
+        if (null != command) {
+            if (RobotActionType.RELINQUISH_DRIVE_TO_COMMAND == robotAction.actionType) {
+                if (!(command instanceof ICanTakeDrive)) {
+                    System.out.println("***************************************************************************");
+                    System.out.println("*** Command '" + commandClass);
+                    System.out.println("***   cannot be run because it does not implement ICanTakeDrive");
+                    System.out.println("***************************************************************************");
+                    command = null;
+                }
+            }
+        }
         return command;
+    }
+
+    /**
+     *
+     * @param interrupted
+     */
+    private void stopTakesDriveCommand(boolean interrupted) {
+        takeDriveCommand.end(interrupted);
+        long now = System.currentTimeMillis();
+        accumulatedStopDuration += now - startTime - (long)(1000.0 * takeDriveCmdDefEndPathTime);
+        // now set everything back to defaults for takesDriveAction
+        takeDriveCommand = null;
+        takeDriveCmdHasDriveControl = false;
+        takeDriveCmdStartTime = 0;
+        takeDriveCmdDefEndPathTime = 0.0;
+        // assume targeting has the robot at the next control point location and
+        // heading, so there is no more to do here.
     }
 
     /**
@@ -217,15 +277,31 @@ public class AutonomousPathCommand extends Command {
      */
     @Override
     public void execute() {
+        // if a command is potentially taking control of the drive, test whether it is ready.
+        if ((null != takeDriveCommand) && !takeDriveCmdHasDriveControl) {
+            takeDriveCmdHasDriveControl = ((ICanTakeDrive)takeDriveCommand).canTakeDrive();
+        }
+
         if (null != stopAndRunCommand) {
             // There is an active stop-and-run command. Take the next step in that command.
             stopAndRunCommand.execute();
 
+        } else if ((null != takeDriveCommand) && takeDriveCmdHasDriveControl) {
+            // there is a targeting command that has drive control, run it.
+            takeDriveCommand.execute();
+
         } else {
             // get the path time: path time is a time along the path as though there were no stop-and-run
             // commands. The duration of any stop-and-run commands is tracked and subtracted to get the
-            // actual path time.
-            double pathTime = (System.currentTimeMillis() - startTime - stopAndRunDuration) / 1000.0;
+            // actual path time. OK, we are doing this even if there is a takesDrive command because there
+            // may be another scheduled action that needs to be queued, or pre emps te
+            double pathTime = (System.currentTimeMillis() - startTime - accumulatedStopDuration) / 1000.0;
+            if ((null != takeDriveCommand) && !takeDriveCmdHasDriveControl &&
+                    (pathTime > takeDriveCmdDefEndPathTime)) {
+                // This is a worst-case scenario - the robot has driven to the control point after targeting started,
+                // but the target has not been acquired. Force an end to the targeting command.
+                stopTakesDriveCommand(true);
+            }
             pathPoint = getPointAt(pathTime);
             if (A05Constants.getPrintDebug()) {
                 System.out.println("AutonomousPathCommand.execute() get point at time: " + pathTime);
@@ -235,28 +311,44 @@ public class AutonomousPathCommand extends Command {
                 isFinished = true;
                 swerveDrive.swerveDriveComponents(0.0, 0.0, 0.0);
             } else {
-                // for 2022 Rapid React we have added scheduled actions and stop-and-run actions. This makes this
+                // for 2022 Rapid React, we have added scheduled actions and stop-and-run actions. This makes this
                 // command very much like a wpilib CommandGroup action. The interesting thing about this action
                 // that it gets all its sequencing from the path file - which was built without access to the
                 // actual code and commands that may be scheduled or stop_and_run. These commands are instantiated
-                // by reflection, so only the name of the command is required during path planning.
-                Command command;
-                if ((null != pathPoint.action()) && (null != pathPoint.action().command) &&
-                        (null != (command = instantiateActionCommand(pathPoint.action().command)))) {
-                    // OK, we've instantiated the command, now either schedule it, or run it inside this command.
-                    if (KochanekBartelsSpline.RobotActionType.SCHEDULE_COMMAND == pathPoint.action().actionType) {
-                        // this one is really simple - we just schedule the command, and it happens in
-                        // parallel with path following.
-                        CommandScheduler.getInstance().schedule(command);
-                    } else if (KochanekBartelsSpline.RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action().actionType) {
-                        // this is a bit more complicated, we are going to run the command inside this command,
-                        // then resume path following when this command completes. So we assume the robot is stopped,
-                        //that we know the start time of the command, and that the command is initialized.
-                        stopAndRunCommand = command;
-                        swerveDrive.swerveDriveComponents(0.0, 0.0, 0.0);
-                        stopAndRunStartTime = System.currentTimeMillis();
-                        stopAndRunCommand.initialize();
-                        return;
+                // by reflection, so only the name of the command and the argument type/value list is required during
+                // path planning.
+                //
+                // for 2025 REEFSCAPE, we have added scheduled actions that can take control of the swerve drive
+                // for targeting. This is a bit more complicated because target acquisition can be significantly
+                // affected by game venue conditions. So we need an implementation that will do something reasonable
+                // if the target cannot be acquired, and provides leeway in when the target is acquired. These commands
+                // must implement ICanTakeDrive.
+                RobotAction robotAction = pathPoint.action();
+                if (null != robotAction) {
+                    Command command;
+                    if (null != (command = instantiateActionCommand(robotAction))) {
+                        // OK, we've instantiated the command, now either schedule it, or run it inside this command.
+                        if (RobotActionType.SCHEDULE_COMMAND == pathPoint.action().actionType) {
+                            // this one is really simple - we just schedule the command, and it happens in
+                            // parallel with path following.
+                            CommandScheduler.getInstance().schedule(command);
+                        } else if (RobotActionType.STOP_AND_RUN_COMMAND == pathPoint.action().actionType) {
+                            // we are concerned about the increment interval creating a situation
+                            // this is a bit more complicated, we are going to run the command inside this command,
+                            // then resume path following when this command completes. So we assume the robot is stopped,
+                            //that we know the start time of the command, and that the command is initialized.
+                            stopAndRunCommand = command;
+                            swerveDrive.swerveDriveComponents(0.0, 0.0, 0.0);
+                            stopAndRunStartTime = System.currentTimeMillis();
+                            stopAndRunCommand.initialize();
+                            return;
+                        } else if (RobotActionType.RELINQUISH_DRIVE_TO_COMMAND == pathPoint.action().actionType) {
+                            takeDriveCommand = command;
+                            takeDriveCmdHasDriveControl = false;
+                            takeDriveCmdStartTime = System.currentTimeMillis();
+                            takeDriveCmdDefEndPathTime = pathPoint.nextControlPt().getTime();
+                            takeDriveCommand.initialize();
+                        }
                     }
                 }
 
@@ -288,9 +380,7 @@ public class AutonomousPathCommand extends Command {
                 lastPathPoint = pathPoint;
             }
         }
-
     }
-
 
     /**
      * <p>
@@ -314,7 +404,7 @@ public class AutonomousPathCommand extends Command {
                 stopAndRunCommand.end(false);
                 long now = System.currentTimeMillis();
                 long duration = now - stopAndRunStartTime;
-                stopAndRunDuration += duration;
+                accumulatedStopDuration += duration;
                 stopAndRunCommand = null;
                 stopAndRunStartTime = 0;
                 // I'm going to assume that if we stop to do something it may involve rotation to aim
@@ -329,6 +419,10 @@ public class AutonomousPathCommand extends Command {
                 } catch (InterruptedException e) {
                     // do nothing here, it means the sleep was interrupted.
                 }
+            }
+        } else if ((null != takeDriveCommand) && takeDriveCmdHasDriveControl) {
+            if (takeDriveCommand.isFinished()) {
+                stopTakesDriveCommand(false);
             }
         }
         if (A05Constants.getPrintDebug() && isFinished) {
@@ -345,8 +439,10 @@ public class AutonomousPathCommand extends Command {
      */
     @Override
     public void end(boolean interrupted) {
-        if (interrupted && (null != stopAndRunCommand)) {
-            stopAndRunCommand.end(true);
+        if (null != stopAndRunCommand) {
+            stopAndRunCommand.end(interrupted);
+        } else if (null != takeDriveCommand) {
+            takeDriveCommand.end(interrupted);
         }
         swerveDrive.swerveDriveComponents(0, 0, 0);
         if (A05Constants.getPrintDebug()) {

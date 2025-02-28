@@ -1,4 +1,4 @@
-* **version:** 2024.2.7
+* **version:** 2025.0.1
 * **status:** first used for FRC **2023 Charged Up**
 * **comments:** This code was extracted from our 2022 code base to provide a stable and growing code
   base to jump start future years.
@@ -22,6 +22,12 @@ the robot response to their favorite game).
         configurations settings into the sparkMax, changes eliminating SmartMotion and introducing
         MAXMotion for either position or RPM control.
        </li>
+     </ul>
+   </li>
+   <li> 2025.0.1 - Support for adding an autonomous command that takes drive control from the autonomous path
+     follower to use targeting (vision) capability to autonomously position and scare, and leave the robot in a
+     known position for autonomous path following to continue:
+     <ul>
      </ul>
    </li>
   </ul>
