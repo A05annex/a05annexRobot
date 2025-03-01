@@ -22,7 +22,8 @@
       "robotActionCommand": "DummyScheduledCommand",
       "robotActionType": "Scheduled",
       "robotActionDuration": -1.0,
-      "robotScheduledActionTime": 2.3500000000000005
+      "robotScheduledActionTime": 2.3500000000000005,
+      "robotActionArgs": []
     }
   ],
   "title": "untitled",
@@ -62,7 +63,8 @@
         "robotActionCommand": "DummyStopAndRunCommand",
         "robotActionType": "StopAndRun",
         "robotActionDuration": 0.2,
-        "robotScheduledActionTime": -1.0
+        "robotScheduledActionTime": -1.0,
+        "robotActionArgs": []
       },
       "derivativesEdited": true
     },

@@ -353,7 +353,7 @@ public class AutonomousPathCommand extends Command {
                             takeDriveCmdStartTime = System.currentTimeMillis();
                             // set this just short of the control point so we get the control point and possibly
                             // stop and run command when path following restarts.
-                            takeDriveCmdDefEndPathTime = pathPoint.nextControlPt().getTime() - 0.05;
+                            takeDriveCmdDefEndPathTime = pathPoint.nextControlPt().getTime();
                             takeDriveCommand.initialize();
                         }
                     }
