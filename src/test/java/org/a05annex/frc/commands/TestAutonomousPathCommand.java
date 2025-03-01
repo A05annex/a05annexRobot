@@ -39,7 +39,7 @@ public class TestAutonomousPathCommand {
      *  account for the code being run in the project test filesystem rather than on the Roborio file
      *  system.
      */
-    static class TestAutonomousPath extends A05Constants.AutonomousPath {
+    public static class TestAutonomousPath extends A05Constants.AutonomousPath {
 
         public TestAutonomousPath(@NotNull String pathName, int id, @NotNull String filename) {
             super(pathName, id, filename);
@@ -74,7 +74,7 @@ public class TestAutonomousPathCommand {
      * so things are running as on the robot (without a real driver station to connect to, the scheduler decides
      * the robot is disabled, and will not schedule anything.
      */
-    class ExtendedAutonomousPathCommand extends AutonomousPathCommand {
+    public static class ExtendedAutonomousPathCommand extends AutonomousPathCommand {
 
         /**
          * Constructor for the {@code AutonomousPathCommand}.
@@ -99,8 +99,8 @@ public class TestAutonomousPathCommand {
         }
     }
 
-    private static final double TEST_DRIVE_LENGTH = 0.5969;
-    private static final double TEST_DRIVE_WIDTH = 0.5969;
+    public static final double TEST_DRIVE_LENGTH = 0.5969;
+    public static final double TEST_DRIVE_WIDTH = 0.5969;
 
     /**
      *

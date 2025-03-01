@@ -8,21 +8,34 @@ import edu.wpi.first.wpilibj2.command.Command;
  */
 public class DummyStopAndRunCommand extends Command {
 
-    public static final long STOP_AND_RUN_DURATION = 2000;
+    public static long STOP_AND_RUN_DURATION = 2000;
     public static int instantiationCt = 0;
     public static int initializationCt = 0;
     public static int endCt = 0;
     public static long stopAndRunDuration = 0;
     public static int executeCt = 0;
 
-
     final private long startTime = System.currentTimeMillis();
-    final private long endTime = startTime + STOP_AND_RUN_DURATION;
+    final private long endTime;
 
     public DummyStopAndRunCommand() {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
+        endTime = startTime + STOP_AND_RUN_DURATION;
+        System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("          '%s':  ends at %d%n", this.getClass().getName(), endTime);
+        synchronized (DummyStopAndRunCommand.class) {
+            instantiationCt += 1;
+            stopAndRunDuration += STOP_AND_RUN_DURATION;
+        }
+    }
+    public DummyStopAndRunCommand(long duration) {
+        // each subsystem used by the command must be passed into the
+        // addRequirements() method (which takes a vararg of Subsystem)
+        addRequirements();
+        STOP_AND_RUN_DURATION = duration;
+        endTime = startTime + STOP_AND_RUN_DURATION;
         System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
         System.out.printf("          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {

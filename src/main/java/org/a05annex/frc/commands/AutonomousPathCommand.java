@@ -30,8 +30,8 @@ public class AutonomousPathCommand extends Command {
 
     // --------------------------------------------------------------------------------------------
     // These are some static parameters set during the run of the command, and examined only for
-    // testing, to assure the cammand has operated as expected.
-
+    // testing, to assure the command has operated as expected.
+    public static int invalidCommandCt = 0;
     // --------------------------------------------------------------------------------------------
 
 
@@ -245,6 +245,9 @@ public class AutonomousPathCommand extends Command {
                     command = null;
                 }
             }
+        }
+        if (null == command) {
+            invalidCommandCt++;
         }
         return command;
     }
