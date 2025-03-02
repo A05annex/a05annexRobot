@@ -96,11 +96,6 @@ public class NavX {
     private final AngleD refRoll = new AngleD(AngleD.ZERO);
 
     /**
-     * The actual field heading of the robot at the time the NavX in initialized.
-     */
-    private final AngleD refHeading = new AngleD(AngleD.ZERO);
-
-    /**
      * {@code true} if the fused heading should be reported in the {@link HeadingInfo}, {@code false} otherwise.
      */
     boolean includeFusedHeading = false;
@@ -169,13 +164,15 @@ public class NavX {
         // heading was 0.0 at initialization. In this case we are initializing to some other heading.
         refPitch.setDegrees(ahrs.getPitch());
         refRoll.setDegrees(ahrs.getRoll());
-        refHeading.setValue(heading);
         // reset the Yaw gyro to read 0.0
         ahrs.reset();
         // set the adjustment angle so the ahrs.getAngle() will return the specified heading
         // in the current NavX board position.
+        // Reset the adjustment angle to 0.0 so we don't accumulate adjustments
+        double preResetAdjustment = ahrs.getAngleAdjustment();
+        ahrs.setAngleAdjustment(0.0);
+        // now reset the adjustment angle to provide the right heading
         AngleD adjustmentAngle = new AngleD(AngleUnit.DEGREES, ahrs.getAngle() - heading.getDegrees());
-
         ahrs.setAngleAdjustment(adjustmentAngle.getDegrees());
 
 //        double reportedHeading = ahrs.getAngle();
@@ -187,10 +184,19 @@ public class NavX {
 //            adjustmentAngle.add(AngleConstantD.TWO_PI);
 //            ahrs.setAngleAdjustment(adjustmentAngle.getDegrees());
 //        }
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("*************************************************************************************");
+            System.out.println("**** NavX.initializeHeadingAndNav() called:");
+            System.out.println("****   NavX adjustment before initialization: " + preResetAdjustment + "degrees");
+            System.out.println("****   initializing for robot heading: " + heading.getDegrees() + "degrees");
+            System.out.println("****   calculated adjustment angle: " + adjustmentAngle.getDegrees() + "degrees");
+            System.out.println("****   NavX adjustment angle after set:" + ahrs.getAngleAdjustment() + "degrees");
+            System.out.println("*************************************************************************************");
+        }
 
 
         // Set the expected heading to the specified initialize heading
-        expectedHeading.setValue(refHeading);
+        expectedHeading.setValue(heading);
     }
 
     /**

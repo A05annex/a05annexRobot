@@ -18,7 +18,7 @@ public class DummyTakesDriveCommand extends Command implements ICanTakeDrive {
     public DummyTakesDriveCommand() {
         this.cyclesBeforeTakeDrive = 0;
         this.cyclesToTarget = 50;
-        System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         synchronized (DummyTakesDriveCommand.class) {
             instantiationCt += 1;
         }
@@ -26,7 +26,7 @@ public class DummyTakesDriveCommand extends Command implements ICanTakeDrive {
     public DummyTakesDriveCommand(Integer cyclesBeforeTakeDrive, Integer cyclesToTarget) {
         this.cyclesBeforeTakeDrive = cyclesBeforeTakeDrive;
         this.cyclesToTarget = cyclesToTarget;
-        System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         synchronized (DummyTakesDriveCommand.class) {
             instantiationCt += 1;
         }

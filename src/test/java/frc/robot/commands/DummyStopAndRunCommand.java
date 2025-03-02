@@ -23,8 +23,8 @@ public class DummyStopAndRunCommand extends Command {
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
         endTime = startTime + STOP_AND_RUN_DURATION;
-        System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
-        System.out.printf("          '%s':  ends at %d%n", this.getClass().getName(), endTime);
+        System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("****          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
             stopAndRunDuration += STOP_AND_RUN_DURATION;
@@ -36,8 +36,8 @@ public class DummyStopAndRunCommand extends Command {
         addRequirements();
         STOP_AND_RUN_DURATION = duration;
         endTime = startTime + STOP_AND_RUN_DURATION;
-        System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
-        System.out.printf("          '%s':  ends at %d%n", this.getClass().getName(), endTime);
+        System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("****          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
             stopAndRunDuration += STOP_AND_RUN_DURATION;

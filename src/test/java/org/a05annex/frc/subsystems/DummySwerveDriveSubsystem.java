@@ -2,6 +2,7 @@ package org.a05annex.frc.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.a05annex.frc.A05Constants;
 import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
@@ -134,8 +135,10 @@ public class DummySwerveDriveSubsystem extends SubsystemBase implements ISwerveD
     @Override
     public void prepareForDriveComponents(double forward, double strafe, double rotation) {
         testGeometryIsSet();
-        System.out.printf("prepareForDriveComponents:  %d %10.3f %10.3f %10.3f%n", System.currentTimeMillis(),
-                forward, strafe, rotation);
+        if (A05Constants.getPrintDebug()) {
+            System.out.printf("**** prepareForDriveComponents:  %d %10.3f %10.3f %10.3f%n", System.currentTimeMillis(),
+                    forward, strafe, rotation);
+        }
     }
 
     @Override

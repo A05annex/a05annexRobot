@@ -22,7 +22,7 @@ public class DummyScheduledCommand extends Command {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
-        System.out.printf("Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         synchronized (DummyScheduledCommand.class) {
             instantiationCt += 1;
         }

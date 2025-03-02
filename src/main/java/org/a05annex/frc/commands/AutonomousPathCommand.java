@@ -181,9 +181,14 @@ public class AutonomousPathCommand extends Command {
         pathFollower = spline.getPathFollower();
         startTime = System.currentTimeMillis();
         isFinished = false;
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("**************************************************************************************");
+            System.out.println("**** AutonomousPathCommand.initialize() called for path '" + path.getName() + "'");
+            System.out.println("**** swerveDrive: " + swerveDrive.getClass().getCanonicalName());
+        }
         initializeRobotForPath();
         if (A05Constants.getPrintDebug()) {
-            System.out.println("AutonomousPathCommand.initialize() called for path '" + path.getName() + "'");
+            System.out.println("**************************************************************************************");
         }
     }
     /**
@@ -196,6 +201,10 @@ public class AutonomousPathCommand extends Command {
      * </ul>
      */
     public void initializeRobotForPath() {
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("**** AutonomousPathCommand.initializeRobotForPath() called for path '" +
+                    path.getName() + "'");
+        }
         pathPoint = getPointAt(0.0);
         if (pathPoint.pathPoint != null) {
             NavX.getInstance().initializeHeadingAndNav(pathPoint.fieldHeading());
@@ -215,8 +224,7 @@ public class AutonomousPathCommand extends Command {
             }
         }
         if (A05Constants.getPrintDebug()) {
-            System.out.println("AutonomousPathCommand.initializeRobotForPath() called for path '" +
-                    path.getName() + "'");
+            System.out.println("**** Field heading: " + pathPoint.fieldHeading().getDegrees() + "degrees");
         }
     }
 
@@ -233,6 +241,10 @@ public class AutonomousPathCommand extends Command {
             return null;
         }
         String commandClass = "frc.robot.commands." + commandClassName;
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("**************************************************************************************");
+            System.out.println("**** Attempting to instantiate robot action: " + commandClass);
+        }
         Command command = Utl.instantiateObjectFromName(Command.class, commandClass,
                 robotAction.getArgTypeArray(), robotAction.getArgValueArray());
         if (null != command) {
@@ -249,6 +261,10 @@ public class AutonomousPathCommand extends Command {
         if (null == command) {
             invalidCommandCt++;
         }
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("**** Instantiation " + ((null == command)?"failed":"successful"));
+            System.out.println("**************************************************************************************");
+        }
         return command;
     }
 
@@ -257,6 +273,16 @@ public class AutonomousPathCommand extends Command {
      * @param interrupted
      */
     private void stopTakesDriveCommand(boolean interrupted) {
+        if (A05Constants.getPrintDebug()) {
+            System.out.println("**************************************************************************************");
+            System.out.println("**** AutonomousPathCommand.stopTakesDriveCommand():");
+            System.out.println("****   command: " + takeDriveCommand.getClass().getCanonicalName());
+            System.out.println("****   " + (interrupted?"The command is being forced to end.":
+                    "The command has reported it is finished."));
+            System.out.println("****   " + (takeDriveCmdHasDriveControl?"The command has taken drive control":
+                    "THIS COMMAND NEVER TOOK CONTROL OF THE DRIVE"));
+            System.out.println("**************************************************************************************");
+        }
         takeDriveCommand.end(interrupted);
         long now = System.currentTimeMillis();
         accumulatedStopDuration += now - startTime - (long)(1000.0 * takeDriveCmdDefEndPathTime);
@@ -295,6 +321,13 @@ public class AutonomousPathCommand extends Command {
             // if a command is potentially taking control of the drive, test whether it is ready.
             if ((null != takeDriveCommand) && !takeDriveCmdHasDriveControl) {
                 takeDriveCmdHasDriveControl = ((ICanTakeDrive)takeDriveCommand).canTakeDrive();
+                if (A05Constants.getPrintDebug() && takeDriveCmdHasDriveControl) {
+                    System.out.println("**************************************************************************************");
+                    System.out.println("**** AutonomousPathCommand.execute():");
+                    System.out.println("****   command: " + takeDriveCommand.getClass().getCanonicalName());
+                    System.out.println("****   This command has just TAKEN CONTROL of the drive");
+                    System.out.println("**************************************************************************************");
+                }
             }
             if (takeDriveCmdHasDriveControl && (pathTime >= takeDriveCmdDefEndPathTime)) {
                 // The takeDriveCommand is still driving. We have run the path follower

@@ -2,7 +2,8 @@ package frc.robot.commands;
 
 /**
  * This is a class that does not extend {@link edu.wpi.first.wpilibj2.command.Command}, but
- * will be instantiated in a test as though it is a command.
+ * will be instantiated in an autonomous path test as though it is a command. This is to
+ * test that the error handling works as expected.
  */
 public class NotCommand {
     public static int instantiationCt = 0;

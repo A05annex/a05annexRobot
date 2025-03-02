@@ -17,7 +17,7 @@ public class TestShortTakesDrive {
     @DisplayName("Test AutonomousPathCommand - short takes drive command")
     void test_shortTakesDriveCommand() {
         A05Constants.setPrintDebug(true);
-        TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath("test path",
+        TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath("Test Takes-Drive ending before control pt time",
                 0, "./src/test/resources/paths/TakesDriveCmdShortTest.json");
         // instantiate the AutonomousPathCommand with the test path and the DummySwerveDriveSubsystem,
         // get a scheduler and schedule the Autonomous
