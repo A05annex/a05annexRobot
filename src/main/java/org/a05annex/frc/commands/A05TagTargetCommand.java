@@ -16,7 +16,7 @@ import java.util.function.DoubleFunction;
  * Command that controls the robot to reach a specified target position using AprilTags for localization.
  */
 @SuppressWarnings("unused")
-public class A05TagTargetCommand extends A05DriveCommand {
+public class A05TagTargetCommand extends A05DriveCommand implements ICanTakeDrive{
     /**
      * The radius (in meters) where the robot begins to slow down as it approaches the target.
      */
@@ -124,7 +124,7 @@ public class A05TagTargetCommand extends A05DriveCommand {
         updateIRP();
 
         // Does all checks to verify that data is valid and good to target with.
-        verifyOkToTarget();
+        canTarget = verifyOkToTarget();
 
         // Performs all actual drive calculations and calls methods that run the motors
         calculateThenDrive();
@@ -165,17 +165,18 @@ public class A05TagTargetCommand extends A05DriveCommand {
      * Validates if targeting is allowed based on the validity of the inferred position.
      * If the inferred position is invalid, targeting is disabled by setting the canTarget flag.
      */
-    protected void verifyOkToTarget() {
+    protected boolean verifyOkToTarget() {
         if(!inferredRobotPosition.isValid && !InferredRobotPosition.isCachingPaused()) {
             if(driveXbox == null) {
                 isFinished = true;
-                return;
+                return false;
             }
             currentMode = MODE.WAITING_FOR_TARGET;
-            return;
+            return false;
         }
 
-        canTarget = true;
+        //canTarget = true;
+        return true;
     }
     /**
      * Calculates and applies driving commands based on the current mode and targeting data.
@@ -313,6 +314,12 @@ public class A05TagTargetCommand extends A05DriveCommand {
         }
         return MODE.WAITING_FOR_TARGET;
     }
+
+    @Override
+    public boolean canTakeDrive() {
+        return verifyOkToTarget();
+    }
+
     /**
      * Defines modes for adjusting robot speed based on its distance to the target.
      * These modes transition based on distance thresholds.

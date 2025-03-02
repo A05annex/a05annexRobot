@@ -174,7 +174,21 @@ public class NavX {
         ahrs.reset();
         // set the adjustment angle so the ahrs.getAngle() will return the specified heading
         // in the current NavX board position.
-        ahrs.setAngleAdjustment(heading.getDegrees() - ahrs.getAngle());
+        AngleD adjustmentAngle = new AngleD(AngleUnit.DEGREES, ahrs.getAngle() - heading.getDegrees());
+
+        ahrs.setAngleAdjustment(adjustmentAngle.getDegrees());
+
+//        double reportedHeading = ahrs.getAngle();
+//
+//        if(reportedHeading - heading.getDegrees() > 180) {
+//            adjustmentAngle.subtract(AngleConstantD.TWO_PI);
+//            ahrs.setAngleAdjustment(adjustmentAngle.getDegrees());
+//        } else if(heading.getDegrees() - reportedHeading > 180) {
+//            adjustmentAngle.add(AngleConstantD.TWO_PI);
+//            ahrs.setAngleAdjustment(adjustmentAngle.getDegrees());
+//        }
+
+
         // Set the expected heading to the specified initialize heading
         expectedHeading.setValue(refHeading);
     }
