@@ -165,11 +165,12 @@ public class NavX {
         refPitch.setDegrees(ahrs.getPitch());
         refRoll.setDegrees(ahrs.getRoll());
         // reset the Yaw gyro to read 0.0
+        double preResetNavxHeading = ahrs.getAngle();
+        double preResetAdjustment = ahrs.getAngleAdjustment();
         ahrs.reset();
         // set the adjustment angle so the ahrs.getAngle() will return the specified heading
         // in the current NavX board position.
         // Reset the adjustment angle to 0.0 so we don't accumulate adjustments
-        double preResetAdjustment = ahrs.getAngleAdjustment();
         ahrs.setAngleAdjustment(0.0);
         // now reset the adjustment angle to provide the right heading
         AngleD adjustmentAngle = new AngleD(AngleUnit.DEGREES, ahrs.getAngle() - heading.getDegrees());
@@ -187,7 +188,8 @@ public class NavX {
         if (A05Constants.getPrintDebug()) {
             System.out.println("*************************************************************************************");
             System.out.println("**** NavX.initializeHeadingAndNav() called:");
-            System.out.println("****   NavX adjustment before initialization: " + preResetAdjustment + "degrees");
+            System.out.println("****   Pre reset NavX heading: " + preResetNavxHeading + "degrees");
+            System.out.println("****   Pre reset NavX adjustment: " + preResetAdjustment + "degrees");
             System.out.println("****   initializing for robot heading: " + heading.getDegrees() + "degrees");
             System.out.println("****   calculated adjustment angle: " + adjustmentAngle.getDegrees() + "degrees");
             System.out.println("****   NavX adjustment angle after set:" + ahrs.getAngleAdjustment() + "degrees");

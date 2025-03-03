@@ -109,18 +109,27 @@ public class AutonomousPathCommand extends Command {
      */
     private long startTime;
     /**
-     * The start time for the current {@link #stopAndRunCommand}. When the current {@link #stopAndRunCommand}
-     * finishes, this is used to compute the duration of that command, which is added to {@link #accumulatedStopDuration}
-     */
-    private long stopAndRunStartTime = 0;
-    /**
-     * The current <i>stop-and-run-command</i>, {@code null} if there is no current <i>stop-and-run-command</i>.
+     * The current {@link RobotActionType#STOP_AND_RUN_COMMAND}, {@code null} if there is no current <i>stop-and-run-command</i>.
      */
     private Command stopAndRunCommand = null;
+    /**
+     * The start time for the current {@link RobotActionType#STOP_AND_RUN_COMMAND}. When the current
+     * {@link RobotActionType#STOP_AND_RUN_COMMAND} finishes, this is used to compute the duration of that
+     * command, which is added to {@link #accumulatedStopDuration}
+     */
+    private long stopAndRunStartTime = 0;
 
+    /**
+     * The current {@link RobotActionType#RELINQUISH_DRIVE_TO_COMMAND}, {@code null} if there is no
+     * current <i>relinquish-drive-to</i> command.
+     */
     private Command takeDriveCommand = null;
+    /**
+     * Has the current {@link #takeDriveCommand} taken control of the drive.
+     */
     private boolean takeDriveCmdHasDriveControl = false;
     private long takeDriveCmdStartTime = 0;
+
     /**
      * The path time the path following should restart after {@link RobotActionType#RELINQUISH_DRIVE_TO_COMMAND}
      * ends. if it does not take control of the drive (the robot should be in at the curve control point, which
