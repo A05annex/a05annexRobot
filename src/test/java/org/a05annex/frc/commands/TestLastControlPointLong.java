@@ -22,6 +22,7 @@ public class TestLastControlPointLong {
     @Test
     @DisplayName("Test AutonomousPathCommand - last control point - long")
     void test_TakesDriveCmdLastCtrlPointLong() {
+        AutonomousPathCommand.invalidCommandCt = 0;
         A05Constants.setPrintDebug(true);
         TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath("test path",
                 0, "./src/test/resources/paths/TakeDriveCmdLastCtrlPtLongTest.json");

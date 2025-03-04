@@ -108,6 +108,7 @@ public class TestAutonomousPathCommand {
     @Test
     @DisplayName("Test AutonomousPathCommand")
     void test_autonomousPathCommand() {
+        DummyScheduledCommand.executeCt = 0;
         TestAutonomousPath testPath = new TestAutonomousPath("test path",
                 0, "./src/test/resources/paths/AutonomousPathCommandTest.json");
         // instantiate the AutonomousPathCommand with the test path and the DummySwerveDriveSubsystem,

@@ -168,6 +168,7 @@ public class NavX {
         double preResetNavxHeading = ahrs.getAngle();
         double preResetAdjustment = ahrs.getAngleAdjustment();
         ahrs.reset();
+        double postResetNavxHeading = ahrs.getAngle();
         // set the adjustment angle so the ahrs.getAngle() will return the specified heading
         // in the current NavX board position.
         // Reset the adjustment angle to 0.0 so we don't accumulate adjustments
@@ -188,11 +189,13 @@ public class NavX {
         if (A05Constants.getPrintDebug()) {
             System.out.println("*************************************************************************************");
             System.out.println("**** NavX.initializeHeadingAndNav() called:");
+            System.out.println("****   initializing for robot heading: " + heading.getDegrees() + "degrees");
             System.out.println("****   Pre reset NavX heading: " + preResetNavxHeading + "degrees");
             System.out.println("****   Pre reset NavX adjustment: " + preResetAdjustment + "degrees");
-            System.out.println("****   initializing for robot heading: " + heading.getDegrees() + "degrees");
+            System.out.println("****   Post reset NavX heading: " + postResetNavxHeading + "degrees");
             System.out.println("****   calculated adjustment angle: " + adjustmentAngle.getDegrees() + "degrees");
-            System.out.println("****   NavX adjustment angle after set:" + ahrs.getAngleAdjustment() + "degrees");
+            System.out.println("****   NavX adjustment angle after set: " + ahrs.getAngleAdjustment() + "degrees");
+            System.out.println("****   NavX heading after set: " + ahrs.getAngle() + "degrees");
             System.out.println("*************************************************************************************");
         }
 

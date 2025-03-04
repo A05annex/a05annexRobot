@@ -4,25 +4,49 @@
   "robotScheduledActions": [
     {
       "robotActionCommand": "DummyTakesDriveCommand",
-      "robotActionType": "RelinquishDriveTo",
-      "robotActionDuration": 0.893,
-      "robotScheduledActionTime": 2.1500000000000004,
       "robotActionArgs": [
         {
-          "robotActionArgType": "Integer",
-          "robotActionArgValue": "50"
+          "robotActionArgValue": "50",
+          "robotActionArgType": "Integer"
         },
         {
-          "robotActionArgType": "Integer",
-          "robotActionArgValue": "50"
+          "robotActionArgValue": "50",
+          "robotActionArgType": "Integer"
         }
-      ]
+      ],
+      "robotActionType": "RelinquishDriveTo",
+      "robotActionDuration": 0.893,
+      "robotScheduledActionTime": 2.1500000000000004
     },
     {
       "robotActionCommand": "DummyScheduledCommand",
+      "robotActionArgs": [],
       "robotActionType": "Scheduled",
       "robotActionDuration": -1.0,
       "robotScheduledActionTime": 2.3500000000000005
+    },
+    {
+      "robotActionCommand": "DummyTakesDriveCommand",
+      "robotActionArgs": [
+        {
+          "robotActionArgValue": "50",
+          "robotActionArgType": "Integer"
+        },
+        {
+          "robotActionArgValue": "50",
+          "robotActionArgType": "Integer"
+        }
+      ],
+      "robotActionType": "RelinquishDriveTo",
+      "robotActionDuration": 1.051,
+      "robotScheduledActionTime": 3.999999999999994
+    },
+    {
+      "robotActionCommand": "DummyScheduledCommand",
+      "robotActionArgs": [],
+      "robotActionType": "Scheduled",
+      "robotActionDuration": -1.0,
+      "robotScheduledActionTime": 4.299999999999993
     }
   ],
   "title": "untitled",
@@ -60,6 +84,25 @@
       "field_dHeading": 0.0,
       "robotAction": {
         "robotActionCommand": "DummyStopAndRunCommand",
+        "robotActionArgs": [],
+        "robotActionType": "StopAndRun",
+        "robotActionDuration": 0.2,
+        "robotScheduledActionTime": -1.0
+      },
+      "derivativesEdited": true
+    },
+    {
+      "headingDerivativeEdited": true,
+      "field_dX": 0.0,
+      "fieldY": -4.535761589403974,
+      "field_dY": 0.0,
+      "fieldX": 3.524701986754967,
+      "fieldHeading": -1.5707963267948966,
+      "time": 5.0,
+      "field_dHeading": 0.0,
+      "robotAction": {
+        "robotActionCommand": "DummyStopAndRunCommand",
+        "robotActionArgs": [],
         "robotActionType": "StopAndRun",
         "robotActionDuration": 0.2,
         "robotScheduledActionTime": -1.0

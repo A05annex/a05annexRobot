@@ -193,7 +193,7 @@ public class AutonomousPathCommand extends Command {
         if (A05Constants.getPrintDebug()) {
             System.out.println("**************************************************************************************");
             System.out.println("**** AutonomousPathCommand.initialize() called for path '" + path.getName() + "'");
-            System.out.println("**** swerveDrive: " + swerveDrive.getClass().getCanonicalName());
+            System.out.println("****   swerveDrive: " + swerveDrive.getClass().getCanonicalName());
         }
         initializeRobotForPath();
         if (A05Constants.getPrintDebug()) {
@@ -211,7 +211,7 @@ public class AutonomousPathCommand extends Command {
      */
     public void initializeRobotForPath() {
         if (A05Constants.getPrintDebug()) {
-            System.out.println("**** AutonomousPathCommand.initializeRobotForPath() called for path '" +
+            System.out.println("****   AutonomousPathCommand.initializeRobotForPath() called for path '" +
                     path.getName() + "'");
         }
         pathPoint = getPointAt(0.0);
@@ -233,7 +233,7 @@ public class AutonomousPathCommand extends Command {
             }
         }
         if (A05Constants.getPrintDebug()) {
-            System.out.println("**** Field heading: " + pathPoint.fieldHeading().getDegrees() + "degrees");
+            System.out.println("****   Field heading: " + pathPoint.fieldHeading().getDegrees() + "degrees");
         }
     }
 
@@ -253,16 +253,17 @@ public class AutonomousPathCommand extends Command {
         if (A05Constants.getPrintDebug()) {
             System.out.println("**************************************************************************************");
             System.out.println("**** Attempting to instantiate robot action: " + commandClass);
+            System.out.println("****   Robot action type: " + robotAction.actionType.toString());
         }
         Command command = Utl.instantiateObjectFromName(Command.class, commandClass,
                 robotAction.getArgTypeArray(), robotAction.getArgValueArray());
         if (null != command) {
             if (RobotActionType.RELINQUISH_DRIVE_TO_COMMAND == robotAction.actionType) {
                 if (!(command instanceof ICanTakeDrive)) {
-                    System.out.println("***************************************************************************");
-                    System.out.println("*** Command '" + commandClass);
-                    System.out.println("***   cannot be run because it does not implement ICanTakeDrive");
-                    System.out.println("***************************************************************************");
+                    System.out.println("**** ************************************************************************");
+                    System.out.println("**** **** Command '" + commandClass);
+                    System.out.println("**** ****   cannot be run because it does not implement ICanTakeDrive");
+                    System.out.println("**** ************************************************************************");
                     command = null;
                 }
             }
@@ -271,7 +272,7 @@ public class AutonomousPathCommand extends Command {
             invalidCommandCt++;
         }
         if (A05Constants.getPrintDebug()) {
-            System.out.println("**** Instantiation " + ((null == command)?"failed":"successful"));
+            System.out.println("****   Instantiation " + ((null == command)?"failed":"successful"));
             System.out.println("**************************************************************************************");
         }
         return command;
@@ -479,7 +480,11 @@ public class AutonomousPathCommand extends Command {
             }
         }
         if (A05Constants.getPrintDebug() && isFinished) {
-            System.out.println("AutonomousPathCommand.isFinished() returns true for path " + path.getName());
+            if (A05Constants.getPrintDebug()) {
+                System.out.println("**************************************************************************************");
+                System.out.println("**** AutonomousPathCommand.isFinished() returns true for path '" + path.getName() + "'");
+                System.out.println("**************************************************************************************");
+            }
         }
         return isFinished;
     }
@@ -499,7 +504,11 @@ public class AutonomousPathCommand extends Command {
         }
         swerveDrive.swerveDriveComponents(0, 0, 0);
         if (A05Constants.getPrintDebug()) {
-            System.out.println("AutonomousPathCommand.end() called for path '" + path.getName() + "'");
+            System.out.println("**************************************************************************************");
+            System.out.println("**** AutonomousPathCommand.end() called for path '" + path.getName() + "'");
+            System.out.println("****   " + (interrupted?"The command is being forced to end.":
+                    "The command has reported it is finished."));
+            System.out.println("**************************************************************************************");
         }
     }
 }

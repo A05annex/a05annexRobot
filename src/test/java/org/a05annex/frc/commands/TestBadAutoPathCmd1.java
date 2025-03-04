@@ -27,6 +27,7 @@ public class TestBadAutoPathCmd1 {
     @Test
     @DisplayName("Test AutonomousPathCommand - bad command classes")
     void test_badActionCommandName() {
+        AutonomousPathCommand.invalidCommandCt = 0;
         A05Constants.setPrintDebug(true);
         TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath("test path",
                 0, "./src/test/resources/paths/BadCmdClasses1.json");

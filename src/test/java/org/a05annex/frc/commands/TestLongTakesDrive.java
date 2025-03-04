@@ -22,6 +22,7 @@ public class TestLongTakesDrive {
     @Test
     @DisplayName("Test AutonomousPathCommand - long takes drive command")
     void test_longTakesDriveCommand() {
+        AutonomousPathCommand.invalidCommandCt = 0;
         A05Constants.setPrintDebug(true);
         TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath("test path",
                 0, "./src/test/resources/paths/TakeDriveCmdLongTest.json");

@@ -57,7 +57,7 @@
       "field_dY": 0.0,
       "fieldX": 1.1922018348623853,
       "fieldHeading": -2.1309177109782897,
-      "time": 3.05,
+      "time": 3.00,
       "field_dHeading": 0.0,
       "robotAction": {
         "robotActionCommand": "DummyStopAndRunCommand",

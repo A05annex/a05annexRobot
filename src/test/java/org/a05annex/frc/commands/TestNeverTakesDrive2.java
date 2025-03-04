@@ -12,14 +12,15 @@ import java.io.FileNotFoundException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Suite
-public class TestShortTakesDrive {
+public class TestNeverTakesDrive2 {
     @Test
-    @DisplayName("Test AutonomousPathCommand - short takes drive command")
-    void test_shortTakesDriveCommand() {
+    @DisplayName("Test AutonomousPathCommand - never takes drive command, 2 cycles")
+    void test_neverTakesDriveCommand2() {
         AutonomousPathCommand.invalidCommandCt = 0;
         A05Constants.setPrintDebug(true);
-        TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath("Test Takes-Drive ending before control pt time",
-                0, "./src/test/resources/paths/TakesDriveCmdShortTest.json");
+        TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath(
+                "never takes drive - 2 target and shoot",
+                0, "./src/test/resources/paths/TakesDriveCmdNeverTakesDrive2.json");
         // instantiate the AutonomousPathCommand with the test path and the DummySwerveDriveSubsystem,
         // get a scheduler and schedule the Autonomous
         try {
@@ -28,8 +29,8 @@ public class TestShortTakesDrive {
             throw new RuntimeException(e);
         }
 
-        DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TestAutonomousPathCommand.TEST_DRIVE_LENGTH, TestAutonomousPathCommand.TEST_DRIVE_WIDTH,
-                0.0, 0.0, 0.0, 0.0, 1.0);
+        DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TestAutonomousPathCommand.TEST_DRIVE_LENGTH,
+                TestAutonomousPathCommand.TEST_DRIVE_WIDTH,0.0, 0.0, 0.0, 0.0, 1.0);
         AutonomousPathCommand autonomousPathCommend = new TestAutonomousPathCommand.ExtendedAutonomousPathCommand(
                 testPath, DummySwerveDriveSubsystem.getInstance());
 
@@ -39,7 +40,7 @@ public class TestShortTakesDrive {
 
         CommandScheduler.getInstance().enable();
         CommandScheduler.getInstance().schedule(autonomousPathCommend);
-        while (!autonomousPathCommend.isFinished()) {
+        while (CommandScheduler.getInstance().isScheduled(autonomousPathCommend)) {
             CommandScheduler.getInstance().run();
             try {
                 long msSleep = nextTime-System.currentTimeMillis();
