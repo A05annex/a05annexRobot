@@ -6,11 +6,11 @@
       "robotActionCommand": "DummyTakesDriveCommand",
       "robotActionArgs": [
         {
-          "robotActionArgValue": "50",
+          "robotActionArgValue": "10",
           "robotActionArgType": "Integer"
         },
         {
-          "robotActionArgValue": "50",
+          "robotActionArgValue": "60",
           "robotActionArgType": "Integer"
         }
       ],
@@ -60,6 +60,18 @@
       "fieldHeading": 0.0,
       "time": 0.0,
       "field_dHeading": 0.0,
+      "robotAction": {
+        "robotActionCommand": "DummyStopAndRunCommand",
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "1.0",
+            "robotActionArgType": "Double"
+          }
+        ],
+        "robotActionType": "StopAndRun",
+        "robotActionDuration": 0.2,
+        "robotScheduledActionTime": -1.0
+      },
       "derivativesEdited": true
     },
     {
@@ -84,7 +96,12 @@
       "field_dHeading": 0.0,
       "robotAction": {
         "robotActionCommand": "DummyStopAndRunCommand",
-        "robotActionArgs": [],
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "0.1",
+            "robotActionArgType": "Double"
+          }
+        ],
         "robotActionType": "StopAndRun",
         "robotActionDuration": 0.2,
         "robotScheduledActionTime": -1.0
@@ -102,7 +119,12 @@
       "field_dHeading": 0.0,
       "robotAction": {
         "robotActionCommand": "DummyStopAndRunCommand",
-        "robotActionArgs": [],
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "0.3",
+            "robotActionArgType": "Double"
+          }
+        ],
         "robotActionType": "StopAndRun",
         "robotActionDuration": 0.2,
         "robotScheduledActionTime": -1.0

@@ -1,0 +1,93 @@
+{
+  "speedMultiplier": 1.0,
+  "description": "No description provided.",
+  "robotScheduledActions": [
+    {
+      "robotActionCommand": "ElevatorMoveWaitCommand",
+      "robotActionArgs": [
+        {
+          "robotActionArgValue": "L3",
+          "robotActionArgType": "String"
+        }
+      ],
+      "robotActionType": "Scheduled",
+      "robotActionDuration": -1.0,
+      "robotScheduledActionTime": 2.4099999999999997
+    },
+    {
+      "robotActionCommand": "TagTargetCommand",
+      "robotActionArgs": [
+        {
+          "robotActionArgValue": "-0.5",
+          "robotActionArgType": "Double"
+        },
+        {
+          "robotActionArgValue": "-0.0751",
+          "robotActionArgType": "Double"
+        },
+        {
+          "robotActionArgValue": "far center reef",
+          "robotActionArgType": "String"
+        }
+      ],
+      "robotActionType": "RelinquishDriveTo",
+      "robotActionDuration": 2.0,
+      "robotScheduledActionTime": 2.46
+    }
+  ],
+  "title": "untitled",
+  "controlPoints": [
+    {
+      "headingDerivativeEdited": true,
+      "field_dX": 0.0,
+      "fieldY": -0.7380907372400756,
+      "field_dY": 0.0,
+      "fieldX": -2.1467863894139896,
+      "fieldHeading": 0.0,
+      "time": 0.0,
+      "field_dHeading": 0.0,
+      "robotAction": {
+        "robotActionCommand": "WaitCommand",
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "250",
+            "robotActionArgType": "Integer"
+          }
+        ],
+        "robotActionType": "StopAndRun",
+        "robotActionDuration": 5.0,
+        "robotScheduledActionTime": -1.0
+      },
+      "derivativesEdited": true
+    },
+    {
+      "headingDerivativeEdited": true,
+      "field_dX": 0.32041587901701263,
+      "fieldY": -1.261436672967864,
+      "field_dY": -0.5981096408317574,
+      "fieldX": -0.41654064272211855,
+      "fieldHeading": 3.14159,
+      "time": 2.3,
+      "field_dHeading": 0.0,
+      "derivativesEdited": true
+    },
+    {
+      "headingDerivativeEdited": true,
+      "field_dX": 0.0,
+      "fieldY": -3.1839319470699436,
+      "field_dY": 0.0,
+      "fieldX": -0.17088846880907482,
+      "fieldHeading": 3.14159,
+      "time": 3.5,
+      "field_dHeading": 0.0,
+      "robotAction": {
+        "robotActionCommand": "CoralPostScoreCommand",
+        "robotActionArgs": [],
+        "robotActionType": "StopAndRun",
+        "robotActionDuration": 0.5,
+        "robotScheduledActionTime": -1.0
+      },
+      "derivativesEdited": true
+    }
+  ]
+}

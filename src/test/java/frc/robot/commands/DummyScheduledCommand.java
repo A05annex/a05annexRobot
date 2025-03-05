@@ -16,6 +16,13 @@ public class DummyScheduledCommand extends Command {
     public static int endCt = 0;
     public static int executeCt = 0;
 
+    static public void zeroCounts() {
+        instantiationCt = 0;
+        initializationCt = 0;
+        endCt = 0;
+        executeCt = 0;
+    }
+
 
     int m_executeCt = 0;
     public DummyScheduledCommand() {

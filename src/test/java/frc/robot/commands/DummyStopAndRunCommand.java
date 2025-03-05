@@ -8,39 +8,53 @@ import edu.wpi.first.wpilibj2.command.Command;
  */
 public class DummyStopAndRunCommand extends Command {
 
-    public static long STOP_AND_RUN_DURATION = 2000;
+    public static long DEFAULT_STOP_AND_RUN_DURATION = 2000;
+
+    // --------------------------------------------------------------------------------------------
+    // These are some static parameters set during the run of the command, and examined only for
+    // testing, to assure the command has operated as expected.
     public static int instantiationCt = 0;
     public static int initializationCt = 0;
     public static int endCt = 0;
     public static long stopAndRunDuration = 0;
     public static int executeCt = 0;
+    static public void zeroCounts() {
+        instantiationCt = 0;
+        initializationCt = 0;
+        endCt = 0;
+        stopAndRunDuration = 0;
+        executeCt = 0;
+    }
+    // --------------------------------------------------------------------------------------------
+
 
     final private long startTime = System.currentTimeMillis();
     final private long endTime;
 
+    /**
+     * The no-argument constructor uses a default duration of 2.0 seconds
+     */
     public DummyStopAndRunCommand() {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
-        endTime = startTime + STOP_AND_RUN_DURATION;
+        endTime = startTime + DEFAULT_STOP_AND_RUN_DURATION;
         System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         System.out.printf("****          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
-            stopAndRunDuration += STOP_AND_RUN_DURATION;
         }
     }
-    public DummyStopAndRunCommand(long duration) {
+    public DummyStopAndRunCommand(Double duration) {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
-        STOP_AND_RUN_DURATION = duration;
-        endTime = startTime + STOP_AND_RUN_DURATION;
+        long msDuration = (long)(duration * 1000.0);
+        endTime = startTime + msDuration;
         System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         System.out.printf("****          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
-            stopAndRunDuration += STOP_AND_RUN_DURATION;
         }
     }
 
@@ -67,10 +81,13 @@ public class DummyStopAndRunCommand extends Command {
 
     @Override
     public void end(boolean interrupted) {
-        System.out.printf("%n          '%s':  ends after %.3f%n", this.getClass().getName(),
-                (endTime - startTime)/1000.0);
+        long actualEndTime = System.currentTimeMillis();
+        long actualDuration = actualEndTime - startTime;
+        System.out.printf("%n          '%s':  ends after %dms%n", this.getClass().getName(),
+                actualDuration);
         synchronized (DummyStopAndRunCommand.class) {
             endCt++;
+            stopAndRunDuration += actualDuration;
         }
     }
 }

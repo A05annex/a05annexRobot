@@ -1,6 +1,7 @@
 package org.a05annex.frc.commands;
 
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.commands.DummyStopAndRunCommand;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.subsystems.DummySwerveDriveSubsystem;
 import org.junit.jupiter.api.DisplayName;
@@ -10,53 +11,26 @@ import org.junit.platform.suite.api.Suite;
 import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Suite
 public class TestNeverTakesDrive2 {
     @Test
     @DisplayName("Test AutonomousPathCommand - never takes drive command, 2 cycles")
     void test_neverTakesDriveCommand2() {
-        AutonomousPathCommand.invalidCommandCt = 0;
+        AutonomousPathCommand.zeroCounts();
+        DummyStopAndRunCommand.zeroCounts();
         A05Constants.setPrintDebug(true);
-        TestAutonomousPathCommand.TestAutonomousPath testPath = new TestAutonomousPathCommand.TestAutonomousPath(
-                "never takes drive - 2 target and shoot",
-                0, "./src/test/resources/paths/TakesDriveCmdNeverTakesDrive2.json");
-        // instantiate the AutonomousPathCommand with the test path and the DummySwerveDriveSubsystem,
-        // get a scheduler and schedule the Autonomous
-        try {
-            testPath.load();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        TestAutonomousPathCommand.runAutonomousPath("never takes drive - 2 target and shoot",
+                "./src/test/resources/paths/TakesDriveCmdNeverTakesDrive2.json");
 
-        DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TestAutonomousPathCommand.TEST_DRIVE_LENGTH,
-                TestAutonomousPathCommand.TEST_DRIVE_WIDTH,0.0, 0.0, 0.0, 0.0, 1.0);
-        AutonomousPathCommand autonomousPathCommend = new TestAutonomousPathCommand.ExtendedAutonomousPathCommand(
-                testPath, DummySwerveDriveSubsystem.getInstance());
-
-        long startTime = System.currentTimeMillis();
-        System.out.printf("Start time: %d%n", startTime);
-        long nextTime = startTime + 20;
-
-        CommandScheduler.getInstance().enable();
-        CommandScheduler.getInstance().schedule(autonomousPathCommend);
-        while (CommandScheduler.getInstance().isScheduled(autonomousPathCommend)) {
-            CommandScheduler.getInstance().run();
-            try {
-                long msSleep = nextTime-System.currentTimeMillis();
-                if (msSleep > 0) {
-                    //noinspection BusyWait
-                    Thread.sleep(nextTime - System.currentTimeMillis());
-                }
-            } catch (InterruptedException e) {
-                break;
-            }
-            nextTime += 20;
-        }
-
-        // The path has been run - there should have been 4 commands that the path attempted to run that were invalid.
-        // 2 of these were invalid names, so nothing was instantiated
+        // The path has been run, check what actually happened.
         assertEquals(0, AutonomousPathCommand.invalidCommandCt);
+        // Info about stop-and-run commands (1@0.1sec and 1@0.3sec = 2@.4sec), or
+        assertEquals(2, DummyStopAndRunCommand.instantiationCt);
+        assertEquals(2, DummyStopAndRunCommand.endCt);
+        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) + 2 > DummyStopAndRunCommand.executeCt);
+        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) <= DummyStopAndRunCommand.executeCt);
 //        // One of these was a class that is not a Command
 //        assertEquals(1, NotCommand.instantiationCt);
 //        // One was as a takes drive - but it oes not implement ICanTakeDrive

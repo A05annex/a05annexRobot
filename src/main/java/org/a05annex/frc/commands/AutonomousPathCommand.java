@@ -32,6 +32,10 @@ public class AutonomousPathCommand extends Command {
     // These are some static parameters set during the run of the command, and examined only for
     // testing, to assure the command has operated as expected.
     public static int invalidCommandCt = 0;
+
+    static public void zeroCounts() {
+        invalidCommandCt = 0;
+    }
     // --------------------------------------------------------------------------------------------
 
 
@@ -295,7 +299,8 @@ public class AutonomousPathCommand extends Command {
         }
         takeDriveCommand.end(interrupted);
         long now = System.currentTimeMillis();
-        accumulatedStopDuration += now - startTime - (long)(1000.0 * takeDriveCmdDefEndPathTime);
+//        accumulatedStopDuration += now - startTime - (long)(1000.0 * takeDriveCmdDefEndPathTime);
+        accumulatedStopDuration = now - startTime - (long)(1000.0 * takeDriveCmdDefEndPathTime);
         // now set everything back to defaults for takesDriveAction
         takeDriveCommand = null;
         takeDriveCmdHasDriveControl = false;
