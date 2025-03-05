@@ -152,7 +152,7 @@ public class A05TagTargetCommand extends A05DriveCommand implements ICanTakeDriv
      */
     @Override
     public boolean isFinished() {
-        return isFinished || (lastMode == MODE.POSITION_CONTROL && iSwerveDrive.isAbsoluteTranslateDone()) || distance() < IN_POSITION_RADIUS;
+        return isFinished || distance() < IN_POSITION_RADIUS;
     }
     /**
      * Stops the robot by setting all drive parameters to zero.
@@ -160,6 +160,10 @@ public class A05TagTargetCommand extends A05DriveCommand implements ICanTakeDriv
     @Override
     public void end(boolean interrupted) {
         iSwerveDrive.swerveDrive(AngleConstantD.ZERO, 0.0, 0.0);
+
+        if(A05Constants.getPrintDebug()) {
+            System.out.println("A05 TAG TARGET FINISHED ******* IsFinished " + isFinished + ". Distance: " + distance());
+        }
     }
     /**
      * Validates if targeting is allowed based on the validity of the inferred position.

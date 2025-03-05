@@ -88,8 +88,8 @@ public class RobotPosition {
     protected RobotPosition() {
         this.isValid = false;
         this.isNew = false;
-        this.x = 0.0;
-        this.y = 0.0;
+        this.x = -1.0;
+        this.y = -1.0;
         this.pipelineResult = null;
         this.tagSet = null;
     }
