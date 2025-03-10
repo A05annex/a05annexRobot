@@ -3,11 +3,11 @@
   "description": "No description provided.",
   "robotScheduledActions": [
     {
-      "robotActionCommand": "ElevatorMoveWaitCommand",
+      "robotActionCommand": "DummyScheduledCommand",
       "robotActionArgs": [
         {
-          "robotActionArgValue": "L3",
-          "robotActionArgType": "String"
+          "robotActionArgValue": "5",
+          "robotActionArgType": "Integer"
         }
       ],
       "robotActionType": "Scheduled",
@@ -15,19 +15,15 @@
       "robotScheduledActionTime": 2.4099999999999997
     },
     {
-      "robotActionCommand": "TagTargetCommand",
+      "robotActionCommand": "DummyTakesDriveCommand",
       "robotActionArgs": [
         {
-          "robotActionArgValue": "-0.5",
-          "robotActionArgType": "Double"
+          "robotActionArgValue": "5",
+          "robotActionArgType": "Integer"
         },
         {
-          "robotActionArgValue": "-0.0751",
-          "robotActionArgType": "Double"
-        },
-        {
-          "robotActionArgValue": "far center reef",
-          "robotActionArgType": "String"
+          "robotActionArgValue": "50",
+          "robotActionArgType": "Integer"
         }
       ],
       "robotActionType": "RelinquishDriveTo",
@@ -47,11 +43,11 @@
       "time": 0.0,
       "field_dHeading": 0.0,
       "robotAction": {
-        "robotActionCommand": "WaitCommand",
+        "robotActionCommand": "DummyStopAndRunCommand",
         "robotActionArgs": [
           {
-            "robotActionArgValue": "250",
-            "robotActionArgType": "Integer"
+            "robotActionArgValue": "5.0",
+            "robotActionArgType": "Double"
           }
         ],
         "robotActionType": "StopAndRun",
@@ -81,8 +77,13 @@
       "time": 3.5,
       "field_dHeading": 0.0,
       "robotAction": {
-        "robotActionCommand": "CoralPostScoreCommand",
-        "robotActionArgs": [],
+        "robotActionCommand": "DummyStopAndRunCommand",
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "0.5",
+            "robotActionArgType": "Double"
+          }
+        ],
         "robotActionType": "StopAndRun",
         "robotActionDuration": 0.5,
         "robotScheduledActionTime": -1.0

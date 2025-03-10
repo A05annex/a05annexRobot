@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import org.a05annex.frc.commands.TestAutonomousPathCommand;
 
 
 /**
@@ -16,13 +17,17 @@ public class DummyStopAndRunCommand extends Command {
     public static int instantiationCt = 0;
     public static int initializationCt = 0;
     public static int endCt = 0;
+    public static long requestedStopAndRunDuration = 0;
     public static long stopAndRunDuration = 0;
+    public static long expectedDurationTolerance = 0;
     public static int executeCt = 0;
     static public void zeroCounts() {
         instantiationCt = 0;
         initializationCt = 0;
         endCt = 0;
+        requestedStopAndRunDuration = 0;
         stopAndRunDuration = 0;
+        expectedDurationTolerance = 0;
         executeCt = 0;
     }
     // --------------------------------------------------------------------------------------------
@@ -38,11 +43,13 @@ public class DummyStopAndRunCommand extends Command {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
-        endTime = startTime + DEFAULT_STOP_AND_RUN_DURATION;
+        endTime = startTime + DEFAULT_STOP_AND_RUN_DURATION - (TestAutonomousPathCommand.COMMAND_CYCLE_TIME_MS / 2);
         System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         System.out.printf("****          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
+            requestedStopAndRunDuration += DEFAULT_STOP_AND_RUN_DURATION;
+            expectedDurationTolerance += (TestAutonomousPathCommand.COMMAND_CYCLE_TIME_MS / 2);
         }
     }
     public DummyStopAndRunCommand(Double duration) {
@@ -50,13 +57,17 @@ public class DummyStopAndRunCommand extends Command {
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
         long msDuration = (long)(duration * 1000.0);
-        endTime = startTime + msDuration;
+        endTime = startTime + msDuration - (TestAutonomousPathCommand.COMMAND_CYCLE_TIME_MS / 2);
         System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
         System.out.printf("****          '%s':  ends at %d%n", this.getClass().getName(), endTime);
         synchronized (DummyStopAndRunCommand.class) {
             instantiationCt += 1;
+            requestedStopAndRunDuration += msDuration;
+            expectedDurationTolerance += (TestAutonomousPathCommand.COMMAND_CYCLE_TIME_MS / 2);
         }
     }
+
+
 
     @Override
     public void initialize() {

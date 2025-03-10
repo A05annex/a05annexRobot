@@ -4,10 +4,12 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.DummyScheduledCommand;
 import frc.robot.commands.DummyStopAndRunCommand;
+import frc.robot.commands.DummyTakesDriveCommand;
 import org.a05annex.frc.A05Constants;
 import org.a05annex.frc.subsystems.DummySwerveDriveSubsystem;
 import org.a05annex.frc.subsystems.ISwerveDrive;
 import org.a05annex.util.geo2d.KochanekBartelsSpline;
+import org.a05annex.util.geo2d.KochanekBartelsSpline.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,8 +19,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 /**
  * This is a test of the {@link AutonomousPathCommand} that uses a test path
@@ -101,6 +101,7 @@ public class TestAutonomousPathCommand {
 
     public static final double TEST_DRIVE_LENGTH = 0.5969;
     public static final double TEST_DRIVE_WIDTH = 0.5969;
+    public static final long COMMAND_CYCLE_TIME_MS = 20;
 
     /**
      *
@@ -108,62 +109,94 @@ public class TestAutonomousPathCommand {
     @Test
     @DisplayName("Test AutonomousPathCommand")
     void test_autonomousPathCommand() {
-        DummyScheduledCommand.executeCt = 0;
-        A05Constants.setPrintDebug(true);
         runAutonomousPath("test path",
-                "./src/test/resources/paths/AutonomousPathCommandTest.json");
+                "./src/test/resources/paths/AutonomousPathCommandTest.json",
+                0,3, 2, 0);
 
-        // OK, now that we've run the path, verify that the commands were properly run
-        // The DummyScheduledCommand runs twice
-        assertEquals(2, DummyScheduledCommand.instantiationCt);
-        assertEquals(2, DummyScheduledCommand.initializationCt);
-        assertEquals(2, DummyScheduledCommand.endCt);
-        assertEquals(2 * DummyScheduledCommand.EXECUTES_PER_SCHEDULED_RUN, DummyScheduledCommand.executeCt);
-        // The DummyStopAndRunCommand runs 3 times
-        assertEquals(3, DummyStopAndRunCommand.instantiationCt);
-        assertEquals(3, DummyStopAndRunCommand.initializationCt);
-        assertEquals(3, DummyStopAndRunCommand.endCt);
-        assertTrue((3 * DummyStopAndRunCommand.DEFAULT_STOP_AND_RUN_DURATION) + 60 > DummyStopAndRunCommand.stopAndRunDuration);
-        assertTrue((3 * DummyStopAndRunCommand.DEFAULT_STOP_AND_RUN_DURATION) <= DummyStopAndRunCommand.stopAndRunDuration);
-        // and the actual duration may be a bit more/less. The executes should be the
-        // cumulative duration / 20 + a couple extra executes because of timing uncertainties, say maybe 20 (.4 sec)
-//        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) + 20 > DummyStopAndRunCommand.executeCt);
-//        assertTrue((DummyStopAndRunCommand.stopAndRunDuration / 20) <= DummyStopAndRunCommand.executeCt);
     }
 
-    public static void runAutonomousPath(String pathName, String pathFileName) {
-        TestAutonomousPath testPath = new TestAutonomousPath(pathName,0, pathFileName);
-        // instantiate the AutonomousPathCommand with the test path and the DummySwerveDriveSubsystem,
-        // get a scheduler and schedule the Autonomous
-        try {
-            testPath.load();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+    /**
+     * This is a method that zeros all the stats counters, runs a path, and then runs
+     * standard tests on all of the dummy command stats to make sure everything ran as
+     * expected.
+     *
+     * @param pathName The path name/description for logging and reporting
+     * @param pathFileName The path file name
+     * @param failedActionCreateCt The number of robot action instantiations that failed, normally
+     *                             {@code 0} for a valid path.
+     *
+     * @param stopAndRunActionCt The number of {@link RobotActionType#SCHEDULE_COMMAND} actions run in this
+     *                           path. Specify -1 if you are testing path fail scenarios where expected failures
+     *                           require special testing of the {@link DummyScheduledCommand} operation, and the
+     *                           tests in this framework should be skipped.
+     * @param scheduledActionCt
+     * @param takesDriveCt
+     */
+   public static void runAutonomousPath(String pathName, String pathFileName, int failedActionCreateCt,
+                                         int stopAndRunActionCt, int scheduledActionCt, int takesDriveCt) {
+       AutonomousPathCommand.zeroCounts();
+       DummyScheduledCommand.zeroCounts();
+       DummyStopAndRunCommand.zeroCounts();
+       DummyTakesDriveCommand.zeroCounts();
+       A05Constants.setPrintDebug(true);
+       TestAutonomousPath testPath = new TestAutonomousPath(pathName, 0, pathFileName);
+       // instantiate the AutonomousPathCommand with the test path and the DummySwerveDriveSubsystem,
+       // get a scheduler and schedule the Autonomous
+       try {
+           testPath.load();
+       } catch (FileNotFoundException e) {
+           throw new RuntimeException(e);
+       }
+
+       DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TEST_DRIVE_LENGTH, TEST_DRIVE_WIDTH,
+               0.0, 0.0, 0.0, 0.0, 1.0);
+       AutonomousPathCommand autonomousPathCommend = new ExtendedAutonomousPathCommand(
+               testPath, DummySwerveDriveSubsystem.getInstance());
+
+       long startTime = System.currentTimeMillis();
+       System.out.printf("Start time: %d%n", startTime);
+       long nextTime = startTime + COMMAND_CYCLE_TIME_MS;
+
+       CommandScheduler.getInstance().enable();
+       CommandScheduler.getInstance().schedule(autonomousPathCommend);
+       while (CommandScheduler.getInstance().isScheduled(autonomousPathCommend)) {
+           CommandScheduler.getInstance().run();
+           try {
+               long msSleep = nextTime - System.currentTimeMillis();
+               if (msSleep > 0) {
+                   //noinspection BusyWait
+                   Thread.sleep(nextTime - System.currentTimeMillis());
+               }
+           } catch (InterruptedException e) {
+               break;
+           }
+           nextTime += COMMAND_CYCLE_TIME_MS;
+       }
+       // OK, now that we've run the path, verify that the commands were properly run
+       assertEquals(failedActionCreateCt, AutonomousPathCommand.invalidCommandCt);
+       // The DummyScheduledCommand testing
+       if (scheduledActionCt >= 0) {
+           assertEquals(scheduledActionCt, DummyScheduledCommand.instantiationCt);
+           assertEquals(scheduledActionCt, DummyScheduledCommand.initializationCt);
+           assertEquals(scheduledActionCt, DummyScheduledCommand.endCt);
+           assertEquals(DummyScheduledCommand.requestedExecuteCt, DummyScheduledCommand.executeCt);
+       }
+       // The DummyStopAndRunCommand testing
+        if (stopAndRunActionCt >= 0) {
+            assertEquals(stopAndRunActionCt, DummyStopAndRunCommand.instantiationCt);
+            assertEquals(stopAndRunActionCt, DummyStopAndRunCommand.initializationCt);
+            assertEquals(stopAndRunActionCt, DummyStopAndRunCommand.endCt);
+            assertEquals(DummyStopAndRunCommand.requestedStopAndRunDuration, DummyStopAndRunCommand.stopAndRunDuration,
+                    DummyStopAndRunCommand.expectedDurationTolerance);
         }
-
-        DummySwerveDriveSubsystem.getInstance().setDriveGeometry(TEST_DRIVE_LENGTH, TEST_DRIVE_WIDTH,
-                0.0, 0.0, 0.0, 0.0, 1.0);
-        AutonomousPathCommand autonomousPathCommend = new ExtendedAutonomousPathCommand(
-                testPath, DummySwerveDriveSubsystem.getInstance());
-
-        long startTime = System.currentTimeMillis();
-        System.out.printf("Start time: %d%n", startTime);
-        long nextTime = startTime + 20;
-
-        CommandScheduler.getInstance().enable();
-        CommandScheduler.getInstance().schedule(autonomousPathCommend);
-        while (CommandScheduler.getInstance().isScheduled(autonomousPathCommend)) {
-            CommandScheduler.getInstance().run();
-            try {
-                long msSleep = nextTime-System.currentTimeMillis();
-                if (msSleep > 0) {
-                    //noinspection BusyWait
-                    Thread.sleep(nextTime - System.currentTimeMillis());
-                }
-            } catch (InterruptedException e) {
-                break;
-            }
-            nextTime += 20;
+        // The DummyTakesDriveCommand testing
+        if (takesDriveCt >= 0) {
+            assertEquals(takesDriveCt, DummyTakesDriveCommand.instantiationCt);
+            assertEquals(takesDriveCt, DummyTakesDriveCommand.initializationCt);
+            assertEquals(takesDriveCt, DummyTakesDriveCommand.endCt);
+            assertEquals(DummyTakesDriveCommand.requestedCyclesBeforeTakeDrive, DummyTakesDriveCommand.canTakeDriveFailCt);
+            assertEquals(DummyTakesDriveCommand.requestedCyclesToTarget - DummyTakesDriveCommand.requestedCyclesBeforeTakeDrive,
+                    DummyTakesDriveCommand.executeCt);
         }
     }
 }
