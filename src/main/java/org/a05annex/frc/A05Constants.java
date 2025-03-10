@@ -146,6 +146,9 @@ public abstract class A05Constants {
      */
     public static final XboxController ALT_XBOX = new XboxController(1);
 
+    /**
+     * This enum handles interaction with the D-Pad on the Xbox controller. Instead of using angles, we assign a name.
+     */
     public enum D_PAD {
         U,
         UR,
@@ -168,6 +171,11 @@ public abstract class A05Constants {
         }
     }
 
+    /**
+     * Get the D-Pad direction from the Xbox controller.
+     * @param controller The Xbox controller to get the D-Pad direction from.
+     * @return The D-Pad direction.
+     */
     public static D_PAD getDPad(XboxController controller) {
         int pov = controller.getPOV();
         for(D_PAD dir : D_PAD.values()) {

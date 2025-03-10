@@ -28,7 +28,7 @@ public abstract class A05Robot extends TimedRobot {
      */
     protected A05RobotContainer a05RobotContainer;
 
-    private Command autonomousCommand = null;
+    protected Command autonomousCommand = null;
 
     /**
      * Set the robot container, which must be a superclass of {@link A05RobotContainer}, for this robot.
