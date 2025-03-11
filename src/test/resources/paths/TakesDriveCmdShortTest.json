@@ -23,6 +23,29 @@
       "robotActionType": "Scheduled",
       "robotActionDuration": -1.0,
       "robotScheduledActionTime": 2.3500000000000005
+    },
+    {
+      "robotActionCommand": "DummyTakesDriveCommand",
+      "robotActionArgs": [
+        {
+          "robotActionArgValue": "5",
+          "robotActionArgType": "Integer"
+        },
+        {
+          "robotActionArgValue": "39",
+          "robotActionArgType": "Integer"
+        }
+      ],
+      "robotActionType": "RelinquishDriveTo",
+      "robotActionDuration": 1.051,
+      "robotScheduledActionTime": 3.999999999999994
+    },
+    {
+      "robotActionCommand": "DummyScheduledCommand",
+      "robotActionArgs": [],
+      "robotActionType": "Scheduled",
+      "robotActionDuration": -1.0,
+      "robotScheduledActionTime": 4.299999999999993
     }
   ],
   "title": "untitled",
@@ -36,6 +59,18 @@
       "fieldHeading": 0.0,
       "time": 0.0,
       "field_dHeading": 0.0,
+      "robotAction": {
+        "robotActionCommand": "DummyStopAndRunCommand",
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "1.0",
+            "robotActionArgType": "Double"
+          }
+        ],
+        "robotActionType": "StopAndRun",
+        "robotActionDuration": 0.2,
+        "robotScheduledActionTime": -1.0
+      },
       "derivativesEdited": true
     },
     {
@@ -69,12 +104,24 @@
     {
       "headingDerivativeEdited": true,
       "field_dX": 0.0,
-      "fieldY": -5.647709923664124,
+      "fieldY": -4.535761589403974,
       "field_dY": 0.0,
-      "fieldX": 1.908492366412215,
-      "fieldHeading": -0.6022873461349638,
-      "time": 4.0,
+      "fieldX": 3.524701986754967,
+      "fieldHeading": -1.5707963267948966,
+      "time": 5.0,
       "field_dHeading": 0.0,
+      "robotAction": {
+        "robotActionCommand": "DummyStopAndRunCommand",
+        "robotActionArgs": [
+          {
+            "robotActionArgValue": "0.3",
+            "robotActionArgType": "Double"
+          }
+        ],
+        "robotActionType": "StopAndRun",
+        "robotActionDuration": 0.2,
+        "robotScheduledActionTime": -1.0
+      },
       "derivativesEdited": true
     }
   ]

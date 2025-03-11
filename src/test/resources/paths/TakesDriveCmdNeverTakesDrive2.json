@@ -6,11 +6,11 @@
       "robotActionCommand": "DummyTakesDriveCommand",
       "robotActionArgs": [
         {
-          "robotActionArgValue": "10",
+          "robotActionArgValue": "50",
           "robotActionArgType": "Integer"
         },
         {
-          "robotActionArgValue": "60",
+          "robotActionArgValue": "50",
           "robotActionArgType": "Integer"
         }
       ],

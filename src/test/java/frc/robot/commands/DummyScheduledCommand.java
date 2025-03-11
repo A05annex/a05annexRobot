@@ -10,30 +10,50 @@ import edu.wpi.first.wpilibj2.command.Command;
  */
 public class DummyScheduledCommand extends Command {
 
-    public static final int EXECUTES_PER_SCHEDULED_RUN = 10;
+    public static final int DEFAULT_EXECUTES_PER_SCHEDULED_RUN = 10;
     public static int instantiationCt = 0;
     public static int initializationCt = 0;
     public static int endCt = 0;
+    public static int requestedExecuteCt = 0;
     public static int executeCt = 0;
 
     static public void zeroCounts() {
         instantiationCt = 0;
         initializationCt = 0;
         endCt = 0;
+        requestedExecuteCt = 0;
         executeCt = 0;
     }
 
 
     int m_executeCt = 0;
+    int m_maxExecuteCt = DEFAULT_EXECUTES_PER_SCHEDULED_RUN;
+
     public DummyScheduledCommand() {
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements();
-        System.out.printf("**** Instantiating command: class='%s'%n", this.getClass().getName());
+        System.out.printf("**** Instantiating command: class='%s', command cycles=%d%n",
+                this.getClass().getName(),m_maxExecuteCt);
         synchronized (DummyScheduledCommand.class) {
             instantiationCt += 1;
+            requestedExecuteCt += m_maxExecuteCt;
         }
     }
+
+    public DummyScheduledCommand(Integer cyclesCt) {
+        // each subsystem used by the command must be passed into the
+        // addRequirements() method (which takes a vararg of Subsystem)
+        addRequirements();
+        m_maxExecuteCt = cyclesCt;
+        System.out.printf("**** Instantiating command: class='%s', command cycles=%d%n",
+                this.getClass().getName(),m_maxExecuteCt);
+        synchronized (DummyScheduledCommand.class) {
+            instantiationCt += 1;
+            requestedExecuteCt += m_maxExecuteCt;
+        }
+    }
+
 
     @Override
     public void initialize() {
@@ -53,7 +73,7 @@ public class DummyScheduledCommand extends Command {
 
     @Override
     public boolean isFinished() {
-        return m_executeCt >= EXECUTES_PER_SCHEDULED_RUN;
+        return m_executeCt >= m_maxExecuteCt;
     }
 
     @Override
