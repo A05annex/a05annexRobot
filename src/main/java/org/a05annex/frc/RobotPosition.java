@@ -1,7 +1,6 @@
 package org.a05annex.frc;
 
 import org.a05annex.frc.subsystems.PhotonCameraWrapper;
-import org.a05annex.util.AngleConstantD;
 import org.a05annex.util.AngleD;
 import org.a05annex.util.Utl;
 import org.jetbrains.annotations.NotNull;
@@ -169,15 +168,15 @@ public class RobotPosition {
      */
     static double[] solveForTruePositionTestMethod(double camX, double camY, AngleD headingDelta) {
         headingDelta.mult(-1.0);
-        AngleD hypotenuseAngle = headingDelta.add(new AngleD().atan(camX / camY)).cloneAngleD();
+        AngleD hypotenuseAngle = headingDelta.add(new AngleD().atan(camY / camX)).cloneAngleD();
 
         if (camY < 0.0) {
-            hypotenuseAngle.add(AngleConstantD.DEG_180);
+            //hypotenuseAngle.add(AngleConstantD.DEG_180);
         }
 
         double hypotenuse = Utl.length(camX, camY);
-        double x = hypotenuseAngle.sin() * hypotenuse; // true X is distance from target
-        double y = hypotenuseAngle.cos() * hypotenuse;
+        double x = hypotenuseAngle.cos() * hypotenuse; // true X is distance from target
+        double y = hypotenuseAngle.sin() * hypotenuse;
 
         return new double[]{x, y};
     }
