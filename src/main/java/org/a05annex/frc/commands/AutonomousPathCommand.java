@@ -485,11 +485,9 @@ public class AutonomousPathCommand extends Command {
             }
         }
         if (A05Constants.getPrintDebug() && isFinished) {
-            if (A05Constants.getPrintDebug()) {
-                System.out.println("**************************************************************************************");
-                System.out.println("**** AutonomousPathCommand.isFinished() returns true for path '" + path.getName() + "'");
-                System.out.println("**************************************************************************************");
-            }
+            System.out.println("**************************************************************************************");
+            System.out.println("**** AutonomousPathCommand.isFinished() returns true for path '" + path.getName() + "'");
+            System.out.println("**************************************************************************************");
         }
         return isFinished;
     }

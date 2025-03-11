@@ -106,7 +106,7 @@ public abstract class A05RobotContainer {
      * The default robot container initialization, which:
      * <ul>
      *     <li>Reads the driver selection switches and sets the driver;</li>
-     *     <li>Reads the robot Id switch and sets the robot between the
+     *     <li>Reads the robot ID switch and sets the robot between the
      *         <i>programming</i> and <i>competition robots</i>;</li>
      *     <li>Reads the autonomous selection switches, loads the specified
      *         autonomous path and initializes the {@link #autoCommand}</li>
@@ -135,7 +135,7 @@ public abstract class A05RobotContainer {
         int robotId = A05Constants.readRobotID();
         robotSettings = A05Constants.ROBOT_SETTINGS_LIST.get(robotId);
 
-        // setup the chosen autonomous path
+        // set up the chosen autonomous path
         int autoId = A05Constants.readAutoID();
         A05Constants.AutonomousPath autonomousPath = null;
         try {

@@ -25,7 +25,6 @@ public class PhotonCameraWrapper {
     /**
      * The height of the camera, in meters, above the ground
      */
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     public final double xDisplacement, yDisplacement, headingAngle;
 
     // Latest frame, target, and frame with target

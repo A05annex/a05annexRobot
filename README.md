@@ -122,7 +122,7 @@ to be declared in the <tt>a05annexRobot</tt>, but populated in the competition c
 * And finally, the <tt>[A05RobotContainer](https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05RobotContainer.java)
   </tt> constructor reads the configuration selection switches for robot profile, driver profile, and autonomous path
   and loads/initializes the those values for the match. NOTE: our use of switches on the robot for configuration
-  comes from a time where there was a lot of chatter billing SmartDashboard as unreliable and not up to the task.
+  comes from a time when there was a lot of chatter billing SmartDashboard as unreliable and not up to the task.
   Current WPIlib documentation is very explicit about how to do this correctly, i.e.
  [Choosing and Autonomous Program](https://docs.wpilib.org/en/stable/docs/software/dashboards/smartdashboard/choosing-an-autonomous-program-from-smartdashboard.html),
  so we will be revising this for the 2024 season.
@@ -141,7 +141,7 @@ the [Swerve Programming paper](./resources/SwerveProgramming.pdf) that describes
 ## Characterizing Your Team's Robot(s)
 
 Every robot base will probably be slightly different in terms of geometry, swerve modules, Roborio, and NavX; so we
-wanted a way we could setup the parameters for both our competition and practice/prototype robot so that we did not
+wanted a way we could set up the parameters for both our competition and practice/prototype robot so that we did not
 maintain different code branches for each. We want to be able to run the same code on both robots. To satisfy this
 we introduce an
 <tt>[A05Constants](
@@ -156,14 +156,14 @@ What follows are the details of robot representation and calibration:
 
 ### Representing Your Robot(s)
 
-We generally have 2 similar swerve drive robots. The first is test/prototype robot,usually the robot from last season
+We generally have 2 similar swerve drive robots. The first is a test/prototype robot, usually the robot from last season
 with the competition-specific appendages removed. The second is this season's competition robot. While these robots
 are generally very similar, there are generally some differences in geometry, electronics (different navX2 boards),
 physical state (how new are the wheel treads), etc.
 
 See the <tt>[A05Constants](
 https://github.com/A05annex/a05annexRobot/blob/main/src/main/java/org/a05annex/frc/A05Constants.java).ROBOT_SETTINGS_LIST
-</tt> documentation for a description of all of the parameters in this class, all set in the
+</tt> documentation for a description of all the parameters in this class, all set in the
 constructor. The [ao5annexTemplate
 <tt>Constants</tt>](https://github.com/A05annex/a05annexTemplate/blob/main/src/main/java/frc/robot/Constants.java)
 defines 2 robots: a "Competition" robot at index 0; and a "Practice" robot at index 1.
@@ -182,7 +182,7 @@ the <tt>SwerveSpeedCache</tt> can be accurately mapped to robot behaviour.
 * *id* and *name*: The *id* is used to confirms that the robot settings entry is at the index you expect it to be
   so it is consistent with your robot selection UI. The *name* is for UI display of which robot
   configuration is selected.
-* *length* and *width*: The should be measured from the center of the rotation shaft (analog position encoder). This
+* *length* and *width*: This should be measured from the center of the rotation shaft (analog position encoder). This
   library currently supports ***ONLY*** a rectangular arrangement of swerve modules. If you are doing something
   different, this library is not for your robot(s).
 * *swerve module calibration constants*: These are the readings of the analog swerve module encoders when the drives
@@ -195,7 +195,7 @@ the <tt>SwerveSpeedCache</tt> can be accurately mapped to robot behaviour.
   regardless of the direction and number of spins the robot has made. See the next section for notes on measuring
   and setting this value.
 * *maxSpeedCalibration*: this is a correction between the calculated maximum module speed (using module gear
-  ratio, and motor specifications) and the measured maximum speed along a a well specified control path. This
+  ratio, and motor specifications) and the measured maximum speed along a well specified control path. This
   calibration is vital for having the robot track autonomous paths correctly.
 
 ### Robot Drive/NavX Calibration
@@ -273,7 +273,7 @@ translation (movement forward, backward, right,and left - with no change in robo
 control robot rotation (field heading). Similarly, the tuning for translation and rotation should be similarly
 decoupled. Additionally, we have separated: normal driving conditions, a *boost* mode, and a *slow* mode. These modes
 can be better described as:
-* default (normal driving conditions) - similar to how you would want you car to behave in city traffic. You need a
+* default (normal driving conditions) - similar to how you would want your car to behave in city traffic. You need a
   balance of control and speed, but you would seldom, if ever, use the maximum speed or minimum turning radius. This
   is your default driving profile for a match;
 * *boost* - like getting on the freeway. The path is clear ahead, your robot is correctly oriented, and you want to
