@@ -568,6 +568,43 @@ public class SpeedCachedSwerve implements ISwerveDrive {
         return position;
     }
 
+	@Nullable
+	public AngleD getHeadingAt(double time) {
+		time -= latencyOffset;
+		double nextTime;
+		AngleD nextHeading = new AngleD();
+		double lastTime = controlRequests[mostRecentControlRequest].timeStamp;
+		if (time > lastTime) {
+			// a strange situation where the requested time is after (more recent) than the most recently
+			// recorded request (i.e. the time we are looking for is after our last recorded request). This
+			// is a handling conundrum - if you want the current heading, talk to the NavX, you can't get it
+			// here.
+			throw new IllegalArgumentException("You are asking for newer heading information than what is in" +
+					" the speed cache. Please query the NavX for current heading information instead of the" +
+					" speed cache.");
+		}
+		AngleD lastHeading = new AngleD(controlRequests[mostRecentControlRequest].actualHeading);
+		int backIndex = nextBackIndex(mostRecentControlRequest);
+		while (true) {
+			nextTime = lastTime;
+			nextHeading.setValue(lastHeading);
+			lastTime = controlRequests[backIndex].timeStamp;
+			lastHeading.setValue(controlRequests[backIndex].actualHeading);
+			if (lastTime <= time) {
+				// So we are now at the point where the lastTime is before the requested time, and the nextTime
+				// is after the requested time. interpolate the heading delta between the
+				return new AngleD(AngleUnit.RADIANS, lastHeading.getRadians() +
+						((time - lastTime) / (nextTime - lastTime)) * (nextHeading.getRadians() - lastHeading.getRadians()));
+			}
+
+			if ((backIndex = nextBackIndex(backIndex)) == -1) {
+				// There are not enough entries in the cache
+				break;
+			}
+		}
+		return null;
+	}
+
     /**
      * Returns the delta between the expected robot heading and the actual robot heading at the requested time. The
      * use case is when the heading for some sensor (like vision) has a latency and requires information about the

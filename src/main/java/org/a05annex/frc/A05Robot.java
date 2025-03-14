@@ -54,6 +54,8 @@ public abstract class A05Robot extends TimedRobot {
         if(!A05Constants.getPrintDebug()) {
             DriverStation.silenceJoystickConnectionWarning(true); // Silence the warning about unplugged joysticks if print debug is false
         }
+
+        NavX.getInstance().initializeHeadingAndNav();
     }
 
     /**

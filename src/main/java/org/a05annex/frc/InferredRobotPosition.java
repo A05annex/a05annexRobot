@@ -93,6 +93,8 @@ public class InferredRobotPosition extends RobotPosition {
         double timestamp = robotPosition.pipelineResult.getTimestampSeconds();
 
         try {
+            robotPosition = getRobotPosition(tagSet, SpeedCachedSwerve.getInstance().getHeadingAt(timestamp));
+
             SpeedCachedSwerve.RobotRelativePosition scsRobotRelativePosition = SpeedCachedSwerve.getInstance().getRobotRelativePositionSince(timestamp);
             if(scsRobotRelativePosition.cacheOverrun) {
                 return INVALID_IRP;

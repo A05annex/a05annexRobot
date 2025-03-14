@@ -222,10 +222,10 @@ public class A05DriveCommand extends Command {
                 // clip and add speed multiplier
                 rotation = Utl.clip(rotation, -0.5, 0.5) * this.conditionedSpeed;
                 if (A05Constants.getPrintDebug()) {
-                    System.out.println("**********");
-                    System.out.println("Expected Heading: " + headingInfo.expectedHeading.getRadians());
-                    System.out.println("Actual Heading:   " + headingInfo.heading.getRadians());
-                    System.out.println("Rotation:         " + rotation);
+//                    System.out.println("**********");
+//                    System.out.println("Expected Heading: " + headingInfo.expectedHeading.getRadians());
+//                    System.out.println("Actual Heading:   " + headingInfo.heading.getRadians());
+//                    System.out.println("Rotation:         " + rotation);
                 }
             } else {
                 // no NavX

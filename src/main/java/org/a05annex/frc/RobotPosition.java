@@ -134,6 +134,15 @@ public class RobotPosition {
         return new RobotPosition(true, camera.isTargetDataNew(tagSet), pos.x, pos.y, camera.getNewestFrameWithTarget(), tagSet);
     }
 
+    protected static RobotPosition getRobotPosition(A05Constants.AprilTagSet tagSet, AngleD robotHeading) {
+        if (!canTarget(tagSet)) {
+            return new RobotPosition(); // Returns blank RobotPosition with isValid flag set to false
+        }
+
+        TruePosition pos = solveForTruePosition(tagSet, robotHeading);
+        return new RobotPosition(true, camera.isTargetDataNew(tagSet), pos.x, pos.y, camera.getNewestFrameWithTarget(), tagSet);
+    }
+
     /**
      * PhotonVision produces vectors relative to the robot heading, meaning that a robot facing a target and on an arc
      * around that target would have the same position data regardless of its location on the arc. <p>
@@ -145,13 +154,17 @@ public class RobotPosition {
      * @return The calculated true position of the robot.
      */
     protected static @NotNull TruePosition solveForTruePosition(A05Constants.AprilTagSet tagSet) {
+        return solveForTruePosition(tagSet, navX.getHeading());
+    }
+
+    protected static @NotNull TruePosition solveForTruePosition(A05Constants.AprilTagSet tagSet, AngleD robotHeading) {
         double camX = camera.getXFromLastTarget(tagSet); // camera X is distance from target
         double camY = camera.getYFromLastTarget(tagSet); // camera Y is horizontal offset X
 
         camX += camera.xDisplacement;
         camY += camera.yDisplacement;
 
-        AngleD headingDelta = navX.getHeadingInfo().getClosestHeading(tagSet.heading()).subtract(navX.getHeading()).cloneAngleD(); // Tag heading - current heading
+        AngleD headingDelta = navX.getHeadingInfo().getClosestHeading(tagSet.heading()).subtract(robotHeading).cloneAngleD(); // Tag heading - current heading
 
         double[] output = solveForTruePositionTestMethod(camX, camY, headingDelta);
         return new TruePosition(output[0], output[1]);
@@ -169,10 +182,6 @@ public class RobotPosition {
     static double[] solveForTruePositionTestMethod(double camX, double camY, AngleD headingDelta) {
         headingDelta.mult(-1.0);
         AngleD hypotenuseAngle = headingDelta.add(new AngleD().atan(camY / camX)).cloneAngleD();
-
-        if (camY < 0.0) {
-            //hypotenuseAngle.add(AngleConstantD.DEG_180);
-        }
 
         double hypotenuse = Utl.length(camX, camY);
         double x = hypotenuseAngle.cos() * hypotenuse; // true X is distance from target
