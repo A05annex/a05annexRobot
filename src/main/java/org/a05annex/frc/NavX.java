@@ -121,7 +121,7 @@ public class NavX {
         // So, if there is no navX, there is no error - it just keeps trying to connect forever, so this
         // needs to be on a thread that can be killed if it doesn't connect in time ......
         // TODO: figure out the threading, error handling, and redundancy.
-        ahrs = new AHRS(AHRS.NavXComType.kMXP_SPI);
+        ahrs = new AHRS(AHRS.NavXComType.kUSB1);
         try {
             // the reset starts a calibration process, so we want to make sure that finishes before we do
             // anything else, This is happening when the robot is first powered up, so this blocking any other
