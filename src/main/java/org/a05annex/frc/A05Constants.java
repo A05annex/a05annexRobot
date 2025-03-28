@@ -962,6 +962,11 @@ public abstract class A05Constants {
     public static final Dictionary<String, AprilTagSet> aprilTagSetDictionary = new Hashtable<>();
 
 
+    public static boolean isRedAlliance() {
+        return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true);
+    }
+
+
     /**
      * This class is used to contain the drive parameters used for positioning with AprilTags.
      */
@@ -1141,7 +1146,7 @@ public abstract class A05Constants {
          * @return an {@link AngleD} of the heading to face when targeting.
          */
         public AngleD heading() {
-            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redHeading : blueHeading;
+            return isRedAlliance() ? redHeading : blueHeading;
         }
 
         /**
@@ -1150,7 +1155,7 @@ public abstract class A05Constants {
          * @return an array of ints defining the tag IDs to target on.
          */
         public int[] tagIDs() {
-            return NetworkTableInstance.getDefault().getTable("FMSInfo").getEntry("IsRedAlliance").getBoolean(true) ? redTagIDs : blueTagIDs;
+            return isRedAlliance() ? redTagIDs : blueTagIDs;
         }
     }
 }
